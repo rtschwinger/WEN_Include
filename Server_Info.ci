@@ -1,0 +1,59 @@
+//=================Server Info test====================================================================
+//EquipAssMetadataWin("!server1info")
+//WinTitle("MNK6C PSE Primary Server")
+//=================Server Info test====================================================================
+INT
+FUNCTION server_info()
+	INT 	i;
+	INT		numServer;
+	STRING 	sCluster 	= "MNK6C";
+	INT 	handle 		= ServerBrowseOpen("", "", sCluster);
+	STRING	sName 		= "";
+
+	
+	IF (handle = -1) THEN
+     DspError("DBFDevice Device Error !!"); //  Prompt Error!!
+     RETURN FALSE;
+	END
+	
+	numServer = ServerBrowseNumRecords(handle);
+		
+	ServerBrowseFirst(handle);
+	FOR i = 1 TO numServer DO
+		sName = ServerBrowseGetField(handle, "Name");
+	
+		
+		IF _ServerMonCheckOnline(sName, sCluster) THEN
+
+			TagWrite(sCluster + "." + "SERVER_INFO\" + sName + "\Online\stVal","1");
+//			PageSetInt(sName, "1")
+
+		ELSE
+
+			TagWrite(sCluster + "." + "SERVER_INFO\" + sName + "\Online\stVal","0");
+//			PageSetInt(sName, "0")
+
+		END
+
+		IF i < numServer THEN
+			ServerBrowseNext(handle)
+		END
+	END
+		
+	ServerBrowseClose(handle);
+
+END
+
+PRIVATE
+INT	FUNCTION _ServerMonCheckOnline(STRING sName, STRING sCluster)
+	INT 	rc;
+	INT		Error;
+	
+	ErrSet(1);
+	
+	rc = ServerIsOnline(sName, sCluster);
+	Error = IsError();
+	ErrSet(0);
+
+	RETURN rc;
+END

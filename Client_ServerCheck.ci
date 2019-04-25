@@ -1,0 +1,394 @@
+
+MODULE INT WINDOW_OPEN_FAILED = -1;   //WinNew or WinNewAt failed
+MODULE INT DEFAULT_WINDOW_MODE = 773;	//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+
+
+//********************** DELL Servers **********************
+//GPT RTSchwinger 2019/02/14
+FUNCTION Server_EquipPopup_L(STRING sTAGPFX,STRING sCluster,STRING sTitle = "")
+		INT iMouseX;
+		INT iMouseY;
+		INT hWin;
+		
+		ErrLog("IODevice: " + sTAGPFX + " Cluster: " + sCluster + " Title: " + sTitle);
+		!                   Equip Ass
+		!------------------------------------------------------
+		Server_ASS_Dell(sTAGPFX,sCluster,sTitle);
+		!------------------------------------------------------
+		!                   Equip PopUp
+		!------------------------------------------------------
+		hWin = WinNewAt("!Server_Status" , iMouseX + StrToInt(PageInfo(14)) , iMouseY + StrToInt(PageInfo(15)) , DEFAULT_WINDOW_MODE);
+	
+		//Ensure popup window opened
+		IF (hWin <> WINDOW_OPEN_FAILED) THEN
+				//Set window title
+				WinTitle(sTitle);
+		END
+END
+
+FUNCTION Server_EquipPopup_R( STRING sTAGPFX,STRING sCluster, STRING sTitle = "")
+	STRING sType = "DELL";
+	STRING sPage;
+	INT iSelection;
+	//------------------------------------------------------
+	//                   Equip Ass
+	//------------------------------------------------------
+	GEN_ASS_CAT(sTAGPFX,sCluster);
+	//------------------------------------------------------
+	//                   Equip Menu
+	//------------------------------------------------------
+	DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+	DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	iSelection = DspPopupMenu(-1,"");
+
+
+SELECT CASE iSelection
+	CASE 1
+		Get_UserManual("DELL_R820");
+	CASE 2
+		Get_Drawing("DELL_R820");
+	CASE 3
+		AssChainPopUp("!EquipAlarmList");
+	END SELECT
+
+	IF sPage <> "" THEN
+		EquipAssMetadataWin("!Server_" + sType + "_" + sPage);
+	END
+END
+
+//GPT RTSchwinger 2019/02/14
+FUNCTION Server_ASS_Dell(STRING sTAGPFX,STRING sCluster,STRING sTitle = "")
+    !Dim
+    STRING sType,sEquip,sAreaP;
+    STRING sServer;
+
+    !Init
+    strDevice=sTAGPFX;								/* strTAG is the Device Name */
+    strCluster=sCluster;
+    IF strCluster <> "" THEN strCluster = strCluster + "."; END
+    sType = "EATON";								/* Type */
+    sEquip = sTAGPFX;								/* Equip */
+
+    //------------------------------------------------------
+    //                   Equip Ass
+    //------------------------------------------------------
+    Ass(-2,"Cluster","'" + sCluster + "'",0);
+    Ass(-2,"Type","'" + sType + "'",0);
+    Ass(-2,"Equip","'" + sTitle + "'",0);
+    sAreaP = StrMid(sTAGPFX,4,6);
+    Ass(-2,"AreaP","'" + sAreaP + "'",0);
+    ASS_IODevice_To_EquipName(sTAGPFX,sCluster);
+    //------------------------------------------------------
+    //        Variable and Alarm and Trend Tags Ass
+    //------------------------------------------------------
+    Equip_ASS_Server(sTAGPFX,strCluster,sServer);
+END
+
+//GPT RTSchwinger 2019/02/14
+FUNCTION Equip_ASS_Server(STRING sTAGPFX,STRING strCluster, STRING sServer)
+	STRING sHTR = "HTR";
+	STRING sRPT = "RPT";
+	STRING sBMTAGPFX;
+	
+			IF sServer = "Primary"  THEN
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_C1_IO","\WEN2_PC1_IO\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_C3_IO","\WEN2_PC3_IO\Online\stVal",strCluster);    
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_C5_IO","\WEN2_PC5_IO\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_C7_IO","\WEN2_PC7_IO\Online\stVal",strCluster);    
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_C9_IO","\WEN2_PC9_IO\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_11_IO","\WEN2_P11_IO\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_P_13_IO","\WEN2_P13_IO\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC1_ALM","\WEN2_PC1_ALM\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC1_TRND","\WEN2_PC1_TRND\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC1_RPT","\WEN2_PC1_RPT\Online\stVal",strCluster);
+			ELSE
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC2_IO","\WEN2_PC2_IO\Online\stVal",strCluster);  
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC4_IO","\WEN2_PC4_IO\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC6_IO","\WEN2_PC6_IO\Online\stVal",strCluster);   
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC8_IO","\WEN2_PC8_IO\Online\stVal",strCluster);   
+					AssIEC_SERVER(sTAGPFX,"WEN2_P10_IO","\WEN2_P10_IO\Online\stVal",strCluster);   
+					AssIEC_SERVER(sTAGPFX,"WEN2_P12_IO","\WEN2_P12_IO\Online\stVal",strCluster);   
+					AssIEC_SERVER(sTAGPFX,"WEN2_P14_IO","\WEN2_P14_IO\Online\stVal",strCluster);   
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC2_ALM","\WEN2_PC2_ALM\Online\stVal",strCluster);
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC2_TRND","\WEN2_PC2_TRND\Online\stVal",strCluster);				
+					AssIEC_SERVER(sTAGPFX,"WEN2_PC2_RPT","\WEN2_PC2_RPT\Online\stVal",strCluster);
+			END
+
+
+END
+
+//GPT RTSchwinger 2019/02/14
+FUNCTION AssIEC_SERVER(STRING sIODevice,STRING sItem,STRING sTag,STRING sCluster,STRING sHTR="")
+INT iAssReturn = 0;
+STRING sAssTag = sCluster + sIODevice + sTag;
+	 
+		ErrLog("Item to be Ass: " + sItem);
+		ErrLog("Tag to be Ass: " + sAssTag);
+		iAssReturn = Ass(-2,sItem,sAssTag,0);
+		ErrLog("Ass Returned: " + IntToStr(iAssReturn));
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("SERVER Assign item : " + sItem );
+				ErrLog("SERVER Assign IODevice : " + sIODevice );
+				ErrLog("SERVER Assign TAG : " + sTag );
+				ErrLog("SERVER Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem,"'" + sAssTag + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("SERVER A_Assign item : " + sItem );
+				ErrLog("SERVER A_Assign IODevice : " + sIODevice );
+				ErrLog("SERVER A_Assign TAG : " + sTag );
+				ErrLog("SERVER A_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_On",sAssTag + strON,0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("SERVER Assign_On item : " + sItem );
+				ErrLog("SERVER Assign_On IODevice : " + sIODevice );
+				ErrLog("SERVER Assign_On TAG : " + sTag );
+				ErrLog("SERVER Assign_On Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_Dis",sAssTag + strDIS,0);
+		IF iAssReturn THEN
+		 	IF iDebug_On THEN
+		 	  ErrLog("--------------------------------------------" );
+				ErrLog("SERVER Assign_Dis item : " + sItem );
+				ErrLog("SERVER Assign_Dis IODevice : " + sIODevice );
+				ErrLog("SERVER Assign_Dis TAG : " + sTag );
+				ErrLog("SERVER Assign_Dis Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		// Assign Trend Tag whether it exists or not
+	iAssReturn = Ass(-2,"T_" + sItem,"'" + sIODevice + sTag + sHTR + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("SERVER Trend_Assign item : " + sItem );
+				ErrLog("SERVER Trend_Assign IODevice : " + sIODevice );
+				ErrLog("SERVER Trend_Assign TAG : " + sTag );
+				ErrLog("SERVER Trend_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+    iAssReturn = 0;
+  	
+END
+
+
+!Check Server Status
+FUNCTION ServerCheck()
+     	INT iWEN2_PIO1,iWEN2_SIO2;
+     	INT iWEN2_PIO3,iWEN2_SIO4;
+     	INT iWEN2_PIO5,iWEN2_SIO6;
+     	INT iWEN2_PIO7,iWEN2_SIO8;
+     	INT iWEN2_PIO9,iWEN2_SIO10;
+     	INT iWEN2_PIO9A,iWEN2_SIO10A;
+     	INT iWEN2_PIO11,iWEN2_SIO12;
+     	INT iWEN2_PIO13,iWEN2_SIO14;
+     	INT iWEN2_ALM1,iWEN2_ALM2;
+     	INT iWEN2_TRND1,iWEN2_TRND2;
+     	INT iWEN2_RPT1,iWEN2_RPT2;
+     	INT iWEN2_P1,iWEN2_S1;
+     	INT iWEN2_PS;
+     	
+     	iWEN2_PIO1=ServerIsOnline("WEN2_PC1_IO","WEN2");
+     	iWEN2_SIO2=ServerIsOnline("WEN2_PC2_IO","WEN2");
+     	iWEN2_PIO3=ServerIsOnline("WEN2_PC3_IO","WEN2");
+     	iWEN2_SIO4=ServerIsOnline("WEN2_PC4_IO","WEN2");
+     	iWEN2_PIO5=ServerIsOnline("WEN2_PC5_IO","WEN2");
+     	iWEN2_SIO6=ServerIsOnline("WEN2_PC6_IO","WEN2");
+     	iWEN2_PIO7=ServerIsOnline("WEN2_PC7_IO","WEN2");
+     	iWEN2_SIO8=ServerIsOnline("WEN2_PC8_IO","WEN2");
+     	iWEN2_PIO9=ServerIsOnline("WEN2_P09_IO","WEN2");
+     	iWEN2_SIO10=ServerIsOnline("WEN2_S10_IO","WEN2");
+     	iWEN2_PIO9A=ServerIsOnline("WEN2_P09A_IO","WEN2");
+     	iWEN2_SIO10A=ServerIsOnline("WEN2_S10A_IO","WEN2");
+     	iWEN2_PIO11=ServerIsOnline("WEN2_P11_IO","WEN2");
+     	iWEN2_SIO12=ServerIsOnline("WEN2_S12_IO","WEN2");
+     	iWEN2_PIO13=ServerIsOnline("WEN2_P13_IO","WEN2");
+     	iWEN2_SIO14=ServerIsOnline("WEN2_S14_IO","WEN2");
+     	
+     	iWEN2_TRND1=ServerIsOnline("WEN2_PC1_TRND","WEN2");
+     	iWEN2_TRND2=ServerIsOnline("WEN2_PC2_TRND","WEN2");
+     	iWEN2_ALM1=ServerIsOnline("WEN2_PC1_ALM","WEN2");
+     	iWEN2_ALM2=ServerIsOnline("WEN2_PC2_ALM","WEN2");
+     	iWEN2_RPT1=ServerIsOnline("WEN2_PC1_RPT","WEN2");
+     	iWEN2_RPT2=ServerIsOnline("WEN2_PC2_RPT","WEN2");
+
+     	iWEN2_PS=ServerInfo("Alarm",2,"WEN2")
+     	
+     	IF iWEN2_PS THEN
+     		iWEN2_P1 = 1;
+     		iWEN2_S1 = 0;
+     	ELSE
+     		iWEN2_P1 = 0;
+     		iWEN2_S1 = 1;
+     	END
+     	
+     	IF NOT(iWEN2_PIO1=1) THEN
+     		WEN2.SERVER_INFO\Primary1\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary1\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO3=1) THEN
+     		WEN2.SERVER_INFO\Primary3\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary3\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO5=1) THEN
+     		WEN2.SERVER_INFO\Primary5\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary5\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO7=1) THEN
+     		WEN2.SERVER_INFO\Primary7\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary7\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO9=1) THEN
+     		WEN2.SERVER_INFO\Primary9\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary9\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO9A=1) THEN
+     		WEN2.SERVER_INFO\Primary9A\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary9A\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO11=1) THEN
+     		WEN2.SERVER_INFO\Primary11\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary11\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_PIO13=1) THEN
+     		WEN2.SERVER_INFO\Primary13\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Primary13\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_ALM1=1) THEN
+     		WEN2.SERVER_INFO\Alarm1\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Alarm1\Shutdown\stVal=0;
+     	END
+     	
+     	WEN2.SERVER_INFO\Primary1\Status\stVal = iWEN2_P1;
+
+     	IF NOT(iWEN2_SIO2=1) THEN
+     		WEN2.SERVER_INFO\Standby2\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby2\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO4=1) THEN
+     		WEN2.SERVER_INFO\Standby4\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby4\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO6=1) THEN
+     		WEN2.SERVER_INFO\Standby6\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby6\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO8=1) THEN
+     		WEN2.SERVER_INFO\Standby8\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby8\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO10=1) THEN
+     		WEN2.SERVER_INFO\Standby10\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby10\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO10A=1) THEN
+     		WEN2.SERVER_INFO\Standby10A\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby10A\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO12=1) THEN
+     		WEN2.SERVER_INFO\Standby12\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby12\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_SIO14=1) THEN
+     		WEN2.SERVER_INFO\Standby14\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Standby14\Shutdown\stVal=0;
+     	END
+     	
+     	IF NOT(iWEN2_ALM2=1) THEN
+     		WEN2.SERVER_INFO\Alarm2\Shutdown\stVal=1;
+     	ELSE
+     		WEN2.SERVER_INFO\Alarm2\Shutdown\stVal=0;
+     	END
+     	
+     	WEN2.SERVER_INFO\Standby2\Status\stVal = iWEN2_S1;
+END
+
+//SERVER_INFO\WEN2_PC1_IO\Online\stVal
+//SERVER_INFO\WEN2_PC2_IO\Online\stVal
+//SERVER_INFO\WEN2_PC3_IO\Online\stVal
+//SERVER_INFO\WEN2_PC4_IO\Online\stVal
+//SERVER_INFO\WEN2_PC5_IO\Online\stVal
+//SERVER_INFO\WEN2_PC6_IO\Online\stVal
+//SERVER_INFO\WEN2_PC7_IO\Online\stVal
+//SERVER_INFO\WEN2_PC8_IO\Online\stVal
+//SERVER_INFO\WEN2_PC9_IO\Online\stVal
+//SERVER_INFO\WEN2_P10_IO\Online\stVal
+//SERVER_INFO\WEN2_P11_IO\Online\stVal
+//SERVER_INFO\WEN2_P12_IO\Online\stVal
+//SERVER_INFO\WEN2_P13_IO\Online\stVal
+//SERVER_INFO\WEN2_P14_IO\Online\stVal
+//SERVER_INFO\WEN2_PC1_ALM\Online\stVal
+//SERVER_INFO\WEN2_PC2_ALM\Online\stVal
+//SERVER_INFO\WEN2_PC1_TRND\Online\stVal
+//SERVER_INFO\WEN2_PC2_TRND\Online\stVal
+//SERVER_INFO\WEN2_PC1_RPT\Online\stVal
+//SERVER_INFO\WEN2_PC2_RPT\Online\stVal
+
+
+
+FUNCTION ServerCheck_Display()
+	INT iWEN2_P1,iWEN2_S1;
+	INT iWEN2_PShut,iWEN2_SShut;
+
+	iWEN2_P1=WEN2.SERVER_INFO\Primary1\Status\stVal;
+	iWEN2_S1=WEN2.SERVER_INFO\Standby2\Status\stVal;
+	iWEN2_PShut= WEN2.SERVER_INFO\Primary1\Shutdown\stVal OR WEN2.SERVER_INFO\Primary3\Shutdown\stVal OR WEN2.SERVER_INFO\Primary5\Shutdown\stVal 
+				OR WEN2.SERVER_INFO\Primary7\Shutdown\stVal OR WEN2.SERVER_INFO\Primary9\Shutdown\stVal OR WEN2.SERVER_INFO\Primary9A\Shutdown\stVal OR 
+				WEN2.SERVER_INFO\Primary11\Shutdown\stVal OR WEN2.SERVER_INFO\Primary13\Shutdown\stVal OR WEN2.SERVER_INFO\Alarm1\Shutdown\stVal
+	iWEN2_SShut= WEN2.SERVER_INFO\Standby2\Shutdown\stVal OR WEN2.SERVER_INFO\Standby4\Shutdown\stVal OR WEN2.SERVER_INFO\Standby6\Shutdown\stVal 
+				OR WEN2.SERVER_INFO\Standby8\Shutdown\stVal OR WEN2.SERVER_INFO\Standby10\Shutdown\stVal OR WEN2.SERVER_INFO\Standby10\Shutdown\stVal
+				OR WEN2.SERVER_INFO\Standby12\Shutdown\stVal OR WEN2.SERVER_INFO\Standby14\Shutdown\stVal OR WEN2.SERVER_INFO\Alarm2\Shutdown\stVal
+	
+
+	PageSetInt("WEN2_P_Shutdown",IntToStr(iWEN2_PShut));
+	PageSetInt("WEN2_S_Shutdown",IntToStr(iWEN2_SShut));
+	
+	PageSetInt("WEN2_P_Status1",IntToStr(iWEN2_P1));
+	PageSetInt("WEN2_S_Status1",IntToStr(iWEN2_S1));
+END

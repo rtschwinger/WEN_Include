@@ -1,0 +1,359 @@
+!********************** ABB Emax ACB **********************
+! GPT RTS 2016/08/17 New
+FUNCTION ACB_ASS_ABBEMAX(STRING strTAG,STRING sCluster)
+	!Dim
+	STRING sType,sEquip;
+	INT iStatus;
+	
+	!Init
+	strDevice=strTAG;								/* strTAG is the Device Name */
+	strCluster=sCluster;			
+	IF strCluster <> "" THEN strCluster = sCluster + "."; END
+	sType = "ABBEMAX";							/* Type */
+	sEquip = strTAG;								/* Equip */
+    
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strTAG + "'",0);
+	ASS_IODevice_To_EquipName(strTAG,sCluster);
+	!------------------------------------------------------
+	!        Variable,Alarm and Trend Tags Ass
+	!------------------------------------------------------
+	Equip_ASS_ACB(strTAG,strCluster);
+	!------------------------------------------------------
+	!        Check Service and Ready to Closed Ass
+	!------------------------------------------------------
+	iStatus = Ass(-2,"Service", + strCluster + strTAG + "\XCBR1\CBRkdPos\In",0);
+	Ass(-2,"Service_Hidden","'" + IntToStr(iStatus) + "'",0);
+	iStatus = Ass(-2,"Rdy_Close", + strCluster + strTAG + "\XCBR1\Rdy_Close\stVal",0);
+	Ass(-2,"Rdy_Close_Hidden","'" + IntToStr(iStatus) + "'",0);
+	iStatus = Ass(-2,"TEST", + strCluster + strTAG + "\XCBR1\CBRkdPos\Test",0);
+	Ass(-2,"TEST_Hidden","'" + IntToStr(iStatus) + "'",0);
+	iStatus = Ass(-2,"Spring", + strCluster + strTAG + "\XCBR1\Spring\stVal",0);
+	Ass(-2,"Spring_Hidden","'" + IntToStr(iStatus) + "'",0);
+END
+
+! GPT RTS 2016/08/17 New
+FUNCTION ACB_ABBEMAX_EquipPopup_L(STRING strTAG,STRING sCluster)
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	ACB_ASS_ABBEMAX(strTAG,sCluster);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	EquipAssMetadataWin("!ACB_ABBEMAX_Main");
+END
+
+! GPT RTS 2016/08/17 New
+FUNCTION ACB_ABBEMAX_EquipPopup_R(STRING strTAG,STRING sCluster)
+	STRING sType = "ABBEMAX";
+	STRING sPage;
+	INT iSelection;
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	ACB_ASS_ABBEMAX(strTAG,sCluster);
+	!------------------------------------------------------
+	!                   Equip Menu
+	!------------------------------------------------------
+	DspPopupMenu(0, StrToLocalText("@(Voltage)"));
+	DspPopupMenu(0, StrToLocalText("@(Current)"));
+	DspPopupMenu(0, StrToLocalText("@(Power)/@(Energy)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+	DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	iSelection = DspPopupMenu(-1,"");
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	SELECT CASE iSelection
+		CASE 1
+			sPage = "Voltage"
+		CASE 2	
+			sPage = "Current"
+		CASE 3
+			sPage = "Power"
+		CASE 4
+			Get_UserManual("ABB_EMAX");
+		CASE 5
+			Get_Drawing("ABB_EMAX");
+		CASE 6
+			AssChainPopUp("!EquipAlarmList");
+	END SELECT
+	
+	IF sPage <> "" THEN
+		EquipAssMetadataWin("!ACB_" + sType + "_" + sPage);
+	END
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION Equip_ASS_ACB(STRING strTAG,STRING strCluster)
+	STRING sHTR = "HTR";
+	STRING sRPT = "RPT";
+  
+	!@(External Equipment Health)
+	AssIEC_ACB(strTAG,"COMM",strCluster);
+	!@(Power Factor)
+	AssIEC_ACB(strTAG,"PFTOT",strCluster);
+	!@(Active Power)
+	AssIEC_ACB(strTAG,"WTOT",strCluster);
+	!@(Reactive Power)
+	AssIEC_ACB(strTAG,"VARTOT",strCluster);
+	!@(Apparent Power)
+	AssIEC_ACB(strTAG,"VATOT",strCluster);
+	!@(Active Energy Into the Load)
+	AssIEC_ACB(strTAG,"WHTOT",strCluster);
+	!@(Voltage L-L A-B)
+	AssIEC_ACB(strTAG,"VAB",strCluster);
+	!@(Voltage L-L B-C)
+	AssIEC_ACB(strTAG,"VBC",strCluster);
+	!@(Voltage L-L C-A)
+	AssIEC_ACB(strTAG,"VCA",strCluster);
+	!@(Voltage L-L Avg)
+	AssIEC_ACB(strTAG,"VLLAVG",strCluster);
+	!@(Voltage A-N)
+	AssIEC_ACB(strTAG,"VAN",strCluster);
+	!@(Voltage B-N)
+	AssIEC_ACB(strTAG,"VBN",strCluster);
+	!@(Voltage C-N)
+	AssIEC_ACB(strTAG,"VCN",strCluster);
+	!@(Current A)
+	AssIEC_ACB(strTAG,"IA",strCluster);
+	!@(Current B)
+	AssIEC_ACB(strTAG,"IB",strCluster);
+	!@(Current C)
+	AssIEC_ACB(strTAG,"IC",strCluster);
+	!@(Current G)
+	AssIEC_ACB(strTAG,"IG",strCluster);
+	!@(Current Avg)
+	AssIEC_ACB(strTAG,"IAVG",strCluster);
+	!@(Breaker Status)
+	AssIEC_ACB(strTAG,"CB_Status",strCluster);
+	!@(Breaker Status - Closed)
+	AssIEC_ACB(strTAG,"CB_Closed",strCluster);
+	!@(Breaker Status - Open)
+	AssIEC_ACB(strTAG,"CB_Open",strCluster);
+	!@(Breaker Trip Status)
+	AssIEC_ACB(strTAG,"CB_Trip",strCluster);
+	!@(Device drawn position - in)
+	AssIEC_ACB(strTAG,"Service",strCluster);
+	!@(Device drawn position - out)
+	AssIEC_ACB(strTAG,"Disconnect",strCluster);
+	!@(Device drawn position - test)
+	AssIEC_ACB(strTAG,"TEST",strCluster);
+	!@(ACB Ready TO Close (PF))
+	AssIEC_ACB(strTAG,"Rdy_Close",strCluster);
+	!@(Spring loaded)
+	AssIEC_ACB(strTAG,"Spring",strCluster);
+	
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION AssIEC_ACB(STRING sIODevice,STRING sItemTag,STRING sCluster,STRING sHTR="")
+STRING sItem,sTag;
+
+  SELECT CASE sItemTag
+	!@(External Equipment Health)	
+	CASE "COMM","\LPHD1\EEHealth1"	
+		sItem = "COMM";
+		sTag = "\LPHD1\EEHealth1";
+	!@(Active Energy)	
+	CASE "WHTOT","\MMTR1\TotWh"	
+		sItem = "WHTOT";
+		sTag = "\MMTR1\TotWh";
+	!@(Power Factor)	
+	CASE "PFTOT","\MMXU1\TotPF"	
+		sItem = "PFTOT";
+		sTag = "\MMXU1\TotPF";
+	!@(Active Power)	
+	CASE "WTOT","\MMXU1\TotW"	
+		sItem = "WTOT";
+		sTag = "\MMXU1\TotW";
+	!@(Reactive Power)	
+	CASE "VARTOT","\MMXU1\TotVAr"	
+		sItem = "VARTOT";
+		sTag = "\MMXU1\TotVAr";
+	!@(Apparent Power)	
+	CASE "VATOT","\MMXU1\TotVA"	
+		sItem = "VATOT";
+		sTag = "\MMXU1\TotVA";
+	!@(Voltage A-B)	
+	CASE "VAB","\MMXU1\PPV\phsAB"	
+		sItem = "VAB";
+		sTag = "\MMXU1\PPV\phsAB";
+	  	
+	!@(Voltage B-C)	
+	CASE "VBC","\MMXU1\PPV\phsBC"	
+		sItem = "VBC";
+		sTag = "\MMXU1\PPV\phsBC";
+	  	
+	!@(Voltage C-A)	
+	CASE "VCA","\MMXU1\PPV\phsCA"	
+		sItem = "VCA";
+		sTag = "\MMXU1\PPV\phsCA";
+	  	
+	!@(Voltage L-L Avg)	
+	CASE "VLLAVG","\MMXU1\PPV\zavg"	
+		sItem = "VLLAVG";
+		sTag = "\MMXU1\PPV\zavg";
+	  	  	
+	!@(Voltage A-N)	
+	CASE "VAN","\MMXU1\PhV\phsA"	
+		sItem = "VAN";
+		sTag = "\MMXU1\PhV\phsA";
+	  	
+	!@(Voltage B-N)	
+	CASE "VBN","\MMXU1\PhV\phsB"	
+		sItem = "VBN";
+		sTag = "\MMXU1\PhV\phsB";
+	  	
+	!@(Voltage C-N)	
+	CASE "VCN","\MMXU1\PhV\phsC"	
+		sItem = "VCN";
+		sTag = "\MMXU1\PhV\phsC";
+  	
+	!@(Current Avg)	
+	CASE "IAVG","\MMXU1\A\zavg"	
+		sItem = "IAVG";
+		sTag = "\MMXU1\A\zavg";
+	  	
+	!@(Current A)	
+	CASE "IA","\MMXU1\A\phsA"	
+		sItem = "IA";
+		sTag = "\MMXU1\A\phsA";
+	  	
+	!@(Current B)	
+	CASE "IB","\MMXU1\A\phsB"	
+		sItem = "IB";
+		sTag = "\MMXU1\A\phsB";
+	  	
+	!@(Current C)	
+	CASE "IC","\MMXU1\A\phsC"	
+		sItem = "IC";
+		sTag = "\MMXU1\A\phsC";
+	  	
+	!@(Current G)	
+	CASE "IG","\MMXU1\A\zgnd"	
+		sItem = "IG";
+		sTag = "\MMXU1\A\zgnd";
+	  	  	
+	!@(Breaker Status)	
+	CASE "CB_Status","\XCBR1\Pos"	
+		sItem = "CB_Status";
+		sTag = "\XCBR1\Pos";
+	  	
+	!@(Breaker Status - Closed)
+	CASE "CB_Closed","\XCBR1\Pos_On"	
+		sItem = "CB_Closed";
+		sTag = "\XCBR1\Pos_On";
+	  	
+	!@(Breaker Status - Open)
+	CASE "CB_Open","\XCBR1\Pos_Off"	
+		sItem = "CB_Open";
+		sTag = "\XCBR1\Pos_Off";	
+	  	
+	!@(Device drawn position - in)	!Service
+	CASE "Service","\XCBR1\CBRkdPos\In"	
+		sItem = "Service";
+		sTag = "\XCBR1\CBRkdPos\In";
+	  	
+	!@(Device drawn position - out)	!Disconnent
+	CASE "Disconnect","\XCBR1\CBRkdPos\Out"	
+		sItem = "Disconnect";
+		sTag = "\XCBR1\CBRkdPos\Out";
+	  	
+	!@(Device drawn position - test) !TEST
+	CASE "TEST","\XCBR1\CBRkdPos\Test"	
+		sItem = "TEST";
+		sTag = "\XCBR1\CBRkdPos\Test";
+		
+	!@(ACB Ready TO Close (PF))
+	CASE "Rdy_Close","\XCBR1\Rdy_Close\stVal"
+		sItem = "Rdy_Close";
+		sTag = "\XCBR1\Rdy_Close\stVal";
+		
+	!@(Spring Charged)
+	CASE "Spring","\XCBR1\Spring\stVal"
+		sItem = "Spring";
+		sTag = "\XCBR1\Spring\stVal";
+		
+	!@(ACB MDGF Trip)
+	CASE "MDGF","\PTRC1\MDGF_Tr"
+		sItem = "MDGF";
+		sTag = "\PTRC1\MDGF_Tr";
+
+  !@(ACB Trip)
+	CASE "CB_Trip","\PTRC1\Tr"
+		sItem = "CB_Trip";
+		sTag = "\PTRC1\Tr";
+
+	!@(Other)
+	CASE ELSE
+  		sItem = sItemTag;
+		sTag = sItemTag;
+  END SELECT
+	
+	INT iAssReturn = 0;
+	 
+	iAssReturn = Ass(-2,sItem,sCluster + sIODevice + sTag,0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("ACB Assign item : " + sItem );
+				ErrLog("ACB Assign IODevice : " + sIODevice );
+				ErrLog("ACB Assign TAG : " + sTag );
+				ErrLog("ACB Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem,"'" + sIODevice + sTag + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("ACB A_Assign item : " + sItem );
+				ErrLog("ACB A_Assign IODevice : " + sIODevice );
+				ErrLog("ACB A_Assign TAG : " + sTag );
+				ErrLog("ACB A_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_On",sCluster + sIODevice + sTag + strON,0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("ACB Assign_On item : " + sItem );
+				ErrLog("ACB Assign_On IODevice : " + sIODevice );
+				ErrLog("ACB Assign_On TAG : " + sTag );
+				ErrLog("ACB Assign_On Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_Dis",sCluster + sIODevice + sTag + strDIS,0);
+		IF iAssReturn THEN
+		 	IF iDebug_On THEN
+		 	  ErrLog("--------------------------------------------" );
+				ErrLog("ACB Assign_Dis item : " + sItem );
+				ErrLog("ACB Assign_Dis IODevice : " + sIODevice );
+				ErrLog("ACB Assign_Dis TAG : " + sTag );
+				ErrLog("ACB Assign_Dis Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		// Assign Trend Tag whether it exists or not
+	iAssReturn = Ass(-2,"T_" + sItem,"'" + sIODevice + sTag + sHTR + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("ACB Trend_Assign item : " + sItem );
+				ErrLog("ACB Trend_Assign IODevice : " + sIODevice );
+				ErrLog("ACB Trend_Assign TAG : " + sTag );
+				ErrLog("ACB Trend_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+    iAssReturn = 0;
+  	
+END

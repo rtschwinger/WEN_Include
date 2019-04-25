@@ -1,0 +1,147 @@
+//================================================================================================================
+
+//	Alternative to the UserPasswordForm() function, uses the Touchscreen settings, also works from both local and remote thick clients.
+//  Note:  This does NOT work with web clients; furthermore the web deploymnt databases will not reflect any password changes made.
+
+PUBLIC
+INT FUNCTION LoginAndSetLanguage(STRING sLanguage, INT nCharSet)
+	INT nStatus;
+
+	nStatus = Login("admin", "admin", 0, sLanguage);
+	
+	RETURN nStatus;
+END
+
+FUNCTION WEN_PasswordReset()
+	STRING sUserName;
+	STRING sNewPassword;
+	!Check citec.ini to see if touchscreen
+	INT iTouchScreen = StrToInt(ParameterGet("General","TouchScreen",0));
+	INT iKeypadMode;
+	
+	!Checked citec.ini to see if touchscreen set keypad mode for results
+	IF iTouchScreen = 1 OR iTouchScreen = 2 THEN
+		IF iTouchScreen = 2 THEN
+			iKeypadMode	= 4;
+		END 
+			
+		sUserName = Keypad("",0 + iKeypadMode, "Reset Password - Enter User Name:" ,200,200);
+		IF IsError() THEN
+			RETURN;
+		END
+	ELSE
+		IF iTouchScreen = 3 THEN
+			Exec("osk.exe");
+		END
+		
+		sUserName = Input("Reset Password", "sUser Name:", "");
+		IF sUserName = " " THEN
+			RETURN;
+		END
+	END
+		sNewPassword = sUserName;
+		IF WEN_Svr_PasswordReset(sUserName, sNewPassword) = 0 THEN
+			Message("Reset Password: " + sUserName, "Password Reset Succeeded.", 64);
+		ELSE
+			Message("Reset Password: " + sUserName, "Password Reset Failed.", 48);
+		END !END Server Call to reset Password
+END 
+
+INT FUNCTION WEN_Svr_PasswordReset(STRING sUserName, STRING sNewPassword, STRING sCluster = "")
+	INT hRPC = MsgOpen("Alarm",0, 0, sCluster);
+	STRING sRetVal;
+	
+	sRetVal = MsgRPC(hRPC, "UserPassword", "^"" + sUserName + "^",^"" + sNewPassword + "^"", 0);
+	
+	MsgClose("Alarm", hRPC);
+	RETURN StrToInt(sRetVal);
+END
+
+//  This function is similar to UserPassword() function, except that it runs on teh Alarm server process - This allows support from thick clients.
+INT FUNCTION WEN_Svr_UserPassword(STRING sUserName, STRING sNewPassword, STRING sOldPassword, STRING sCluster = "")
+    INT hRPC = MsgOpen("Alarm", 0, 0, sCluster);
+    STRING sRetVal;
+	
+    sRetVal = MsgRPC(hRPC, "UserPassword", "^"" + sUserName + "^",^"" + sNewPassword + "^",^"" + sOldPassword + "^"", 0);
+    MsgClose("Alarm", hRPC);
+	
+	RETURN StrToInt(sRetVal);
+END
+
+//================================================================================================================
+
+//	Alternative to the UserPasswordForm() function, uses the Touchscreen settings, also works from both local and remote thick clients.
+//  Note:  This does NOT work with web clients; furthermore the web deploymnt databases will not reflect any password changes made.
+
+FUNCTION WEN_UserPassword()
+	STRING sUserName = Name();
+	STRING sOldPassword, sNewPassword, sNewPasswordVerify;
+	INT iTouchScreen = StrToInt(ParameterGet("General","TouchScreen","0"));
+	INT iKeypadMode;
+	
+	IF sUserName = "" OR sUserName = "plsystem" THEN
+		RETURN
+	END
+	
+	IF iTouchScreen = 1 OR iTouchScreen = 2 THEN
+		IF iTouchScreen = 2 THEN
+			iKeypadMode = 4;
+		END
+		
+		sOldPassword = Keypad("",1 + iKeypadMode,"User Password Change - Enter OLD Password:",200,200);
+		IF IsError() THEN
+			RETURN;
+		END
+		sNewPassword = Keypad("",1 + iKeypadMode,"User Password Change - Enter NEW Password:",230,230);
+		IF IsError() THEN
+			RETURN;
+		END
+		sNewPasswordVerify = Keypad("",1 + iKeypadMode,"User Password Change - Re-Enter NEW Password:",260,260);
+		IF IsError() THEN
+			RETURN;
+		END
+
+	ELSE
+		IF iTouchScreen = 3 THEN
+			ExecEx("osk.exe");
+		END
+		
+		FormNew("Change Password", 47, 7, 8+16);
+		
+		FormPrompt(0, 0, "User Name");
+		FormPrompt(23, 0, sUserName);
+		
+		FormPrompt(0, 1, "Full Name");
+		FormPrompt(23, 1, FullName());
+	
+		FormPrompt(0, 2, "Enter Old Password");
+		FormPassword(23, 2, "", sOldPassword, 24);
+		
+		FormPrompt(0, 3, "Enter New Password");
+		FormPassword(23, 3, "", sNewPassword, 24);
+	
+		FormPrompt(0, 4, "Re-enter New Password");
+		FormPassword(23, 4, "", sNewPasswordVerify, 24);
+	
+		FormButton(10, 6, "  OK  ", 0, 1);
+		FormButton(30, 6, "Cancel", 0, 2);
+
+		IF FormRead(0) <> 0 THEN
+			RETURN;
+		END
+	END
+	
+	IF NOT (sOldPassword = "" AND sNewPassword = "" AND sNewPasswordVerify = "") THEN
+		IF sNewPassword = sNewPasswordVerify THEN
+			IF WEN_Svr_UserPassword(sUserName, sNewPassword, sOldPassword) = 0 THEN
+				Message("Change User Password", "Password update succeeded.", 64);
+			ELSE
+				Message("Change User Password", "Password update failed.", 48);
+			END
+		ELSE
+			Message("Change User Password", "Password entered mis-match.", 48);
+		END
+	ELSE
+		Message("Change User Password", "No changes made.", 64);
+	END
+END !END WEN_UserPassword

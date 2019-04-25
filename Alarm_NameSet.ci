@@ -1,0 +1,103 @@
+
+FUNCTION setAlarmName(STRING Alarm, STRING str)
+	setAlarmName_RDB(Alarm,str);
+	setAlarmName_DBF(Alarm,str);
+	TagRDBReload();
+END
+
+INT FUNCTION setAlarmName_RDB(STRING Alarm, STRING str)
+
+ErrSet(1)
+INT found = 0; 
+INT result = 0;
+INT hRdb = RdbOpen("_DIGALM");
+STRING sName;
+
+	IF hRdb <> -1 THEN
+		WHILE found = 0 AND NOT RdbEOF(hRdb) DO 
+			IF RdbGet(hRdb,"TAG") = Alarm THEN
+				sName = RdbGet(hRdb,"NAME");
+				result = RdbSet(hRdb,"NAME",str);
+				found = 1; 
+			END
+			RdbNextRec(hRdb);
+		END
+		RdbClose(hRdb);
+	END
+
+	RETURN result;
+END
+
+INT FUNCTION setAlarmName_DBF(STRING Alarm, STRING str)
+
+//dbfConnect is my custom function for connecting to .dbf file with a Device
+//INT hDev = dbfConnect("digalm",ParameterGet("CtEdit","LASTDATABASEPATH",""));
+ErrSet(1)
+STRING sPath =PathToStr("[HTR]:" + "WEN2\" + "digalm");
+sPath =PathToStr("[Config]:" + "WEN2\" + "digalm");
+INT hDev = DevOpen("WEN2_digalm",0);
+INT found = 0;
+INT result = 0; 
+
+	IF hDev <> -1 THEN
+		WHILE found = 0 AND NOT DevEOF(hDev) DO
+			IF DevGetField(hDev,"TAG") = Alarm THEN
+				result = DevSetField(hDev,"NAME", str);
+				found = 1;
+			END
+			DevNext(hDev);
+		END
+		
+		DevClose(hDev);
+	END
+	RETURN result
+END
+
+FUNCTION AlarmServerRestart()
+STRING sINI; // Citect.ini path
+STRING MyProj = ParameterGet("CtEdit","LASTDATABASE","");
+
+	sINI = ServerInfo(Client, 3);
+	Exec(PathToStr("[BIN]") + "CTCMP32.EXE -d" + MyProj + " -actdsp -i" + sINI); 
+	
+	ParameterPut("Shutdown","NetworkStart",1);
+	ServerRestart("WEN2_PC1_ALM","WEN2");
+
+END
+
+FUNCTION Alarm_Area_Disabled(STRING sArea,STRING sDisabled = "1",STRING sCluster = "WEN2")
+
+	INT eTBHandle,eTBResult;
+	INT aTBHandle,aTBResult;
+	STRING sAlarmTag;
+	STRING sEquip;
+	STRING sAreaName;
+	!***********************Equip Start****************************!
+	eTBHandle = EquipBrowseOpen("*","NAME,Custom4",sCluster);
+	IF eTBHandle <> -1 THEN
+		eTBResult = EquipBrowseFirst(eTBHandle);
+		WHILE (eTBResult = 0) DO
+			sEquip = EquipBrowseGetField(eTBHandle ,  "NAME");
+			sAreaName = EquipBrowseGetField(eTBHandle ,  "Custom4");
+	IF sEquip <> "" AND sAreaName = sArea THEN
+	!**************************Alarm*******************************!
+	aTBHandle = AlmBrowseOpen("EQUIPMENT=" + sEquip,"TAG",sCluster);
+	IF aTBHandle <> -1 THEN
+		aTBResult = AlmBrowseFirst(aTBHandle);
+		WHILE (aTBResult = 0) DO
+			sAlarmTag = AlmBrowseGetField(aTBHandle ,  "TAG");
+			IF sCluster <> "" THEN
+				sAlarmTag = sCluster + "." + sAlarmTag;
+			END
+			TagWrite(sAlarmTag + strDIS,sDisabled)
+			aTBResult = AlmBrowseNext(aTBHandle);
+		END
+		aTBResult = AlmBrowseClose(aTBHandle);
+	END
+	!***********************Equip End******************************!
+	END
+			eTBResult = EquipBrowseNext(eTBHandle);
+		END
+		eTBResult = EquipBrowseClose(eTBHandle);
+	END
+END

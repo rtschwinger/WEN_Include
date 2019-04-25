@@ -1,0 +1,62 @@
+!External Application Paths
+GLOBAL STRING AppExcel="D:\Program Files\LibreOffice 5\program\scalc.exe";		!Libre Office Calc
+GLOBAL STRING AppAdobe="C:\Program Files (x86)\Adobe\Acrobat DC\Acrobat\Acrobat.exe ";	!Adobe 6.0
+
+!Global Paths
+GLOBAL STRING PathRoot="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\alm\";
+GLOBAL STRING PathDoc="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\Doc\";
+GLOBAL STRING PathAlm="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\Alm\";
+GLOBAL STRING PathLog="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\Log\";
+GLOBAL STRING PathWave="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\Wave\";
+GLOBAL STRING PathDraw="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\";
+GLOBAL STRING PathIMCC="E:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\Data\IMCC\";
+
+//*****************  GLOBAL Variable *********************
+//GLOBAL STRING strSE; 		
+//GLOBAL STRING strAA;
+GLOBAL STRING strTN;						
+GLOBAL STRING strALM="";                            //"A_";	//PLS7.3
+GLOBAL STRING strTRN="";                            //"T_";	//PLS7.3
+GLOBAL STRING strON=".On";
+GLOBAL STRING strDIS=".Disabled";
+GLOBAL STRING strCAT=".Category";
+GLOBAL STRING strCluster;
+GLOBAL STRING strData;
+GLOBAL STRING strAddress;
+GLOBAL STRING strTitle;		
+GLOBAL STRING strDevice;
+
+// multi monitor //
+GLOBAL INT iMonitor;
+GLOBAL INT iWidth=3840;
+GLOBAL INT counter;
+
+/* Protection VARiable */
+GLOBAL STRING strProt;
+//*********************************************************
+
+/* Declaration */
+GLOBAL STRING SETW_TREND1;
+GLOBAL STRING SETW_TREND2;
+GLOBAL STRING SETW_TREND3;
+GLOBAL STRING SETW_TREND4;
+GLOBAL STRING SETW_TREND5;
+GLOBAL STRING SETW_TREND6;
+GLOBAL STRING SETW_TREND7;
+GLOBAL STRING SETW_TREND8;
+GLOBAL INT SETW_TREND_COUNT;
+
+//*********************  Alarm Tag  ********************* 
+GLOBAL INT iRecNo1; 	   
+GLOBAL STRING AlmTag;       
+GLOBAL INT AlmTagDisable;    		   
+GLOBAL STRING sHighHigh1,sHigh1;  		/*ASSPOPUP*/
+GLOBAL STRING sLow1,sLowLow1;
+GLOBAL STRING sDeadBand1,sDeviation1,sRate1;
+GLOBAL STRING sHHDelay,sHDelay,sLLDelay,sLDelay,sDevDelay,sDelay;
+GLOBAL STRING AlmCluster; 				/*Cluster*/
+//**********************************************************
+
+GLOBAL INT iCurr_Time,iAction_Time;
+
+GLOBAL INT iDebug_On;

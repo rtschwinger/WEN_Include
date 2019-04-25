@@ -1,0 +1,438 @@
+//********************** CATERPILLAR GENSET **********************
+MODULE INT WINDOW_OPEN_FAILED = -1;   //WinNew or WinNewAt failed
+MODULE INT DEFAULT_WINDOW_MODE = 773;	//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+MODULE INT XPOS_WINDOW = 14;
+MODULE INT YPOS_WINDOW = 15;
+
+// GPT RTS 3/6/2019 00:35:51
+FUNCTION GEN_CAT_EquipPopup_L( STRING sTAGPFX,STRING sCluster, STRING sTitle = "")
+		INT hWin;
+		INT iMouseX = 0;
+		INT iMouseY = 0;
+		//------------------------------------------------------
+		//Message("1.)GEN_CUMMINS_EquipPopup_L.sTAGPFX: ", sTAGPFX, 33);
+		//                   Equip Ass
+		//------------------------------------------------------
+		GEN_ASS_CAT(sTAGPFX,sCluster,sTitle);
+		//------------------------------------------------------
+		//                   Equip PopUp
+		//------------------------------------------------------
+		//Get mouse position (Where popup will be displayed)
+		DspGetMouse(iMouseX , iMouseY);
+		//EquipAssMetadataWin("!Caterpiler_Genset_Main");
+		//---------------------------------------------------
+		hWin = WinNewAt("!Caterpiler_Genset_Main" , iMouseX + StrToInt(PageInfo(XPOS_WINDOW)) , iMouseY + StrToInt(PageInfo(YPOS_WINDOW)) , DEFAULT_WINDOW_MODE);
+	
+		//Ensure popup window opened
+		IF (hWin <> WINDOW_OPEN_FAILED) THEN
+				//Set window title
+				WinTitle(sTitle);
+		END
+END
+
+// GPT RTS 3/6/2019 00:35:33 
+FUNCTION GEN_CAT_EquipPopup_R( STRING sTAGPFX,STRING sCluster, STRING sTitle = "")
+	STRING sType = "CAT";
+	STRING sPage;
+	INT iSelection;
+	//------------------------------------------------------
+	//                   Equip Ass
+	//------------------------------------------------------
+	GEN_ASS_CAT(sTAGPFX,sCluster);
+	//------------------------------------------------------
+	//                   Equip Menu
+	//------------------------------------------------------
+	DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+	DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	iSelection = DspPopupMenu(-1,"");
+
+
+SELECT CASE iSelection
+	CASE 1
+		Get_UserManual("GEN_CAT");
+	CASE 2
+		Get_Drawing("GEN_CAT");
+	CASE 3
+		AssChainPopUp("!EquipAlarmList");
+	END SELECT
+
+	IF sPage <> "" THEN
+		EquipAssMetadataWin("!CAT_" + sType + "_" + sPage);
+	END
+END
+
+// GPT RTS 3/6/2019 00:36:08
+FUNCTION GEN_ASS_CAT(STRING sTAGPFX,STRING sCluster, STRING sTitle = "")
+		//Dim
+		STRING sType,sEquip, sDotCluster;
+
+		//Init
+		sDotCluster=sCluster;
+		IF sDotCluster <> "" THEN sDotCluster = sCluster + "."; END
+		sType = "CAT";								/* Type */
+		sEquip = sTAGPFX;							/* Equip */
+
+		//------------------------------------------------------
+		//                   Equip Ass
+		//------------------------------------------------------
+		Ass(-2,"Cluster","'" + sCluster + "'",0);
+		Ass(-2,"Type","'" + sType + "'",0);
+		Ass(-2,"Equip","'" + sTitle + "'",0);
+		Ass(-2,"IODevice","'" + sTAGPFX + "'",0);
+		ASS_IODevice_To_EquipName(sTAGPFX,sCluster);
+		//------------------------------------------------------
+		//        Variable and Alarm and Trend Tags Ass
+		//------------------------------------------------------
+		Equip_ASS_CAT(sTAGPFX,sDotCluster);
+END
+
+//GPT RTS 16/03/19
+STRING FUNCTION GEN_Status(REAL rStatus)
+	STRING sStatus,srStatus;
+	REAL rrStatus = rStatus;
+	
+	srStatus = rrStatus;
+	ErrLog("Rstatus: " + srStatus);
+
+	SELECT CASE rStatus
+		CASE 0 sStatus = "INITIALIZING"
+		CASE 1 sStatus = "PRE CRANK"
+		CASE 2 sStatus = "STARTING"
+		CASE 3 sStatus = "RUNNING"
+		CASE 4 sStatus = "PRE COOLDOWN"
+		CASE 5 sStatus = "COOLDOWN"
+		CASE 6 sStatus = "STOPPING"
+		CASE 7 sStatus = "STOPPED"
+		CASE 8 sStatus = "IDLING"
+	END SELECT
+	ErrLog("Status: " + sStatus);
+	RETURN sStatus;
+END
+
+
+// GPT RTS 3/6/2019 00:36:17
+FUNCTION Equip_ASS_CAT(STRING sTAGPFX,STRING sCluster)
+		STRING sHTR = "HTR";
+		STRING sRPT = "RPT";
+
+		//@(External Equipment Health SP37 Status)
+		AssIEC_GEN_CAT(sTAGPFX, "COMM", "\LPHD\Gen\EEHealth" ,sCluster);
+
+		// Current State of Generator
+		//@(Generator Available CNV16 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "GenAvail", "\GGIO\EXL\Gen\Available" ,sCluster);
+		//@(Warm Up Timer ART51 Result 6)
+		AssIEC_GEN_CAT(sTAGPFX,"WarmUpTmr","\MMXU\REG\WarmUpTmr",sCluster);
+		//@(Warm Up Time Complete CNV58 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"WarmUpSts","\GGIO\EXL\Gen\WarmUpSts",sCluster);
+		//@(Cool Down Timer ART51 Result 5)
+		
+		AssIEC_GEN_CAT(sTAGPFX,"CoolDwnTmr","\MMXU\REG\CoolDwnTmr",sCluster);
+		//@(Engine Status ART51 Result 3)
+		AssIEC_GEN_CAT(sTAGPFX,"EngStat","\MMXU\EXL\EngStat",sCluster);
+
+		// DC Charger 1 Alarms ************************
+		//@(DC Charger 1 High DC Voltage CNV38 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"HighDCVolt1", "\GGIO\DCC1\HighDCVolt",sCluster);
+		//@(DC Charger 1 Low DC Voltage CNV18 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"LowDCVolt1", "\GGIO\DCC1\LowDCVolt",sCluster);
+		//@(DC Charger 1 Failure CNV20 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"ChgrFail1", "\GGIO\DCC1\ChgrFail",sCluster);
+		//@(DC Charger 1 AC Mains Failure CNV22 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"ACMainsFail1", "\GGIO\DCC1\ACMainsFail",sCluster);
+		//@(DC Charger 1 Common Alarm CNV24 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"CmmnAlm1", "\GGIO\DCC1\CmmnAlm",sCluster);
+		//@(DC Charger 1 Isolation Switch CNV26 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "IsoSW1", "\GGIO\DCC1\IsoSW", sCluster);
+		//@(Slave Device 1 Equipment Health CNV26 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"EEHealth1", "\LPHD1\EEHealth1", sCluster);
+		//************************************************
+
+		// DC Charger 1 Alarms ************************
+		//@(DC Charger 1 High DC Voltage CNV38 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"HighDCVolt2", "\GGIO\DCC2\HighDCVolt",sCluster);
+		//@(DC Charger 1 Low DC Voltage CNV18 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"LowDCVolt2", "\GGIO\DCC2\LowDCVolt",sCluster);
+		//@(DC Charger 1 Failure CNV20 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"ChgrFail2", "\GGIO\DCC2\ChgrFail",sCluster);
+		//@(DC Charger 1 AC Mains Failure CNV22 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"ACMainsFail2", "\GGIO\DCC2\ACMainsFail",sCluster);
+		//@(DC Charger 1 Common Alarm CNV24 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"CmmnAlm2", "\GGIO\DCC2\CmmnAlm",sCluster);
+		//@(DC Charger 1 Isolation Switch CNV26 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "IsoSW2", "\GGIO\DCC2\IsoSW", sCluster);
+		//@(Slave Device 1 Equipment Health CNV26 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX,"EEHealth2", "\LPHD2\EEHealth2",sCluster);
+		//************************************************
+
+		//Generator Engine Alarms *******************
+		//@(Genset Running CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "Running", "\GGIO\EXL\Gen\Running" , sCluster);
+		//@(Genset Running CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "NotAvailable" , "\GGIO\EXL\Gen\NotAvailable" , sCluster);
+		//@(Genset Running CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "Stopping" , "\GGIO\EXL\Gen\Stopping" , sCluster);
+		//@(Genset Running CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "Starting" , "\GGIO\EXL\Gen\Starting" , sCluster);
+		//@(Genset Warm Up Active CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "WarmUpActive" , "\GGIO\EXL\Gen\WarmUpActive" , sCluster);
+		//@(Genset Synchronizing CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "Synchronizing" , "\GGIO\EXL\Gen\Synchronizing" , sCluster);
+		//@(Genset Cool Down CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "CoolDownActive" , "\GGIO\EXL\Gen\CoolDownActive" , sCluster);
+		//@(Genset Fault CNV74 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "Fault" , "\GGIO\EXL\Gen\Fault" , sCluster);
+		
+		//@(Low Coolant Temp Alarm CNV80 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "LoCoolTemp", "\GGIO\EXL\Gen\LoCoolTemp", sCluster);
+		//@(High Coolant Temp Alarm CNV53 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "HiCoolTemp", "\GGIO\EXL\Gen\HiCoolTemp",sCluster);
+		//@(High Coolant Temp Shutdown CNV64 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "HiCoolTempSD", "\GGIO\EXL\Gen\HiCoolTempSD", sCluster);
+		//@(Genset OverSpeed Shutdown CNV63 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "OverSpeedSD", "\GGIO\EXL\Gen\OverSpeedSD", sCluster);
+		//@(Genset Overspeed CNV79 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "OverSpeed", "\GGIO\EXL\Gen\OverSpeed", sCluster);
+		//@(Genset Low Coolant Level Shutdown CNV78 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "LoCoolLvlSD", "\GGIO\EXL\Gen\LoCoolLvlSD", sCluster);
+		//@(Genset Low Coolant Level CNV72 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "LoCoolLvl", "\GGIO\EXL\Gen\LoCoolLvl", sCluster);
+		//@(Genset Engine Alarm CNV67 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "SumAlm", "\GGIO\EXL\Gen\SumAlm", sCluster);
+		//@(Generator Fault Alarm CNV70 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "GenFault", "\GGIO\EXL\Gen\GenFault", sCluster);
+		//@(Genset High Oil Temperature CNV54 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "HiOilTmp", "\GGIO\EXL\Gen\HiOilTmp", sCluster);
+		//@(Genset High Oil Temperature Shutdown CNV15 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "HiOilTmpSD", "\GGIO\EXL\Gen\HiOilTmpSD", sCluster);
+		//@(Genset Low Oil Pressure CNV65 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "LoOilPres", "\GGIO\EXL\Gen\LoOilPres", sCluster);
+		//@(Genset Low Oil Pressure Shutdown CNV60 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "LoOilPresSD", "\GGIO\EXL\Gen\LoOilPresSD", sCluster);
+		//@(Genset Emergency Stop CNV69 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "EStop", "\GGIO\EXL\Gen\Estop", sCluster);
+		
+		//@(PMDC 52U FTO CNV22 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "FTO52U", "\GGIO\EXL\Gen\FTO52U", sCluster);
+		//@(PMDC 52U FTC CNV10 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "FTC52U", "\GGIO\EXL\Gen\FTC52U", sCluster);
+		//@(PMDC 52G FTO CNV8 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "FTO52G", "\GGIO\EXL\Gen\FTO52G", sCluster);
+		//@(PMDC 52G FTC CNV11 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "FTC52G", "\GGIO\EXL\Gen\FTC52G", sCluster);
+		
+		//@(Genset Not in Auto CNV66 Boolean Out)
+		//AssIEC_GEN_CAT(sTAGPFX, "NotInAuto", "\GGIO\EXL\Gen\NotInAuto", sCluster);
+		
+		//@(Genset Engine Control Not In Auto CNV Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "NIAGenEngControl","\GGIO\EXL\Gen\NotInAuto", sCluster);
+		//@(Genset ECS Not In Auto CNV12 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "NIA_ECS", "\GGIO\EXL\Gen\NIA_ECS", sCluster);
+		//@(Genset Synch Not In Auto CNV20 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "NIAGenSyncSw", "\GGIO\EXL\Gen\NIAGenSyncSw", sCluster);
+		//@(Genset Master Mode Not In Auto CNV13 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "NIAMasterMode", "\GGIO\EXL\Gen\NIAMasterMode", sCluster);
+		//@(Genset Utility Sync Switch Not In Auto CNV21 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "NIAUtilSyncSw", "\GGIO\EXL\Gen\NIAUtilSyncSw", sCluster);
+		//@(Genset Alarm)
+		AssIEC_GEN_CAT(sTAGPFX, "AnyActive", "\GGIO\EXL\Gen\AnyActive", sCluster);
+		//@(Genset Fail To Start CNV17 Boolean Out)
+		AssIEC_GEN_CAT(sTAGPFX, "FailToStart", "\GGIO\EXL\Gen\FailToStart", sCluster);
+		//@(Genset Engine Fault Alarm)
+		AssIEC_GEN_CAT(sTAGPFX, "CmmnShutdown", "\GGIO\EXL\Gen\CmmnShutdown", sCluster);
+		//@(Genset Ready To Load)
+		AssIEC_GEN_CAT(sTAGPFX, "TransferToEmerg", "\GGIO\EXL\Gen\TransferToEmerg", sCluster);
+		//***********************************************
+
+		//***EngineData*******************************
+		//@(EngineSpeed ART50 Result 2)
+		AssIEC_GEN_CAT(sTAGPFX,"EngSpeed","\MMXU\REG\EngSpeed", sCluster);
+		//@(OilPressure ART50 Result 5)
+		AssIEC_GEN_CAT(sTAGPFX,"OilPres","\MMXU\REG\OilPres", sCluster);
+		//@(OilTemperature ART50 Result 6)
+		AssIEC_GEN_CAT(sTAGPFX,"OilTemp","\MMXU\REG\OilTemp", sCluster);
+		//@(CoolantTempreature ART50 Result 7)
+		AssIEC_GEN_CAT(sTAGPFX,"CoolTemp","\MMXU\REG\CoolTemp", sCluster);
+		//@(EngineBatteryVoltage ART49 Result 6)
+		AssIEC_GEN_CAT(sTAGPFX,"BattVolts","\MMXU\REG\BattVolts", sCluster);
+		//@(GeneratorTotalkWh ART49 Result 5)
+		AssIEC_GEN_CAT(sTAGPFX,"TotalkWH","\MMXU\REG\TotalkWH", sCluster);
+		//@(EngineStartAttempts ART49 Result 7)
+		AssIEC_GEN_CAT(sTAGPFX,"EngStAtt","\MMXU\REG\EngStat", sCluster);
+		//@(EngineStartsCount ART49 Result 8)
+		AssIEC_GEN_CAT(sTAGPFX,"EngStarts","\MMXU\REG\EngStarts", sCluster);
+		//@(EngineOperatingHours ART50 Result 1)
+		AssIEC_GEN_CAT(sTAGPFX,"EngRunTime","\MMXU\REG\EngRunTime", sCluster);
+		//***********************************************
+
+		//FuelandConsumptionAlarms******************
+		
+		//@(FuelRate ART50 Result 4)
+		AssIEC_GEN_CAT(sTAGPFX,"FuelRate","\MMXU\REG\FuelRate", sCluster);
+		//@(TotalFuel ART50 Result 3)
+		AssIEC_GEN_CAT(sTAGPFX,"TotalFuel","\MMXU\REG\TotalFuel", sCluster);
+		//************************************************
+		//***ACDATA************************************
+		//@(PhaseAtoBVoltage ART48 Result 5)
+		AssIEC_GEN_CAT(sTAGPFX,"VoltsAB","\MMXU\REG\VoltsAB", sCluster);
+		//@(PhaseBtoCVoltage ART48 Result 6)
+		AssIEC_GEN_CAT(sTAGPFX,"VoltsBC","\MMXU\REG\VoltsBC", sCluster);
+		//@(PhaseCtoAVoltage ART48 Result 7)
+		AssIEC_GEN_CAT(sTAGPFX,"VoltsCA","\MMXU\REG\VoltsCA", sCluster);
+		//@(VoltageLLAverage ART48 Result 8)
+		AssIEC_GEN_CAT(sTAGPFX,"VLLAvg","\MMXU\REG\zavg", sCluster);
+		//@(PhaseACurrent ART49 Result 1)
+		AssIEC_GEN_CAT(sTAGPFX,"AmpsA","\MMXU\REG\AmpsA", sCluster);
+		//@(PhaseBCurrent ART49 Result 2)
+		AssIEC_GEN_CAT(sTAGPFX,"AmpsB","\MMXU\REG\AmpsB", sCluster);
+		//@(PhaseCCurrent ART49 Result 3)
+		AssIEC_GEN_CAT(sTAGPFX,"AmpsC","\MMXU\REG\AmpsC", sCluster);
+		//@(AverageAmps ART49 Result 4)
+		AssIEC_GEN_CAT(sTAGPFX,"IAvg","\MMXU\REG\IAvg", sCluster);
+		//@(TotalkW ART48 Result 3)
+		AssIEC_GEN_CAT(sTAGPFX,"TotalkW","\MMXU\REG\TotalkW", sCluster);
+		//@(TotalkVAR ART48 Result 4)
+		AssIEC_GEN_CAT(sTAGPFX,"TotalkVAR","\MMXU\REG\TotalkVAR", sCluster);
+		//@(TotalPowerFactor ART48 Result 2)
+		AssIEC_GEN_CAT(sTAGPFX,"TotalPF","\MMXU\REG\TotalPF", sCluster);
+		//@(GensetFrequency ART48 Result 1)
+		AssIEC_GEN_CAT(sTAGPFX,"Frequency","\MMXU\REG\GenFreq", sCluster);
+		//**********************************************
+
+		//***InfofromOtherDevices******************
+		//@(GensetLowFuelLevel)
+		AssIEC_GEN_CAT(sTAGPFX,"LowFuelLvl","\FOCS\GEN\DT\LVLXMTR\LSTART\ALM", sCluster);
+		//@(DayTankLevelLiters)
+		AssIEC_GEN_CAT(sTAGPFX,"DTLvlLtrs","\FOCS\GEN\DT\LVLLTRS", sCluster);
+		
+		//@(52X BreakerOpen/Closed)
+		AssIEC_GEN_CAT(sTAGPFX,"XBrkrOC","\XBrkr\XCBR1\Pos_On", sCluster);
+		//@(52X Breaker Trip)
+		AssIEC_GEN_CAT(sTAGPFX,"XBrkrTrip","\XBrkr\PTRC1\Tr", sCluster);
+		
+		//@(52G BreakerOpen/Closed)
+		AssIEC_GEN_CAT(sTAGPFX,"GBrkrOC","\GBrkr\XCBR1\Pos_On", sCluster);
+		//@(52GBreakerTrip)
+		AssIEC_GEN_CAT(sTAGPFX,"GBrkrTrip","\GBrkr\PTRC1\Tr", sCluster);
+		
+		//@(52UBreakerOpen/Closed)
+		AssIEC_GEN_CAT(sTAGPFX,"UBrkrOC","\UBrkr\XCBR1\Pos_On", sCluster);
+		//@(52UBreakerTrip)
+		AssIEC_GEN_CAT(sTAGPFX,"UBrkrTrip","\UBrkr\PTRC1\Tr", sCluster);
+		//@(52UBreakerTrip)
+		AssIEC_GEN_CAT(sTAGPFX,"UBrkrzavg","\MMXU\REG\52U\zavg", sCluster);
+END
+
+
+//GPT RTSchwinger 3/6/2019 00:36:29
+FUNCTION AssIEC_GEN_CAT(STRING sIODevice,STRING sItem,STRING sTag,STRING sCluster,STRING sHTR="")
+		INT iAssReturn = 0;
+		STRING sAssTag = sCluster + sIODevice + sTag;
+
+		iAssReturn = Ass(-2,sItem,sAssTag,0);
+		
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("GEN Assign item : " + sItem );
+				ErrLog("GEN Assign IODevice : " + sIODevice );
+				ErrLog("GEN Assign TAG : " + sTag );
+				ErrLog("GEN Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		iAssReturn = Ass(-2,"A_" + sItem,"'" + sAssTag + "'",0);
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("GEN A_Assign item : " + sItem );
+				ErrLog("GEN A_Assign IODevice : " + sIODevice );
+				ErrLog("GEN A_Assign TAG : " + sTag );
+				ErrLog("GEN A_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		iAssReturn = Ass(-2,"A_" + sItem + "_On",sAssTag + strON,0);
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("GEN Assign_On item : " + sItem );
+				ErrLog("GEN Assign_On IODevice : " + sIODevice );
+				ErrLog("GEN Assign_On TAG : " + sTag );
+				ErrLog("GEN Assign_On Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		iAssReturn = Ass(-2,"A_" + sItem + "_Dis",sAssTag + strDIS,0);
+		IF iAssReturn <> 0 THEN
+		 	IF iDebug_On THEN
+		 	  ErrLog("--------------------------------------------" );
+				ErrLog("GEN Assign_Dis item : " + sItem );
+				ErrLog("GEN Assign_Dis IODevice : " + sIODevice );
+				ErrLog("GEN Assign_Dis TAG : " + sTag );
+				ErrLog("GEN Assign_Dis Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		// Assign Trend Tag whether it exists or not
+		iAssReturn = Ass(-2,"T_" + sItem,"'" + sIODevice + sTag + sHTR + "'",0);
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("GEN Trend_Assign item : " + sItem );
+				ErrLog("GEN Trend_Assign IODevice : " + sIODevice );
+				ErrLog("GEN Trend_Assign TAG : " + sTag );
+				ErrLog("GEN Trend_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+    iAssReturn = 0;
+  	
+END
+
+
+
+// GPT RTS 3/6/2019 00:36:42
+FUNCTION GEN_CAT_AutoAlmDis(STRING sCluster)
+
+		INT iAlmOn;
+		INT iAlmDis;
+		INT iAlmQuality;
+		INT iAlmTime;
+		INT TBHandle,TBResult;
+		STRING sAlarmTag;
+		INT iTime;
+		STRING sNotAlarmTag="\LPHD1\EEHealth"
+		INT iNotAlarmStatus;
+		STRING sEquip;
+		INT iEEHealth;
+
+		TBHandle = AlmBrowseOpen("TAG=*Genset*","TAG,Millisec,Custom1,Quality",sCluster);
+		iTime = TimeCurrent();
+			IF TBHandle <> -1 THEN
+					TBResult = AlmBrowseFirst(TBHandle);
+					WHILE (TBResult = 0) DO
+						 sAlarmTag = AlmBrowseGetField(TBHandle ,  "TAG");
+						 IF sCluster <> "" THEN
+							 sAlarmTag = sCluster + "." + sAlarmTag;
+						 END //END IF
+						 iAlmOn = TagRead(sAlarmTag + strON)
+						 iAlmDis = TagRead(sAlarmTag + strDIS)
+						 sEquip = AlmBrowseGetField(TBHandle ,  "Custom1");
+						 iEEHealth = TagRead(sCluster + "." + sEquip + sNotAlarmTag + strON);
+						 iAlmTime = AlmBrowseGetField(TBHandle ,  "Millisec");
+						 iNotAlarmStatus = StrSearch(0,sAlarmTag,sNotAlarmTag);
+						////******************************************************//
+						IF iEEHealth AND NOT iAlmOn THEN
+							IF iNotAlarmStatus = -1 THEN
+								TagWrite(sAlarmTag + strDIS,"1")
+							END //END IF
+						ELSE
+							TagWrite(sAlarmTag + strDIS,"0")
+						END // END ELSE IF
+						TBResult = AlmBrowseNext(TBHandle);
+					END //END WHILE
+					TBResult = AlmBrowseClose(TBHandle);
+			END // END IF
+END
+

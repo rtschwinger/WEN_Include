@@ -1,0 +1,351 @@
+INT OldWid;
+INT PA_Open;
+INT InsertMode;
+
+
+!Vanpro RTSchwinger 2017/1/31 New
+FUNCTION PLSEquipShowDetail_ShowTrend_GPT()
+
+	STRING  sEquip		= AssGetProperty("4", "TagName", 1);
+	STRING  sCluster	= AssGetProperty("Cluster", "TagName", 1);
+	
+	ErrSet(1);
+
+!************************************************************************
+!                           PA Menu
+!************************************************************************
+
+	INT iSelection;
+	INT iTrend=1;
+	INT iAlarm=0;
+	
+!************************************************************************
+!                           PA Display
+!************************************************************************
+
+	INT iMode = 1;
+	INT	iX, iY;
+
+//	IF iSelection <> 0 THEN
+		IF (iMode = 0) THEN	
+			PLSPageDisplay("PLSAnalyst");
+		ELSE
+			DspGetMouse( iX, iY );
+			iX = StrToReal(PageInfo(16)) * IntToReal(iX);
+			iY = StrToReal(PageInfo(17)) * IntToReal(iY);
+	
+			iX = StrToInt(PageInfo(14)) + iX;
+			iY = StrToInt(PageInfo(15)) + iY;
+	
+			PLSDspWinNewAt("!ProcessAnalyst_Vanpro", iX, iY, 2+64+256+4096, "", 1);
+			PA_Open = 1;
+			OldWid = WinNumber();
+		END
+//	END
+	
+	SleepMS(300);
+
+!************************************************************************
+!                           PA Tag Add
+!************************************************************************
+
+	IsError();
+
+	STRING	sTrendTag;
+	STRING	sAlarmTag;
+	STRING	sPen;
+	OBJECT	hNewPen;
+	OBJECT 	hAnalyst		= ObjectByName("AN502");;
+	OBJECT 	hPanes			= _ObjectGetProperty(hAnalyst, "Panes");
+	OBJECT 	hPane;
+	INT TBResult,TBHandle;
+
+	hPane = _ObjectCallMethod(hPanes , "get_ItemByName", sEquip);
+	IF IsError() <> 0 THEN
+		hPane = _ObjectCallMethod(hPanes , "Create", sEquip);
+	END
+		
+	_ObjectCallMethod(hAnalyst, "BlockUpdates");
+	OBJECT hPens = _ObjectGetProperty(hPane, "Pens");
+	
+	_ObjectCallMethod(hPens, "RemoveAll");
+
+	!------------------------------------------------------
+	!                   Trend Tags
+	!------------------------------------------------------
+	IF sEquip <> "" AND iTrend THEN
+		TBHandle = TrnBrowseOpen("Equipment=" + sEquip,"TAG,ITEM", sCluster);
+		IF TBHandle <> -1 THEN
+			TBResult = TrnBrowseFirst(TBHandle);
+			WHILE (TBResult = 0) DO
+				sTrendTag = TrnBrowseGetField(TBHandle , "TAG");
+				IF sCluster <> "" THEN
+					sTrendTag = sCluster + "." + sTrendTag;
+				END
+				ProcessAnalystSetPen(-1,sTrendTag,"AN502",0)
+				TBResult = TrnBrowseNext(TBHandle);
+			END
+			TBResult = TrnBrowseClose(TBHandle);
+		END
+	END
+	
+	!------------------------------------------------------
+	!                   Alarm Tags
+	!------------------------------------------------------
+	IF iAlarm THEN
+		TBHandle = AlmBrowseOpen("Equipment=" + sEquip,"TAG", sCluster);
+		IF TBHandle <> -1 THEN
+			TBResult = AlmBrowseFirst(TBHandle);
+			WHILE (TBResult = 0) DO
+				sAlarmTag = AlmBrowseGetField(TBHandle ,  "TAG");
+				IF sCluster <> "" THEN
+					sAlarmTag = sCluster + "." + sAlarmTag;
+				END
+				ProcessAnalystSetPen(-1,sAlarmTag,"AN502",0,2)
+				TBResult = AlmBrowseNext(TBHandle);
+			END
+			TBResult = AlmBrowseClose(TBHandle);
+		END
+	END	
+
+	!------------------------------------------------------
+	!                      Update
+	!------------------------------------------------------
+	_ObjectCallMethod(hAnalyst, "UnblockUpdates");
+	IsError();
+	ErrSet(0);
+END
+
+
+
+!Vanpro CHYU 2015/12/18 New
+FUNCTION PLSEquipShowDetail_ShowTrend_Vanpro()
+//	STRING  sEquip		= AssGetProperty("Equip", "TagName", 1);
+	STRING  sEquip		= AssGetProperty("4", "TagName", 1);
+//	STRING  sEquip		= AssGetProperty("4", "Equipment", 1);
+	STRING  sCluster	= AssGetProperty("Cluster", "TagName", 1);
+	
+	ErrSet(1);
+
+!************************************************************************
+!                           PA Menu
+!************************************************************************
+
+	INT iSelection;
+	INT iTrend=1;
+	INT iAlarm=0;
+	
+!************************************************************************
+!                           PA Display
+!************************************************************************
+
+	INT iMode = 1;
+	INT	iX, iY;
+
+//	IF iSelection <> 0 THEN
+		IF (iMode = 0) THEN	
+			PLSPageDisplay("PLSAnalyst");
+		ELSE
+			DspGetMouse( iX, iY );
+			iX = StrToReal(PageInfo(16)) * IntToReal(iX);
+			iY = StrToReal(PageInfo(17)) * IntToReal(iY);
+	
+			iX = StrToInt(PageInfo(14)) + iX;
+			iY = StrToInt(PageInfo(15)) + iY;
+	
+			PLSDspWinNewAt("!ProcessAnalyst_Vanpro", iX, iY, 2+64+256+4096, "", 1);
+			PA_Open = 1;
+			OldWid = WinNumber();
+		END
+//	END
+	
+	SleepMS(300);
+
+!************************************************************************
+!                           PA Tag Add
+!************************************************************************
+
+	IsError();
+
+	STRING	sTrendTag;
+	STRING	sAlarmTag;
+	STRING	sPen;
+	OBJECT	hNewPen;
+	OBJECT 	hAnalyst		= ObjectByName("AN502");;
+	OBJECT 	hPanes			= _ObjectGetProperty(hAnalyst, "Panes");
+	OBJECT 	hPane;
+	INT TBResult,TBHandle;
+
+	hPane = _ObjectCallMethod(hPanes , "get_ItemByName", sEquip);
+	IF IsError() <> 0 THEN
+		hPane = _ObjectCallMethod(hPanes , "Create", sEquip);
+	END
+		
+	_ObjectCallMethod(hAnalyst, "BlockUpdates");
+	OBJECT hPens = _ObjectGetProperty(hPane, "Pens");
+	
+	_ObjectCallMethod(hPens, "RemoveAll");
+
+	!------------------------------------------------------
+	!                   Trend Tags
+	!------------------------------------------------------
+	IF sEquip <> "" AND iTrend THEN
+		TBHandle = TrnBrowseOpen("Equipment=" + sEquip,"TAG,ITEM", sCluster);
+		IF TBHandle <> -1 THEN
+			TBResult = TrnBrowseFirst(TBHandle);
+			WHILE (TBResult = 0) DO
+				sTrendTag = TrnBrowseGetField(TBHandle , "TAG");
+				IF sCluster <> "" THEN
+					sTrendTag = sCluster + "." + sTrendTag;
+				END
+				ProcessAnalystSetPen(-1,sTrendTag,"AN502",0)
+				TBResult = TrnBrowseNext(TBHandle);
+			END
+			TBResult = TrnBrowseClose(TBHandle);
+		END
+	END
+	
+	!------------------------------------------------------
+	!                   Alarm Tags
+	!------------------------------------------------------
+	IF iAlarm THEN
+		TBHandle = AlmBrowseOpen("Equipment=" + sEquip,"TAG", sCluster);
+		IF TBHandle <> -1 THEN
+			TBResult = AlmBrowseFirst(TBHandle);
+			WHILE (TBResult = 0) DO
+				sAlarmTag = AlmBrowseGetField(TBHandle ,  "TAG");
+				IF sCluster <> "" THEN
+					sAlarmTag = sCluster + "." + sAlarmTag;
+				END
+				ProcessAnalystSetPen(-1,sAlarmTag,"AN502",0,2)
+				TBResult = AlmBrowseNext(TBHandle);
+			END
+			TBResult = AlmBrowseClose(TBHandle);
+		END
+	END	
+
+	!------------------------------------------------------
+	!                      Update
+	!------------------------------------------------------
+	_ObjectCallMethod(hAnalyst, "UnblockUpdates");
+	IsError();
+	ErrSet(0);
+END
+
+!Vanpro CHYU 2015/12/21 New
+FUNCTION PLSEquipShowDetail_ShowTrend1_Vanpro(STRING AddTrend)
+
+	STRING sCluster	= AssGetProperty("Cluster", "TagName", 1);
+	STRING sEquip	= AssGetProperty("Equip", "TagName", 1);
+	
+	ErrSet(1);
+
+	INT iMode = 1;
+	INT	iX, iY;
+
+	IF (iMode = 0) THEN	
+		PLSPageDisplay("PLSAnalyst");
+	ELSE
+		DspGetMouse( iX, iY );
+		iX = StrToReal(PageInfo(16)) * IntToReal(iX);
+		iY = StrToReal(PageInfo(17)) * IntToReal(iY);
+
+		iX = StrToInt(PageInfo(14)) + iX;
+		iY = StrToInt(PageInfo(15)) + iY;
+		
+		IF OldWid <> 0 AND PA_Open <>0 THEN
+			WinGoto(OldWid)
+		ELSE
+
+			PLSDspWinNewAt("!ProcessAnalyst_Vanpro", iX, iY, 2+64+256+4096, "", 1);
+			PA_Open = 1;
+			OldWid = WinNumber();
+		END
+	END
+	
+	SleepMS(300);
+	IsError();
+
+	STRING	sTrendTag;
+	STRING	sAlarmTag;
+	STRING	sPen;
+	OBJECT	hNewPen;
+	OBJECT 	hAnalyst		= ObjectByName("AN502");;
+	OBJECT 	hPanes		= _ObjectGetProperty(hAnalyst, "Panes");
+	OBJECT 	hPane;
+	INT TBResult,TBHandle;
+	INT Pane=1;
+	
+	IF NOT InsertMode THEN
+		hPane = _ObjectCallMethod(hPanes , "get_ItemByName", "Trend");
+		IF IsError() <> 0 THEN
+			hPane = _ObjectCallMethod(hPanes , "Create", "Trend");
+		END
+	END
+
+!***********************************New Function*********************************************
+	IF InsertMode THEN
+		hPane = _ObjectCallMethod(hPanes , "get_ItemByName", sEquip);
+		IF IsError() <> 0 THEN
+			hPane = _ObjectCallMethod(hPanes , "Create", sEquip);
+		END
+	END
+
+	INT Count = _ObjectGetProperty(hPanes, "Count");
+	STRING sPane1 = _ObjectGetProperty(hPane,"Name");
+	STRING sPane2;
+	INT X;
+
+	FOR X = 1 TO Count DO
+		sPane2 = _ObjectGetProperty(_ObjectCallMethod(hPanes, "get_Item",X),"Name");
+		IF sPane1 = sPane2 THEN
+			Pane = X;
+		END
+	END
+!********************************************************************************************
+		
+	_ObjectCallMethod(hAnalyst, "BlockUpdates");
+	OBJECT  hPens = _ObjectGetProperty(hPane, "Pens");
+	OBJECT 	hPen;
+
+	IF sEquip <> "" AND AddTrend <> "" THEN
+		sTrendTag = sCluster + "." + AddTrend;
+//		sTrendTag = sCluster + AddTrend;
+		hPen = _ObjectCallMethod(hPens , "get_ItemByName", AddTrend);
+		IF IsError() <> 0 THEN
+			ProcessAnalystSetPen(-1,sTrendTag,"AN502",Pane);
+		END
+	END
+//	SleepMS(300);
+
+	_ObjectCallMethod(hAnalyst, "UnblockUpdates");
+//	VanproColumnsEquip(hAnalyst,sEquip,AddTrend);
+	IsError();
+	ErrSet(0);
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION PLSEquipShowDetail_ShowTrend_Modechange()
+	InsertMode = NOT InsertMode;
+END
+
+!GPT RTSchwinger 2016/09/30
+STRING FUNCTION PLSEquipShowDetail_ShowTrend_GetMode()
+	IF InsertMode THEN
+		RETURN "Insert Mode";
+	ELSE
+		RETURN "Single Mode";
+	END
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION PLSEquipShowDetail_ShowTrend_Close_Vanpro()
+	OldWid = 0;
+	PA_Open = 0;
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION PLSEquipShowDetail_ShowTrendR_Vanpro(STRING AddTrend)
+	PLSEquipShowDetail_ShowTrend_Close_Vanpro()
+	PLSEquipShowDetail_ShowTrend1_Vanpro(AddTrend)
+END

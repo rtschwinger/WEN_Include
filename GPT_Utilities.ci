@@ -1,0 +1,972 @@
+//Constants
+MODULE INT DEFAULT_WINDOW_MODE = 773;			//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+MODULE INT BITMAP_AN = 1000;					//Animation number used by dynamic bitmap graphic
+MODULE INT WINDOW_OPEN_FAILED = -1; 			//WinNew or WinNewAt failed
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//		Get_User_Manual				
+//
+//		REV	DATE		    WHO			DESCRIPTION
+//		0	  12/11/2016	RTSchwinger		Original
+//
+//     	GENERAL DESCRIPTION
+//      Appends rest of user manual file name and opens manual of device passed in with Adobe Reader. 
+//			
+//     	ARGUMENTS: String Variable containing the device name
+//
+//     	RETURNED VALUE: 
+//
+//		PSEUDO CODE:
+//
+
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+FUNCTION PLSD_Startup()
+	INT iDebugFile;
+	PLSWaveformInit();
+	SummaryAlarms();
+	iDebug_On = 1;
+	INT LogState = ErrLog("Logging is Working");
+
+	WHILE TRUE DO
+	//Check to see if debug file exist
+      iDebugFile = CheckForDebugFile(); 
+	  IF iDebugFile THEN		
+			iDebug_On = 1;
+		ELSE
+			iDebug_On = 0;
+		END
+		Sleep(15)
+	END
+	
+END
+
+FUNCTION CalcPUE()
+
+	WHILE TRUE DO
+		PUE();
+		SleepMS(5);
+	END
+END
+
+
+INT 
+FUNCTION CheckForDebugFile() 
+		INT iFile;
+		INT i;
+		STRING sFileStr;
+		STRING sFileChar;
+		
+		! Check if the file exists
+		IF FileExist("F:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\User\WEN\debugon.txt") THEN
+    	! The file exists
+    	! Open a file in read-only mode.
+			ErrSet(1);
+			iFile=FileOpen("F:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.2\User\WEN\debugon.txt","r");
+			ErrSet(0);
+			IF iFile = -1 THEN
+				FileClose(iFile);
+				RETURN 0;
+			END
+		ELSE
+			FileClose(iFile);
+			RETURN 0;
+		END
+
+		WHILE NOT FileEOF(iFile) DO
+    	sFileStr=FileRead(iFile,1);
+		END
+		
+		INT iFileReadLen = StrLength(sFileStr); 
+		FOR i = 0 TO iFileReadLen DO
+    	sFileChar = StrGetChar(sFileStr, i);
+    ! Get char from string
+		END
+		! Close the file.
+    FileClose(iFile);
+    Errlog("--------------------------------New Debug Session Started------------------------------------------")
+		RETURN 1;
+END
+
+
+FUNCTION ShowHome()
+STRING sPage = ParameterGet("Page","Startup","StartUp_Google_HD1080");
+	PageDisplay(sPage);
+//	PageDisplay("CHG3_SMDC_B_2 & C_2");
+//	PLSPageDisplay("StartUp");
+END
+
+/* Display User Manual */
+FUNCTION Get_UserManual(STRING strDevice)
+	STRING FileName="D:\Schneider Application\Vijeo Citect\Data\DOC\" + strDevice + "_UserManual.pdf";	
+	STRING Cmd;
+
+	Cmd=AppAdobe + "^"" + FileName + "^""; 	
+	Exec(Cmd,3);	
+END
+
+/* Display Drawing */
+FUNCTION Get_Drawing(STRING strDevice)	
+	STRING FileName="D:\Schneider Application\Vijeo Citect\Data\Drawing\" + strDevice + ".pdf";	
+	STRING Cmd;
+
+	Cmd=AppAdobe + "^"" + FileName + "^""; 	
+	Exec(Cmd,3);	
+END
+
+FUNCTION PA3rd(STRING DeviceName)
+STRING PAV
+PAV = DeviceName + ".pav";
+	ProcessAnalystPopup("ProcessAnalyst_3rdparty");
+	OBJECT hProcessAnalyst = ObjectByName("AN444");
+	_ObjectCallMethod(hProcessAnalyst, "LoadFromFile", PAV, 0);
+END
+
+//Combine string function//
+STRING 
+FUNCTION STR_COMBINE(STRING strPrefix,STRING strBody,STRING strSuffix)
+	STRING strTemp;
+    strTemp=strPrefix + strBody + strSuffix;
+	RETURN strTemp;
+END
+
+//Get Comment Data//
+STRING 
+FUNCTION GetComment(STRING strTag, STRING strCluster)
+	STRING strTemp;
+    strTemp=TagInfoEx(strTag, 16,"SETW",1) ;
+	RETURN strTemp;
+END
+
+// TITLE NAME //
+STRING 
+FUNCTION Ass_Title()
+	RETURN(strDevice);
+	//RETURN(strTitle);
+END
+
+// TITLE NAME //
+STRING 
+FUNCTION Ass_VCB_Title()
+	STRING sTITLE;
+	sTITLE=TagInfoEx(AssInfoEx(1, 0 ),16);
+	RETURN(sTITLE);
+END
+
+
+STRING 
+FUNCTION EquipGetCluster(STRING sEquip)
+	STRING sCluster
+	STRING rCluster
+	sCluster = ClusterFirst();
+	rCluster = EquipGetProperty(sEquip,"Cluster",0,sCluster)
+	IF rCluster <> "" THEN
+		RETURN rCluster;
+	END
+	WHILE ClusterNext(sCluster)<>"" DO 
+		sCluster = ClusterNext(sCluster);
+		rCluster = EquipGetProperty(sEquip,"Cluster",0,sCluster)
+		IF rCluster <> "" THEN
+			RETURN rCluster;
+		END
+	END
+END
+
+INT 
+FUNCTION ClusterCheck(STRING sCluster)
+	STRING rCluster;
+	INT iReturn=0;
+	
+	rCluster = ClusterFirst();
+
+	IF rCluster = sCluster THEN
+		RETURN 1;
+	END
+	WHILE ClusterNext(sCluster)<>"" DO 
+		rCluster = ClusterNext(rCluster);
+		IF rCluster = sCluster THEN
+			RETURN 1;
+		END
+	END
+	RETURN 0;
+END
+
+FUNCTION AlarmEquipFilter(STRING sEquip , STRING sCluster)
+	INT iHndl;
+	INT iRet;
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	STRING temp2;
+	STRING sTagDesc;
+	STRING sTagData;	
+	INT iResult;
+	INT nError;
+
+
+	IF sCluster = "" THEN
+		sCluster = EquipGetCluster(sEquip)
+	END
+//	sEquip = sCluster + "." + sEquip;
+	
+	nError = AlarmFilterOpen("1_Equip_Tree", 2);
+	IF nError = 0 THEN
+		nError = AlarmFilterClose("1_Equip_Tree");
+	END
+
+	!iHndl = AlarmFilterEditOpen("1_Equip_Tree");
+	iHndl = AlarmFilterEditOpen(502);
+	iRet = AlarmFilterEditSet(iHndl, "Equipment=" + "^"" + sEquip + "^"");
+	iRet = AlarmFilterEditCommit(iHndl);
+	iRet = AlarmFilterEditClose(iHndl);
+	TabAlarmFilter_Apply(1,502)
+	!TabAlarmFilter_Apply(1,"1_Equip_Tree")
+
+END
+
+STRING 
+FUNCTION DspPageInfo(INT iType)
+	STRING sRet;
+	STRING sCheck;
+
+	sRet = PageInfo(iType);
+
+	// Override default return values
+	SELECT CASE iType
+	CASE 0
+		//½T»{¬O§_¬O¯S®í­¶­±
+		IF StrRight(sRet,14) = "_Google_HD1080" THEN
+			sRet = StrLeft(sRet,StrLength(sRet)-14);
+		END
+	END SELECT
+	RETURN sRet;
+END
+
+STRING 
+FUNCTION GetHtmlPath(STRING sPath)
+INT i,j;
+INT iPathLen=StrLength(sPath);
+STRING s;
+STRING sReturn;
+
+	FOR i = 1 TO iPathLen DO
+		s = StrMid(sPath,iPathLen-i,1);
+		IF s = "\" THEN
+			j = i - 1;
+			i = iPathLen;
+		END
+	END
+	
+	sReturn = StrLeft(sPath,iPathLen - j);
+
+	RETURN sReturn;
+END
+
+// Login as Guest
+FUNCTION LoginGuest()
+	//IF sLanguage="" THEN
+	//		sLanguage=""
+     //sLanguage="English(United States)"
+  //END
+	STRING sLanguage = "";		
+	IF Login("WEN_Guest", "WEN_Guest",0,sLanguage) = 0 THEN
+		LanguageVariable=0;
+		/* Log Data*/
+		//Data_Log("Log into the system as Guest");
+	ELSE
+		Prompt("Login Error!");	
+	END
+END
+
+STRING 
+FUNCTION EquipGetSymbol(STRING sEquipType)
+INT iCheck;
+	
+	!ION7650
+	iCheck = StrSearch(0,sEquipType,"ION7650")
+	IF iCheck <> -1 THEN
+		RETURN "ION7650";
+	END
+	iCheck = StrSearch(0,sEquipType,"ION7550")
+	IF iCheck <> -1 THEN
+		RETURN "ION7650";
+	END
+
+	!PM8000
+	iCheck = StrSearch(0,sEquipType,"PM8000")
+	IF iCheck <> -1 THEN
+		RETURN "PM8000";
+	END
+	iCheck = StrSearch(0,sEquipType,"PM8K")
+	IF iCheck <> -1 THEN
+		RETURN "PM8000";
+	END
+	
+	!Sepam S80
+	iCheck = StrSearch(0,sEquipType,"S80")
+	IF iCheck <> -1 THEN
+		RETURN "S80";
+	END
+	iCheck = StrSearch(0,sEquipType,"Sepam80")
+	IF iCheck <> -1 THEN
+		RETURN "S80";
+	END
+
+	!Sepam S40
+	iCheck = StrSearch(0,sEquipType,"S40")
+	IF iCheck <> -1 THEN
+		RETURN "S40";
+	END
+	iCheck = StrSearch(0,sEquipType,"Sepam40")
+	IF iCheck <> -1 THEN
+		RETURN "S40";
+	END
+
+	!Sepam S20
+	iCheck = StrSearch(0,sEquipType,"S20")
+	IF iCheck <> -1 THEN
+		RETURN "S20";
+	END
+	iCheck = StrSearch(0,sEquipType,"Sepam20")
+	IF iCheck <> -1 THEN
+		RETURN "S20";
+	END
+	
+	!EtherWAN
+	iCheck = StrSearch(0,sEquipType,"EtherWAN")
+	IF iCheck <> -1 THEN
+		RETURN "HUB";
+	END
+	iCheck = StrSearch(0,sEquipType,"HUB")
+	IF iCheck <> -1 THEN
+		RETURN "HUB";
+	END
+	
+	!MicroLogic
+	iCheck = StrSearch(0,sEquipType,"MicroLogic")
+	IF iCheck <> -1 THEN
+		RETURN "MicroLogic";
+	END
+
+	!TR42
+	iCheck = StrSearch(0,sEquipType,"TR42")
+	IF iCheck <> -1 THEN
+		RETURN "TR42";
+	END
+
+	!DTSC200
+	iCheck = StrSearch(0,sEquipType,"DTSC200")
+	IF iCheck <> -1 THEN
+		RETURN "DTSC200";
+	END
+
+	!Quantum
+	iCheck = StrSearch(0,sEquipType,"Quantum")
+	IF iCheck <> -1 THEN
+		RETURN "Quantum";
+	END
+
+	!M340
+	iCheck = StrSearch(0,sEquipType,"M340")
+	IF iCheck <> -1 THEN
+		RETURN "M340";
+	END
+
+	!HMI
+	iCheck = StrSearch(0,sEquipType,"HMI")
+	IF iCheck <> -1 THEN
+		RETURN "HMI";
+	END
+
+	!GenSet
+	iCheck = StrSearch(0,sEquipType,"Gen")
+	IF iCheck <> -1 THEN
+		RETURN "Gen";
+	END
+	
+	!REF620
+	iCheck = StrSearch(0,sEquipType,"REF620")
+	IF iCheck <> -1 THEN
+		RETURN "REF620";
+	END
+	
+	!EMAX
+	iCheck = StrSearch(0,sEquipType,"EMAX")
+	IF iCheck <> -1 THEN
+		RETURN "EMAX";
+	END
+
+	RETURN sEquipType;
+END
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_Display_ServicePack()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	11/03/03	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//			
+//			Get Citect Service Pack/Hotfix in the form 'Service Pack A' or 'HF....' 
+//
+// 		ARGUMENTS:
+//
+//
+//     	RETURNED VALUE: 
+//
+//			Citect Service Pack as string
+//
+//		PSEUDO CODE:
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+
+STRING 
+FUNCTION CSV_Display_ServicePack()
+
+	STRING 	sServicePack;
+	INT		iPos;
+	
+	! Check for service pack
+	iPos = StrSearch(0, Version(3), "Service");
+	
+	IF iPos = -1 THEN
+		! Check for hotfix
+		iPos = StrSearch(0, Version(3), "HF");
+	END
+	
+	IF iPos > -1 THEN
+		
+		sServicePack = StrMid(Version(3), iPos, StrLength(Version(3)) - iPos);
+	END
+	
+	RETURN sServicePack;
+	
+END	
+
+
+STRING 
+FUNCTION CharReplace(STRING sRemoveChar,STRING sReplaceChar, STRING sSource) 
+	INT iLgh; 
+	INT iCnt; 
+	STRING sResult; 
+	INT iChar,iRemoveChar,iReplaceChar; 
+	
+	iLgh = StrLength(sSource)-1; 
+	iRemoveChar = StrToChar(sRemoveChar); 
+	iReplaceChar = StrToChar(sReplaceChar); 
+	FOR iCnt = 0 TO iLgh DO
+    iChar = StrGetChar(sSource,iCnt);
+    IF iChar = iRemoveChar THEN
+        iChar = iReplaceChar;
+    END
+    sResult = sResult+CharToStr(iChar);
+   END
+   
+   RETURN sResult;
+END
+
+
+//FUNCTION ReadTagVarString(STRING sTagPrefix, STRING sTag, STRING sTagField)
+//STRING sStringTagValue;                      
+//STRING sStringTagValueField;                 
+//INT nIntTagValue;                            
+//REAL fRealTagValue;                          
+    // Tag1 has a STRING data type.              
+    //sStringTagValue = TagRead(“Tag1?;           
+    //sStringTagValueField = TagRead(“Tag1.Field?;
+    // Tag2 has an INTEGER data type.            
+   // nIntTagValue = TagRead(“Tag2?;              
+    // Tag3 has a REAL data type.                
+  //  fRealTagValue = TagRead(“Tag3?;
+//END    
+
+FUNCTION VIEWCALC()                        
+    int calc;                      
+    calc=WNDFIND("Calculator");    
+    if calc=0 then                 
+        EXEC("C:\windows\calc.exe")
+    else                           
+        WNDSHOW(calc,9)            
+    end                            
+END                                
+
+!Calculates PUE for B1_1 a through d and B1_2 a through c
+REAL 
+FUNCTION PUE()
+
+	REAL	rITLoadkw;
+	REAL	rB1_1_ATPkw;
+	REAL	rB1_2_ATPkw;
+	REAL	rUPSkw;
+	REAL	rSITELoadkw;
+	REAL	rPUEkw;
+	
+	!Total Site Load
+	rSITELoadkw = WEN2.PUE\MDC_B1_ION7650\MMXU1\TotW + WEN2.PUE\MDC_B2_ION7650\MMXU1\TotW;
+	
+	!B1_1 Side ATP kw
+	rB1_1_ATPkw = WEN2.PUE\ATP_B1_1_a_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_1_a_2_METER2\MMXU1\TotW + WEN2.PUE\ATP_B1_1_a_3_METER3\MMXU1\TotW + WEN2.PUE\ATP_B1_1_b_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_1_b_2_METER2\MMXU1\TotW + WEN2.PUE\ATP_B1_1_b_3_METER3\MMXU1\TotW + WEN2.PUE\ATP_B1_1_c_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_1_c_2_METER2\MMXU1\TotW + WEN2.PUE\ATP_B1_1_c_3_METER3\MMXU1\TotW + WEN2.PUE\ATP_B1_1_d_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_1_d_2_METER2\MMXU1\TotW;
+
+	!B1_2 Side ATP kw
+	rB1_2_ATPkw = WEN2.PUE\ATP_B1_2_a_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_2_a_2_METER2\MMXU1\TotW + WEN2.PUE\ATP_B1_2_a_3_METER3\MMXU1\TotW + WEN2.PUE\ATP_B1_2_b_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_2_b_2_METER2\MMXU1\TotW + WEN2.PUE\ATP_B1_2_b_3_METER3\MMXU1\TotW + WEN2.PUE\ATP_B1_2_c_1_METER1\MMXU1\TotW + WEN2.PUE\ATP_B1_2_c_2_METER2\MMXU1\TotW + WEN2.PUE\ATP_B1_2_c_3_METER3\MMXU1\TotW;
+
+	!CCNR and CNR UPS output kw
+	rUPSkw = WEN2.PUE\UPS_B1_2_s_3_UB1\An\Pwr\TotW\Out + WEN2.PUE\UPS_B1_2_r_7_UB1\An\Pwr\TotW\Out + WEN2.PUE\UPS_B1_1_r_2_UA1\An\Pwr\TotW\Out + WEN2.PUE\UPS_B1_1_s_12_UA1\An\Pwr\TotW\Out;
+
+	!Total IT Load
+	rITLoadkw = rB1_1_ATPkw + rB1_2_ATPkw + rUPSkw;
+	
+	!Check to see if rITLoadkw is greater than zero so we don't divide by  zero
+	IF rITLoadkw <> 0.0 THEN
+ 		rPUEkw = rSITELoadkw / rITLoadkw;
+ 	END
+	
+	!Write PUE to Tag
+ 	tagwrite("WEN2.PUE\PUEkw", rPUEkw);
+	
+ 	RETURN rPUEkw;
+END
+
+// Function to Get Animation Number from Mouse Position
+INT
+FUNCTION Get_ANn()
+	INT iAN;
+	INT iX,iY;
+	DspGetMouse(iX,iY); 
+	iAN = DspGetAnFromPoint(iX,iY);
+	RETURN iAN;
+END
+
+// Function to get Mouse X Position
+INT
+FUNCTION Get_Mouse_X()
+	INT iX,iY;
+	DspGetMouse(iX,iY); 
+	RETURN iX;
+END
+
+// Function to get Mouse Y Position
+INT
+FUNCTION Get_Mouse_Y()
+	INT iX,iY;
+	DspGetMouse(iX,iY); 
+	RETURN iY;
+END
+
+!***********¨ú±o¤U¤@­Ó¹Ï¼hAN½s¸¹***********!
+INT
+FUNCTION DspGetAnPrevious(INT iAN=DspGetAnCur())
+INT iANn,iRETURN;
+	!¨ú±o·í«e¹Ï­±²Ä¤@­ÓAN½s¸¹(§Y³Ì¤U¼hAN½s¸¹)
+	iANn = DspGetAnFirst();
+	!¨ú±o¤W¤@­ÓAN½s¸¹(§Y¤U¤@­Ó¹Ï¼h¤§ª«¥óAN½s¸¹)
+	IF iAN <> -1 THEN
+		WHILE iANn <> iAN DO
+			iANn = DspGetAnNext(iANn);
+			IF iANn <> iAN THEN
+				iRETURN = iANn;
+			END
+		END
+	END
+	!¬d¸ßµ²§ôªð¦^µ²ªG
+	RETURN iRETURN;
+END
+
+!**********¨ú±o·Æ¹«¦b¤W¹Ï¼hANª¬ºA**********!
+INT
+FUNCTION DspGetMouseOverNext(INT iNext=0)
+INT i;
+INT iAN,iRETURN;
+	!¨ú±o·í«eª«¥ó¤§AN½s¸¹
+	iAN = DspGetAnCur();
+	!¨ú±o¤U¤@­ÓAN½s¸¹(§Y¤W¤@­Ó¹Ï¼h¤§ª«¥óAN½s¸¹)
+	IF iNext >= 0 THEN
+		FOR i = 1 TO iNext DO
+			iAN = DspGetAnNext(iAN);
+			IF iAN = -1 THEN
+				!¬dµLµLª«¥óªð¦^¹s
+				RETURN 0;
+			END
+		END
+	END
+	!§PÂ_·Æ¹«¬O§_¦b¸Óª«¥óAN¤§¤W
+	iRETURN = DspGetMouseOver(iAN);
+	!ªð¦^µ²ªG
+	RETURN iRETURN;
+END
+
+!DspGetMouseOver(DspGetAnNext(DspGetAnNext(DspGetAnNext(DspGetAnCur()))))
+
+
+INT
+FUNCTION DspGetMouseOverPrevious(INT iNext=0)
+INT i;
+INT iAN,iRETURN;
+	
+	iAN = DspGetAnCur();
+
+	IF iNext >= 0 THEN
+		FOR i = 1 TO iNext DO
+			iAN = DspGetAnPrevious(iAN);
+			IF iAN = -1 THEN
+
+				RETURN 0;
+			END
+		END
+	END
+
+	iRETURN = DspGetMouseOver(iAN);
+
+	RETURN iRETURN;
+END
+
+INT
+FUNCTION HubPort(STRING Cluster, STRING Device, STRING Slot, STRING Port)
+	STRING sTag;
+	INT sStatus;
+	sTag= Cluster + "." + Device + "\M" + Slot + "_Port" + Port ;
+	sStatus = TagRead (sTag);
+	IF sStatus = 1 THEN
+		RETURN 1;	
+	ELSE
+	RETURN 0;
+
+	END
+END
+
+FUNCTION Win_PrintScreen_V2()
+	STRING PageName;
+	STRING SaveDateTime;
+	STRING Folder;
+	STRING TestNo;
+	STRING sUserProf = GetEnv("USERPROFILE");
+	INT iMode;
+	INT iCheck;
+	INT hForm;
+	INT hField;
+	
+	//PageName = GetWinTitle();	!PageTitle
+	//PageName = PageInfo(0);	!PageName
+	
+	!SG Page
+	iMode = StrToInt(PageInfo(11));
+	iCheck = iMode BITAND 0x3;
+	IF iCheck <> 0 THEN
+		SuperGenie_PrintScreen();
+		RETURN;
+	END
+	
+	
+	ErrLog("User Profile String: " + sUserProf);
+	
+	hForm = FormNew("Test",30,5,0);
+  hField = FormInput(1,1,"Test No",TestNo,20);
+	FormRead(0);
+	
+	WHILE FormActive(hForm) DO
+		FormSetText(hForm,hField,"Test:");
+		Sleep(1);
+		FormCurr(hForm,hField);
+		TestNo=FormGetText(hForm,hField);
+	END
+
+	//ErrLog("Page Info:: " + PageInfo(0) + " Window Title:: " + GetWinTitle() + TestNo);
+	
+	!Main Page
+	PageName = PageInfo(0) + "_Test Num_" + TestNo + "_at_";	//PageName_PageTitle
+	//ErrLog("User Profile:: " + %userprofile%);
+	
+	SaveDateTime = GetDateAndTime();
+	Folder = Create_New_Folder();
+	WinFile(sUserProf + "\Pictures\" + Folder + "\" + PageName +"_"+ SaveDateTime + ".bmp",);
+END
+
+FUNCTION SuperGenie_PrintScreen()
+	STRING PageName;
+	STRING SaveDateTime;
+	STRING Folder;
+	STRING TestNo;
+	STRING sUserProf = GetEnv("USERPROFILE");
+	INT hForm;
+	INT hField;
+	
+	hForm = FormNew("Test",30,5,0);
+  hField = FormInput(1,1,"Test No",TestNo,20);
+	FormRead(0);
+	
+	WHILE FormActive(hForm) DO
+		FormSetText(hForm,hField,"Test:");
+		Sleep(1);  
+		//FormField(16, 1, 12, 1, 9, check1, "Check for Full screen  ", 0);
+		FormCurr(hForm,hField);
+		TestNo=FormGetText(hForm,hField);
+	END
+	
+	PageName = AssInfo("Equip",0) + "_Test Num_" + TestNo + "_at_";  //Ass_Title();
+	TraceMsg("PageName : " + PageName);
+	SaveDateTime = GetDateAndTime();
+	Folder = Create_New_Folder();
+	WinFile(sUserProf + "\Pictures\" + Folder + "\" + PageName +"_"+ SaveDateTime + ".bmp",);
+END	
+
+
+STRING 
+FUNCTION GetDateAndTime()
+STRING sYear,sMonth,sDay,sHour,sMin,sSecond
+	sYear=IntToStr(DateYear(TimeCurrent(),1));
+	sMonth=StrPad(IntToStr(DateMonth(TimeCurrent())),"0",-2);
+	sDay=StrPad(IntToStr(DateDay(TimeCurrent())),"0",-2);
+	sHour=StrPad(IntToStr(TimeHour(TimeCurrent())),"0",-2);
+	sMin=StrPad(IntToStr(TimeMin(TimeCurrent())),"0",-2);
+	sSecond=StrPad(IntToStr(TimeSecond(TimeCurrent())),"0",-2);
+	RETURN sYear+"_"+sMonth+sDay+"_"+sHour+sMin+sSecond
+END
+
+STRING 
+FUNCTION Create_New_Folder()
+STRING sUserProf = GetEnv("USERPROFILE");	
+STRING sYear,sMonth,sDay,sHour,sMin,sSecond
+	sYear=IntToStr(DateYear(TimeCurrent(),1));
+	sMonth=StrPad(IntToStr(DateMonth(TimeCurrent())),"0",-2);
+	sDay=StrPad(IntToStr(DateDay(TimeCurrent())),"0",-2);
+	sHour=StrPad(IntToStr(TimeHour(TimeCurrent())),"0",-2);
+	sMin=StrPad(IntToStr(TimeMin(TimeCurrent())),"0",-2);
+	sSecond=StrPad(IntToStr(TimeSecond(TimeCurrent())),"0",-2);
+	
+	Exec("C:\Windows\System32\cmd.exe /c md "+sUserProf+"\Pictures\"+sYear+"_"+sMonth+sDay, 6);
+	SleepMS(1000);
+	RETURN sYear+"_"+sMonth+sDay
+END
+
+//0 - Project name
+//1 - Project description
+//2 - Project major version
+//3 - Project minor version
+//4 - Project date
+//5 - Project time
+
+//0 - product name, default
+//1 - product company
+//2 - product major version
+//3 - product minor version
+//4 - product version string
+STRING sProjInfoArray[5];
+INT hFieldName[5];
+
+FUNCTION DspProjVersInfo()
+   INT iProjWEN = 0;        
+   INT iProjWEN_Include = 5;
+   INT iProjWEN2_T1Z1 = 1;  
+   INT iProjWEN2_T1Z2 = 2;  
+   INT iProjWEN2_T1Z3 = 3;  
+   INT iProjWEN2_T1Z4 = 4;  
+   INT iType;
+   STRING sProjWENName;
+   STRING sProjWENDesc;
+   STRING sProjWENMaVer;
+   STRING sProjWENMiVer;
+   STRING sProjWENDate;
+   
+   STRING txtProjWENName = "";
+   STRING txtProjWENDesc = "";
+   STRING txtProjWENMaVer = "";
+   STRING txtProjWENMiVer = "";
+   STRING txtProjWENDate = "";
+   INT hForm;
+   
+   //INT hFieldDesc;
+   //INT hFieldMaVer;
+   //INT hFieldMiVer;
+   //INT hFieldDate;
+	
+   hForm = FormNew("Selection Menu", 100, 15, 6);
+   hFieldName[0] = FormField(2, 1, 30, 1, 3, sProjWENName, "Project Name:  ", 0);
+   hFieldName[1] = FormField(2, 2, 30, 1, 3, sProjWENDesc, "Project Description:  ", 0);
+   hFieldName[2]= FormField(2, 3, 30, 1, 3, sProjWENMaVer, "Project Major Version:  ", 0);
+   hFieldName[3]= FormField(2, 4, 30, 1, 3, sProjWENMiVer, "Project Minor Version:  ", 0);
+   hFieldName[4]= FormField(2, 5, 30, 1, 3, sProjWENDate, "Project Build Date:  ", 0);
+   FormButton( 9, 20, " &Cancel ", 0, 2);
+   IF FormRead(0) = 0 THEN
+  	FOR iType = 0 TO 5 DO
+      sProjWENName = GetProjData(iType,0);
+      TraceMsg("Project name: " + sProjWENName);
+      
+      sProjWENDesc = GetProjData(iType,1);
+      TraceMsg("Project description: " + sProjWENDesc);
+      
+      sProjWENMaVer = GetProjData(iType,2);
+      TraceMsg("Project major version: " + sProjWENMaVer);
+      
+      sProjWENMiVer = GetProjData(iType,3);
+      TraceMsg("Project minor version: " + sProjWENMiVer);
+      
+      sProjWENDate = GetProjData(iType,4);
+      TraceMsg("Project date: " + sProjWENDate);
+      
+      sProjInfoArray[iType] = "Project Name: " + sProjWENName  + " " + sProjWENDesc + " Project Version: "+ sProjWENMaVer +"."+ sProjWENMiVer + " Build Date: " + sProjWENDate; 
+      TraceMsg("Project Info: " + sProjInfoArray[iType]);
+      FormSetText(hForm, hFieldName[iType], sProjInfoArray[iType]);
+  	END
+	END  
+END
+//
+//! Display a form with check boxes to start
+//!! specific motors.
+//FUNCTION SelectMotor()
+//	INT hform;
+//	STRING check1 = "0";
+//	STRING check2 = "0";
+//	STRING check3 = "0";
+//	hform = FormNew("Selection Menu", 26, 22, 6);
+//	FormField(16, 1, 12, 1, 9, check1, "Primary  ", 0);
+//	FormField(16, 2, 12, 1, 9, check2, "Secondary", 0);
+//	FormField(16, 3, 12, 1, 9, check3, "backup   ", 0);
+//	FormButton( 9, 20, " &Cancel ", 0, 2);
+//	IF FormRead(0) = 0 THEN
+//		IF check1 = "1" THEN
+//			StartMotor(MOTOR_1);
+//		END
+//		IF check2 = "1" THEN
+//			StartMotor(MOTOR_2);
+//		END
+//		IF check3 = "1" THEN
+//			StartMotor(MOTOR_3);
+//		END
+//	END
+//END
+//
+//
+STRING FUNCTION GetProjData(INT iProjNum, INT iProjParm)
+    STRING sRetVal;
+    sRetVal = ProjectInfo(iProjNum,iProjParm);
+    TraceMsg ("Project Number: " + IntToStr(iProjNum) + "Project Parm: " + IntToStr(iProjParm));
+    IF sRetVal <> "" THEN
+       RETURN sRetVal;
+    ELSE 
+       RETURN "Info Not Available";
+    END
+END
+
+FUNCTION TagInformationForm ()
+INT hInfo;
+STRING sTag;
+INT x,y,iSession;
+STRING sVal;
+STRING sAlarmDescription; 
+     
+    DspGetMouse (x, y );
+    ErrLog("InTagInfo");
+    hInfo = DspInfoNew(DspGetNearestAn (x, y)) ; 
+    IF hInfo > -1 THEN
+         FormNew("Tag Info", 80, 15, 2);
+         sTag = DspInfo (hInfo, 3, 0);
+         ErrLog("sTag = " + sTag);
+         sAlarmDescription = GetAlarmDescription(sTag);
+         ErrLog("Alarm Description = " + sAlarmDescription);
+         FormPrompt (0, 0, sTag);
+         ErrSet (1);
+         sVal = TagGetProperty(sTag, "Address");  // Subscribe tag
+         ErrSet (0); 
+         SleepMS (500);
+         FormPrompt (0, 0, "TAG NAME : " + DspInfoField(hInfo, sTag, "Name"));
+         FormPrompt (0, 1, "CLUSTER NAME: " + DspInfoField(hInfo, sTag, "Cluster"));
+         FormPrompt (0, 2, "IODEVICE NAME: " + DspInfoField(hInfo, sTag, "Unit"));
+         FormPrompt (0, 3, "TAG ADRESS: " + TagGetProperty(sTag,"Address"));
+         FormPrompt (0, 4, "TAG VALUE: " + TagRead (sTag));
+         FormPrompt (0, 5, "DATA TYPE: " + DspInfoField(hInfo, sTag, "TYPE" ));
+         FormPrompt (0, 6, "RAW ZERO: " + DspInfoField(hInfo, sTag, "RAW_ZERO" ));
+         FormPrompt (0, 7, "RAW FULL: " + DspInfoField(hInfo, sTag, "RAW_FULL" )) ;
+         FormPrompt (0, 8, "ENG ZERO: " + DspInfoField(hInfo, sTag, "ENG_UNITS" )) ;
+         FormPrompt (0, 9, "ENG FULL: " + DspInfoField(hInfo, sTag, "ENG_ZERO" ));
+         FormPrompt (0, 10, "ENG UNITS: " + DspInfoField(hInfo, sTag, "ENG_FULL" )) ;
+         FormPrompt (0, 11, "COMMENT: " + DspInfoField(hInfo, sTag, "COMMENT" ));
+         FormPrompt (0, 12, "ALARM DESCRIPTION: " + GetAlarmDescription(sTag));
+         FormRead (0);
+         DspInfoDestroy (hInfo) ;
+     END
+END 
+
+STRING FUNCTION GetAlarmDescription(STRING sAlarmTag)
+	 STRING sFilter;
+	 STRING sAlarmTagName;
+	 INT iSession,iResult;
+	 
+	  IF(sAlarmTag <> "") THEN
+	  	  sFilter = "TAG="+ sAlarmTag; 
+		 		iSession = AlmBrowseOpen(sFilter,"TAG");
+		 		ErrLog("DisplayAlmByTagName iSession: " + IntToStr(iSession) + " TAG: " +sAlarmTag);
+		 		IF (iSession <> -1) THEN
+		 			  AlmBrowseFirst(iSession);
+		 			  sAlarmTagName = AlmBrowseGetField(iSession, "TAG");
+		 			  ErrLog("DisplayAlmByTagName sAlarmTagName: " + sAlarmTagName);
+		 			  AlmBrowseClose(iSession);
+		 		ELSE
+		 			  sAlarmTagName = "";
+		 			  RETURN sAlarmTagName;
+		 		END //END ELSE if iSession
+		 		
+		 		IF (sAlarmTagName <> "" ) THEN
+		 			  iSession = AlmBrowseOpen(sFilter, "TAG,NAME");
+		 			  ErrLog("DisplayAlmByTag sFilter: " + sFilter + " iSession: " + IntToStr(iSession));
+		 			  IF (iSession <> -1) THEN
+		 			  	  iResult = AlmBrowseFirst(iSession);
+		 			  	  WHILE (iResult = 0) DO
+		 			  		   sAlarmTag = AlmBrowseGetField(iSession, "TAG");
+		 			  		   sAlarmTagName = AlmBrowseGetField(iSession, "NAME");
+		 			  		   
+		 			  		   ErrLog("Alarm Tag Name: " + sAlarmTagName + " " + sAlarmTag);
+		 			  		   iResult = AlmBrowseNext(iSession); 
+		            END //END While
+		            AlmBrowseClose(iSession);
+	          END //END IF iSession
+        END //END IF sAlarmTagName
+    END //END IF sAlarmTAG
+    RETURN sAlarmTagName;
+END
+
+FUNCTION capture_screen()
+
+		//Memory or Local variable defined in the project 
+		counter=counter+1;  
+  	
+		// Open the Trend page of the project
+		PageDisplay("Trend");
+		Sleep(1);
+		// Capture a screenshot of the trend page
+		SendKeys("Trend", "{prtsc}");
+		// Open Microsoft Paint application. Use Mode '6' if wnat the paint window Minimized
+		Exec("mspaint", 1);
+		Sleep(3);
+		// Paste the clipboard into Paint
+		SendKeys("untitled - Paint", "^(v)");
+		Sleep(1);
+		// Open the 'Save As' menu
+		SendKeys("untitled - Paint", "^(s)");
+		Sleep(1);
+		// Enter the name of the screenshot: image_<screenshot's number>
+		SendKeys("Save As", "image_" + IntToStr(counter));
+		Sleep(1);
+		// Change to the 'save as' field
+		SendKeys("Save As", "{tab}");
+		Sleep(1);
+		// Select 'JPG' as type 
+		SendKeys("Save As", "j");
+		Sleep(1);
+		// Save the file
+		SendKeys("Save As", "{enter}");
+		Sleep(1);
+		// Close Paint
+		SendKeys("image_" + IntToStr(counter) + ".JPG - Paint", "%({f4})");
+		SleepMS(500);
+		// Go back to the last page displayed before screenshot
+		PageLast();
+
+END

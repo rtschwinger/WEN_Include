@@ -1,0 +1,1256 @@
+// <comments>
+// <summary>
+// Tab Alarm Table Customization for working in PLS templates and pages
+// </summary>
+// <remarks>
+//      Adaption of tab alarm list in PLS:
+//			<list type="number">
+//			    <item>
+//			        <description>Use PLSAlmDsp_TabAlarm() instead of TabAlarm_Dsp() to setup alarm list on page</description>
+//			    </item>
+//			    <item>
+//			        <description>Call PLSDspShowAlarm() instead of PageDisplay() to display alarm pages</description>
+//			    </item>
+//			    <item>
+//			        <description>Set up Tab Alarm Customization parameters:<br />
+//               [TabAlarm.Custom]<br />
+//               Function.Row.ShowContextMenu  = PLSAlmDsp_Row_ShowContextMenu<br />
+//               Function.AlarmGetDsp          = PLSAlarm_GetDispValue</description>
+//			    </item>
+//			</list>
+// </remarks>
+// </comments>
+
+///	<public functions>
+///				PLS_TabAlmTable_InitDsp			wraps		TabAlmTable_DspInit
+///				TabAlmTable_InitDspEquipment	wraps		TabAlmTable_DspInit (for the equipment pop-up)
+///				PLSAlmDsp_TabAlarm				wraps		TabAlarm_Dsp (7.20)
+///				PLSAlmDsp_Row_ShowContextMenu	customizes	TabAlarm_Row_ShowContextMenu
+///				PLSAlmDsp_Row_ShowHWContextMenu	customizes	TabAlarm_Row_ShowHardwareContextMenu
+///				PLSAlmDsp_Row_ShowInfo			mirrors		TabAlarm_Row_ShowInfo
+///				PLSAlmDsp_Row_Ack				mirrors		TabAlmTable_Row_Ack		/ TabAlarm_Row_Ack (7.20)
+///				PLSAlmDsp_Row_Disble			mirrors		TabAlmTable_Row_Disble	/ TabAlarm_Row_Ack (7.20)
+///				PLSAlmDsp_Row_Enable			mirrors		TabAlmTable_Row_Enable	/ TabAlarm_Row_Eanble (7.20)
+///				PLSAlarm_GetDispValue			customizes	AlarmGetDsp
+///	</public functions>
+//-----------------------------------------------------------------------------
+
+
+// <comments>
+// <summary>
+//		Initializes the alarm list of the tab style templates that use the
+//		lib_controls.AlarmTable genie.
+//      This function is specific to the equipment pop up dialog.
+// </summary>
+// <param name="listID">The alarm list ID</param>
+// <param name="listAN">The animation of the alarm list</param>
+// <param name="formatName">The custom format name defined in INI parameters [Format]
+//      This parameter is optional, only applicable to
+//      alarm templates provided by Tab_Style_Include project
+//
+//      The alarm format needs to be defined in the following convention:
+//
+//      [Format]
+//      format name = {field name,pixel width}...
+//
+//      e.g.
+//      [Format]
+//      Alarm ={Date,69}{Time,69}{Tag,61}{Name,75}{Desc,91}{State,70}{Type,141}</param>
+// <param name="windowNumber">Window number</param>
+// <returns>The AN of the alarm list or 0 if initialization is unsuccessful</returns>
+// </comments>
+PUBLIC
+INT FUNCTION PLSTabAlmTable_InitDspEquipment(STRING listID, INT listAN, STRING formatName = "", INT windowNumber = -1)
+	INT retValue = TabAlmTable_InitDsp(listID, listAN, FormatName);
+
+	//set to page context
+	FilterEquipmentAlarmTable(listAN);	
+
+	RETURN retValue;
+END
+
+// <comments>
+// <summary>
+// Filters the Alarm Table to a specific equipment.
+// </summary>
+// <param name="listAN">The animation of the alarm list.</param>
+// </comments>
+PUBLIC FUNCTION FilterEquipmentAlarmTable(INT listAN)
+	STRING equipmentName = AssGetProperty(4, "TagName", 1);	
+	STRING sEquip;
+	
+	//Filter list to this piece of equipment only
+	INT filterEditSession = AlarmFilterEditOpen(listAN);                    // filter criteria are get / set via filter edit session 
+
+    // specify filter
+    !Vanpro CHYU 2016/03/03
+    !INT SetError = AlarmFilterEditSet(filterEditSession, "Equipment = ^"" + equipmentName + "^"");  // put double-quote around string type fields in case space character was entered in textbox 
+	sEquip = "Equipment=" + equipmentName
+	INT SetError = AlarmFilterEditSet(filterEditSession,sEquip);
+
+	// apply filter 
+    INT CommitError = AlarmFilterEditCommit(filterEditSession); 
+    INT CloseError = AlarmFilterEditClose(filterEditSession); 
+END
+
+// <comments>
+// <summary>
+//		Initializes the alarm list of the tab style templates that use the
+//		lib_controls.AlarmTable genie.
+// </summary>
+// <param name="listID">The ID of the alarm list.</param>
+// <param name="listAN">The animation of the alarm list.</param>
+// <param name="formatName">The custom format name defined in INI parameters.</param>
+// <returns>Success or failure</returns>
+// </comments>
+INT FUNCTION PLS_TabAlmTable_InitDsp(STRING listID, INT listAN, STRING formatName = "")
+	AlarmSetInfo(listAN, 3, PLSAlmDspGetType(listID));
+	RETURN TabAlmTable_InitDsp(listID, listAN, formatName);
+END
+
+// <comments>
+// <summary>
+//		(for 7.20 TabAlarm compatibility)
+//		Displays the alarm list and adjusts display while the page is shown.
+// </summary>
+// <remarks>
+//		This funciton should be called on a separate Cicode object per alarm list.
+//		Multiple alarm lists are allowed per page
+// </remarks>
+// <param name="listID">The alarm list ID number, zero-based</param>
+// <param name="count">The number of alarms to display</param>
+// <param name="type">The type of alarms to display. Optional, default = 0 (active alarms)</param>
+// <param name="clusterName">The clustrer name to which the alarms belong. Optional, default = "" (all clusters)</param>
+// <param name="listWidth">The width of the list in pixels</param>
+// <param name="listFormat">The custom format name defined in INI parameters [Format]</param>
+// <param name="autoFit">The width of the columns will be automatically adjusted continuously</param>
+// <param name="viewOnly">Whether alarm list is view only and disable built-in GUI for controls</param>
+// <param name="listHeight">The height of the list in pixels</param>
+// <returns>0 if run successfully or error number if failed</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_TabAlarm(INT listID, INT count, INT type = 0, STRING clusterName = "", INT listWidth = -1, STRING listFormat = "", INT autoFit = 0, INT viewOnly = 0, INT listHeight = 0)
+	INT retValue;
+	INT listAN = DspGetAnCur();
+
+	// Use type and listFormat set by PLSDspShowAlarm() instead of values passed into this function
+	type = PLSAlmDspGetType(listID);
+	listFormat = PLSAlmDspGetFormat(listID, type);
+
+	retValue = TabAlarm_Dsp(listID, count, type, clusterName, listWidth, listFormat, autoFit, viewOnly, listHeight);
+
+	// Need to set type again if calling different alarm type on the same alarm list on the same page
+	IF type <> AlarmGetInfo(listAN, 3) THEN
+		AlarmSetInfo(listAN, 3, type);
+	END
+
+	RETURN retValue;
+END
+
+// <comments>
+// <summary>
+//		Gets format name for an alarm list.
+// </summary>
+// <param name="listID">The ID of the alarm list.</param>
+// <param name="listType">The type of the alarm list.</param>
+// <returns>The name of the parameter specified for the FORMAT.</returns>
+// </comments>
+STRING 
+FUNCTION PLSAlmDspGetFormat(INT listID, INT listType)
+	// 23-Dec-10 determine form automatically rather than need to be set before showing the page
+	// 23-Dec-10 in 7.20 Hardware alarm is not supported by the TabAlarm_Dsp(), so there is no
+	// need to cater for it
+	IF (10 = listType) THEN
+		RETURN "Summary";	// must be the Name of a parameter specified for the FORMAT section
+	ELSE
+		RETURN "Alarm";		// must be the Name of a parameter specified for the FORMAT section
+	END
+END
+
+//============= Goto Page Begin
+
+// <comments>
+// <summary>
+// Go to the page
+// </summary>
+// <remarks>
+// <param name="listID">The alarm list number (0+).</param>
+// <param name="rowID">The row index (0+).</param>
+// <returns>Error code.</returns>
+// </comments>
+
+INT FUNCTION PLSAlmDsp_Row_GotoPage(INT listID, INT rowID) 
+	INT retValue = 274;
+	INT listAN = TabAlarm_GetAn(listID);
+	INT rowAN = listAN + rowID;
+	INT nWinNo = WinNumber();
+	STRING sPage;
+	STRING sEquipment, sWaveformPossible, sEquipWave, sEquipmentName;
+	INT errLevelOld;
+	INT nParentNo;
+	STRING sCluster;
+	STRING sProject;
+	
+	!Get the Project name
+	sProject = ParameterGet("GPT","Project","");
+
+	!Return if title bar is clicked
+	IF ((listID < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	!user error checking to prevent hw alarms caused by string functions
+	errLevelOld = ErrSetLevel(1);
+	
+	sEquipment = PLSAlarm_GetDispValue(listID, rowAN, "Custom1");
+	sEquipmentName = PLSAlarm_GetDispValue(listID, rowAN, "Equipment");
+	TraceMsg("Goto Page is: " + sEquipmentName );
+
+	!Find the alarm page name
+	IF (StrLength(sEquipmentName) <> 0) THEN
+		sCluster = EquipGetCluster(sEquipmentName);
+		TraceMsg("Cluster is :" + sCluster);
+		sEquipmentName = sCluster + "." + sEquipmentName;
+		TraceMsg("Goto Page is: " + sEquipmentName );
+
+		sPage = EquipGetProperty(sEquipmentName, "Page");
+	END
+	TraceMsg("Goto Page is: " + sPage);
+	IF (StrLength(sPage) <> 0) THEN
+		nParentNo = PageInfo(8);
+		IF (nParentNo > -1) THEN
+			WinSelect(nParentNo);
+		END
+		retValue = PageDisplay(sPage);
+		WinSelect(nWinNo);
+	ELSE
+		Message("Information","The Goto Page for this alarm has not been defined!",64);
+	END
+
+	ErrSetLevel(errLevelOld);
+	RETURN retValue;
+	
+END
+
+
+//============= Goto Page End
+
+
+// <comments>
+// <summary>
+// Show the pop up menu for the row.
+// </summary>
+// <remarks>
+// 25-May-2010
+//    Created from TabAlarm_Row_ShowContextMenu (Citect Tab_alarm_Include V7.20) and
+//    PLSAlmDspRowMenu (PLS SCADA PLS_Include V7.10) to provide a custom context menu
+//    for the tab style alarm list
+// 
+// 22-Nov-2010
+//    Set up customization to instruct the tab style alarm list to call this function
+//    for context menu.
+// </remarks>
+// <param name="listID">The alarm list number (0+).</param>
+// <param name="rowID">The row index (0+).</param>
+// <returns>Error code.</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_Row_ShowContextMenu(INT listID, INT rowID) 
+	INT retValue = 274;
+	INT selection;
+	INT listAN = TabAlarm_GetAn(listID);
+	INT rowAN = listAN + rowID;
+	INT listType;
+	INT nWinNo = WinNumber();
+	INT iX, iY;
+	STRING sHelp;
+	STRING sPage;
+	STRING sEquipment, sWaveformPossible, sEquipWave, sEquipmentName;
+	INT errLevelOld;
+	INT focusAN = KeyGetCursor();
+	INT nParentNo;
+	STRING sCluster;
+	STRING sProject;
+	sProject = ParameterGet("Vanpro","Project","");
+
+	IF ((listID < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	// user error checking to prevent hw alarms caused by string functions
+	errLevelOld = ErrSetLevel(1);
+
+	sHelp = AlarmGetDsp(rowAN, "Help");
+	listType = AlarmGetInfo(listAN, 3);
+	
+	sEquipment = PLSAlarm_GetDispValue(listID, rowAN, "Custom1");
+	sEquipmentName = PLSAlarm_GetDispValue(listID, rowAN, "Equipment");
+	// Show context menu
+	DspPopupMenu(0, StrToLocalText("@(Information)"));
+	
+//	IF StrLength(sHelp) > 0 THEN
+//		DspPopupMenu(0, "," + StrToLocalText("@(Help)"));
+//	ELSE
+//		DspPopupMenu(0, ",!" + StrToLocalText("@(Help)"));
+//	END
+	
+	!Vanpro CHYU 2015/10/30
+	IF (StrLength(sEquipmentName) <> 0) THEN
+		sCluster = EquipGetCluster(sEquipmentName);
+		sEquipmentName = sCluster + "." + sEquipmentName;
+		sPage = EquipGetProperty(sEquipmentName, "Page");
+	END
+	IF (StrLength(sPage) <> 0) THEN
+		DspPopupMenu(0, StrToLocalText("@(Go to page)")+"...");
+	ELSE	
+		DspPopupMenu(0, "!" + StrToLocalText("@(Go to page)")+"...");
+	END
+
+//	IF (StrLength(sEquipment) <> 0) THEN
+//		DspPopupMenu(0, "," + sEquipment + ">1");
+//		PLSEquipListAddMenu(1);
+//	END
+
+	// Set up to use sEquipment to pick waveform data if available
+	IF (StrLength(sEquipment) = 0) THEN
+		sEquipment = StrToLocalText("@(Display)");
+	END
+
+	// 17-Sep-08 Check the 'Custom2' field to see if a waveform *could* be acquired
+//	sWaveformPossible = StrMid(AlarmGetDsp(rowAN, "Custom2"), 0, 8);
+	sWaveformPossible = StrLeft(AlarmGetDsp(rowAN, "Custom2"), 8);
+	sEquipWave = sEquipment + " " + StrToLocalText("@(Waveform)")+"...";
+	
+	//30-Oct-08 - Added security for viewing waveforms
+//	IF sProject <> "" THEN
+//		IF (PLSSecGetPriv(PL_Sec_ViewWaveform) = 1) 
+//			AND "waveform" = StrLower(sWaveformPossible) THEN			// waveform exists
+//			DspPopupMenu(0, "," + sEquipWave);
+//		ELSE
+//			DspPopupMenu(0, "," + sEquipWave);   //Jason
+//		END
+//	END
+
+	// 26-Nov-10 - Use PLS specific security model for alarm options
+	IF ((NOT PLSSecGetPriv(PL_Sec_AlmAck)) OR (listType = 10) OR (listType = 15) OR (listType = 3)) THEN
+		DspPopupMenu(0, ",!" + StrToLocalText("@(Acknowledge)"));
+	ELSE
+		DspPopupMenu(0, "," + StrToLocalText("@(Acknowledge)"));
+	END
+
+	IF ((NOT PLSSecGetPriv(PL_Sec_AlmConfig)) OR (listType = 10) OR (listType = 15)) THEN
+		DspPopupMenu(0, "!" + StrToLocalText("@(Disable)"));
+		DspPopupMenu(0, "!" + StrToLocalText("@(Enable)"));
+	ELSE
+		SELECT CASE listType
+		CASE 3
+			// disabled alarms
+			DspPopupMenu(0, "!" + StrToLocalText("@(Disable)"));
+			DspPopupMenu(0, StrToLocalText("@(Enable)"));
+		CASE IS < 10
+			// active alarms
+			DspPopupMenu(0, StrToLocalText("@(Disable)"));
+			DspPopupMenu(0, "!" + StrToLocalText("@(Enable)"));
+		CASE ELSE
+			// all alarms
+			DspPopupMenu(0, StrToLocalText("@(Disable)"));
+			DspPopupMenu(0, StrToLocalText("@(Enable)"));
+		END SELECT
+	END
+
+	// execute command in context menu
+	selection = DspPopupMenu(-1, "");
+
+	// set cursor back to initial AN
+	KeySetCursor(focusAN);
+IF sProject <> "" THEN
+	SELECT CASE selection
+	CASE 1
+		retValue = PLSAlmDsp_Row_ShowInfo(listID, rowID);
+//	CASE 2
+		// 14-Mar-11 Display page on the parent window
+//		nParentNo = PageInfo(8);
+//		IF (nParentNo > -1) THEN
+//			WinSelect(nParentNo);
+//		END
+//		retValue = PageDisplay(sHelp);
+//		WinSelect(nWinNo);
+	CASE 2!3
+		// 14-Mar-11 Display page on the parent window
+		nParentNo = PageInfo(8);
+		IF (nParentNo > -1) THEN
+			WinSelect(nParentNo);
+		END
+		retValue = PageDisplay(sPage);
+		WinSelect(nWinNo);
+	CASE 3
+		PLSAlmDspShowWaveform(rowAN);
+	CASE 4!3!5
+		retValue = PLSAlmDsp_Row_Ack(listID, rowID);
+	CASE 5!4!6
+		// 26-Nov-10 call PLS specific disable / enable functions
+		//	which also log user actions to event log
+		retValue = PLSAlmDsp_Row_Disable(listID, rowID);
+	CASE 6!5!7
+		retValue = PLSAlmDsp_Row_Enable(listID, rowID);
+//	CASE 101 TO 200
+//		DspGetMouse(iX, iY);
+
+		// 24-Oct-08 Let the List display function to work out the exact position by specifying it's not absolute coord.
+		//iX = StrToInt(PageInfo(14)) + iX;
+		//iY = StrToInt(PageInfo(15)) + iY;
+		// 17-Nov-08 Pass window number to the pop up to allow it to track the calling monitor correctly!!!
+//		PLSEquipListDisplay(sEquipment, iX, iY, nWinNo, PLSEquipListExecuteMenu(selection), 0);
+		
+	END SELECT
+ELSE
+	SELECT CASE selection
+	CASE 1
+		retValue = PLSAlmDsp_Row_ShowInfo(listID, rowID);
+//	CASE 2
+		// 14-Mar-11 Display page on the parent window
+//		nParentNo = PageInfo(8);
+//		IF (nParentNo > -1) THEN
+//			WinSelect(nParentNo);
+//		END
+//		retValue = PageDisplay(sHelp);
+//		WinSelect(nWinNo);
+	CASE 2!3
+		// 14-Mar-11 Display page on the parent window
+		nParentNo = PageInfo(8);
+		IF (nParentNo > -1) THEN
+			WinSelect(nParentNo);
+		END
+		retValue = PageDisplay(sPage);
+		WinSelect(nWinNo);
+	CASE 3
+		PLSAlmDspShowWaveform(rowAN);
+	CASE 4
+		retValue = PLSAlmDsp_Row_Ack(listID, rowID);
+	CASE 5
+		// 26-Nov-10 call PLS specific disable / enable functions
+		//	which also log user actions to event log
+		retValue = PLSAlmDsp_Row_Disable(listID, rowID);
+	CASE 6
+		retValue = PLSAlmDsp_Row_Enable(listID, rowID);
+//	CASE 101 TO 200
+//		DspGetMouse(iX, iY);
+
+		// 24-Oct-08 Let the List display function to work out the exact position by specifying it's not absolute coord.
+		//iX = StrToInt(PageInfo(14)) + iX;
+		//iY = StrToInt(PageInfo(15)) + iY;
+		// 17-Nov-08 Pass window number to the pop up to allow it to track the calling monitor correctly!!!
+//		PLSEquipListDisplay(sEquipment, iX, iY, nWinNo, PLSEquipListExecuteMenu(selection), 0);
+		
+	END SELECT	
+END
+
+	ErrSetLevel(errLevelOld);
+
+	RETURN retValue;
+END
+
+// <comments>
+// <summary>
+// Show the pop up menu for the row AN of hardware alarm
+// </summary>
+// <remarks>
+//		<list type="number">
+//		    <item>
+//		        <description>It uses PLS specific security model other than the one used by the tab alarm list.</description>
+//		    </item>
+//		    <item>
+//		        <description>Support single selection only.</description>
+//		    </item>
+//		    <item>
+//		        <description>Only acknowledge alarm if the AN that displays it is not empty, i.e. it can be set cursor focus.</description>
+//		    </item>
+//		</list>
+// </remarks>
+// <param name="rowAN">The animation number that display the hardware alarm.</param>
+// <returns>Error code.</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_Row_ShowHWContextMenu(INT rowAN)
+	INT retValue = 274;
+	INT selection;
+
+	IF (rowAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// Show context menu
+	IF (NOT PLSSecGetPriv(PL_Sec_AlmAck)) THEN
+		DspPopupMenu(0, "!" + StrToLocalText("@(Acknowledge)"));
+	ELSE
+		DspPopupMenu(0, StrToLocalText("@(Acknowledge)"));
+	END
+
+	// execute command in context menu
+	selection = DspPopupMenu(-1, "");
+
+	SELECT CASE selection
+	CASE 1
+		Sleep(0);
+		IF PLSSecGetPriv(PL_Sec_AlmAck) THEN
+			IF (KeySetCursor(rowAN) = 0) THEN	// remark 3
+				retValue = AlarmAck(0, 0);
+			END
+		ELSE
+			retValue = 276;		// no privilege for operation
+		END
+	END SELECT
+
+	RETURN retValue;
+END
+
+// <comments>
+// <summary>
+//		Displays the information page of the alarm displayed at the specified row.
+// </summary>
+// <param name="listID">The alarm list ID number, zero-based.</param>
+// <param name="rowID">The row ID number, zero-based.</param>
+// <returns>0 if executed successfully or -1 if failed.</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_Row_ShowInfo(INT listID, INT rowID)
+	INT retValue = 274;
+	INT listAN = TabAlarm_GetAn(listID);
+	INT listType;
+	INT recordAN;
+	INT frmHnd;
+
+	IF ((listID < 0) OR (rowID < 0)) THEN
+		RETURN retValue;
+	END
+
+	recordAN = listAN + rowID;
+	IF (AlarmGetDsp(recordAN, "RecNo") = "") THEN
+		RETURN retValue;
+	END
+
+	listType = AlarmGetInfo(listAN, 3);
+
+	IF  (10 = listType) THEN	
+		frmHnd = FormNew("@(Event Information)", 80, 12, 1+4+8);
+	ELSE
+		frmHnd = FormNew("@(Alarm Information)", 80, 11, 1+4+8);
+	END
+	IF (frmHnd < 0) THEN
+		RETURN retValue;
+	END
+
+	// 10-Dec-10 display field value in PLS context
+	// Property									Value
+//	FormPrompt(0,  0, "@(Tag)");				FormPrompt(22,  0, PLSAlarm_GetDispValue(listID, recordAN, "Tag"));
+//	FormPrompt(0,  1, "@(Equipment)");			FormPrompt(22,  1, PLSAlarm_GetDispValue(listID, recordAN, "Custom1"));
+//	FormPrompt(0,  2, "@(Description)");		FormPrompt(22,  2, PLSAlarm_GetDispValue(listID, recordAN, "Name"));
+//	FormPrompt(0,  3, "@(Category)");			FormPrompt(22,  3, PLSAlarm_GetDispValue(listID, recordAN, "Category"));
+//	FormPrompt(0,  4, "@(Priority)");			FormPrompt(22,  4, PLSAlarm_GetDispValue(listID, recordAN, "Priority"));
+//	FormPrompt(0,  5, "@(Time)");				FormPrompt(22,  5, PLSAlarm_GetDispValue(listID, recordAN, "OnTimeMS"));
+//	FormPrompt(0,  6, "@(Date)");				FormPrompt(22,  6, PLSAlarm_GetDispValue(listID, recordAN, "OnDate"));
+//	FormPrompt(0,  7, "@(State)");				FormPrompt(22,  7, PLSAlarm_GetDispValue(listID, recordAN, "State"));
+//	FormPrompt(0,  8, "@(Location)");			FormPrompt(22,  8, PLSAlarm_GetDispValue(listID, recordAN, "Custom2"));
+//	FormPrompt(0,  9, "@(Cluster)");			FormPrompt(22,  9, PLSAlarm_GetDispValue(listID, recordAN, "Cluster"));
+	!Vanpro CHYU 2015/12/23 New
+	STRING sTag,sEquipment,sDescription,sCategory,sPriority,sTime,sDate,sState,sLocation,sCluster,sOperator;
+	sTag = PLSAlarm_GetDispValue(listID, recordAN, "Tag")
+	sEquipment = PLSAlarm_GetDispValue(listID, recordAN, "Equipment")
+	sDescription = PLSAlarm_GetDispValue(listID, recordAN, "Name")
+	sCategory = PLSAlarm_GetDispValue(listID, recordAN, "Category")
+	sPriority = PLSAlarm_GetDispValue(listID, recordAN, "Priority")
+	sTime = PLSAlarm_GetDispValue(listID, recordAN, "OnTimeMS")
+	sDate = PLSAlarm_GetDispValue(listID, recordAN, "OnDate")
+	sState = PLSAlarm_GetDispValue(listID, recordAN, "State")
+	sLocation = PLSAlarm_GetDispValue(listID, recordAN, "Custom2")
+	sCluster = PLSAlarm_GetDispValue(listID, recordAN, "Cluster")
+
+	FormPrompt(0,  0, "@(Tag)");				FormInput(20,  0, " ", sTag, 50);
+	FormPrompt(0,  1, "@(Equipment)");			FormInput(20,  1, " ", sEquipment, 50);
+	FormPrompt(0,  2, "@(Description)");		FormInput(20,  2, " ", sDescription, 50);
+	FormPrompt(0,  3, "@(Category)");			FormInput(20,  3, " ", sCategory, 50);
+	FormPrompt(0,  4, "@(Priority)");			FormInput(20,  4, " ", sPriority, 50);
+	FormPrompt(0,  5, "@(Time)");				FormInput(20,  5, " ", sTime, 50);
+	FormPrompt(0,  6, "@(Date)");				FormInput(20,  6, " ", sDate, 50);
+	FormPrompt(0,  7, "@(State)");				FormInput(20,  7, " ", sState, 50);
+	FormPrompt(0,  8, "@(Location)");			FormInput(20,  8, " ", sLocation, 50);
+	FormPrompt(0,  9, "@(Cluster)");			FormInput(20,  9, " ", sCluster, 50);
+
+
+	IF (10 = listType) THEN
+//		FormPrompt(0,  10, "@(Operator)");		FormPrompt(22, 10, PLSAlarm_GetDispValue(listID, recordAN, "UserName"));
+		sOperator = PLSAlarm_GetDispValue(listID, recordAN, "UserName");
+
+		FormPrompt(0,  10, "@(Operator)");		FormInput(20, 10, " ", sOperator, 50);
+	END
+
+	retValue = FormRead(1);
+
+	RETURN retValue;
+END
+
+// <comments>
+// <summary>
+//		Acknowledges the alarm displayed at the specified row.
+// </summary>
+// <param name="listID">The alarm list ID number, zero-based.</param>
+// <param name="rowID">The row ID number, zero-based.</param>
+// <returns>0 if executed successfully or error code if failed.</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_Row_Ack(INT listID, INT rowID)
+	IF PLSSecGetPriv(PL_Sec_AlmAck) THEN
+		IF (LibAlmTable_GetAN(listID) > 0) THEN
+			RETURN TabAlmTable_Row_Ack(listID, rowID);
+		ELSE
+			// (for 7.20 TabAlarm compatibility)
+			RETURN TabAlarm_Row_Ack(listID, rowID);
+		END
+	END
+	RETURN 276;		// no privilege for operation
+END
+
+// <comments>
+// <summary>
+//		Disables the alarm displayed at the specified row.
+// </summary>
+// <param name="listID">The alarm list ID number, zero-based.</param>
+// <param name="rowID">The row ID number, zero-based.</param>
+// <returns>0 if executed successfully or error code if failed.</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_Row_Disable(INT listID, INT rowID)
+	IF (LibAlmTable_GetAN(listID) > 0) THEN
+		// iterate selected rows currently displayed in the alarm table genie
+		LibTable_TaskSelectedRows(listID, "_PLSAlmDsp_Row_DisableByRef", "^"#Ref^",1", TRUE);
+		RETURN 0;
+	ELSE
+		// (for 7.20 TabAlarm compatibility)
+		RETURN _PLSAlmDsp_Row_EnableOrDisable(listID, rowID, 1);
+	END
+END
+
+// <comments>
+// <summary>
+//		Enables the alarm displayed at the specified row.
+// </summary>
+// <param name="listID">The alarm list ID number, zero-based.</param>
+// <param name="rowID">The row ID number, zero-based.</param>
+// <returns>0 if executed successfully or error code if failed.</returns>
+// </comments>
+INT FUNCTION PLSAlmDsp_Row_Enable(INT listID, INT rowID)
+	IF (LibAlmTable_GetAN(listID) > 0) THEN
+		// iterate selected rows currently displayed in the alarm table genie
+		LibTable_TaskSelectedRows(listID, "_PLSAlmDsp_Row_DisableByRef", "^"#Ref^",0", TRUE);
+		RETURN 0;
+	ELSE
+		// (for 7.20 TabAlarm compatibility)
+		RETURN _PLSAlmDsp_Row_EnableOrDisable(listID, rowID, 0);
+	END
+END
+
+// <comments>
+// <summary>
+//		Callback function to alarm table selected row iteration function - used to 
+//		enable or disable one alarm currently displayed on screen.
+// </summary>
+// <param name="rowRef">The row reference in format of: record id | cluster</param>
+// <param name="disable">The required state of the alarm</param>
+// <returns>0 if executed successfully or error code if failed.</returns>
+// </comments>
+INT FUNCTION _PLSAlmDsp_Row_DisableByRef(STRING rowRef, INT disable = 0)
+	INT recNo = StrWord(rowRef);
+	STRING cluster = StrTrim(rowRef);
+
+	IF (disable) THEN
+		RETURN AlarmDisableRec(recNo, cluster);
+	ELSE
+		RETURN AlarmEnableRec(recNo, cluster);
+	END
+END
+
+// <comments>
+// <summary>
+//		Disables the alarm displayed at the specified row.
+// </summary>
+// <param name="listID">The alarm list ID number, zero-based.</param>
+// <param name="rowID">The row ID number, zero-based.</param>
+// <param name="disable">The required state of the alarm.</param>
+// <returns>0 if executed successfully or error code if failed.</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlmDsp_Row_EnableOrDisable(INT listID, INT rowID, INT disable = 0)
+	INT retValue = 274;
+	INT listAN;
+	INT recNo = -1;
+	INT rowStart;
+	INT rowEnd;
+
+	IF (listID < 0) THEN
+		RETURN retValue;
+	END
+
+	// check privilege
+	IF (NOT PLSSecGetPriv(PL_Sec_AlmConfig)) THEN
+		RETURN 276;
+	END
+
+	listAN = TabAlarm_GetAn(listID);
+	IF (listAN <= 0) THEN
+		RETURN retValue;
+	END
+
+	// get selected rows
+	rowStart = _PLSAlmDsp_GetSelectedRowStart(listID);
+	rowEnd = _PLSAlmDsp_GetSelectedRowEnd(listID, rowStart);
+	IF (rowStart < 0) OR (rowEnd < 0) THEN
+		RETURN retValue;
+	END
+	IF ((rowID < rowStart) OR (rowID > rowEnd)) THEN
+		// outside selection, work on this row only
+		rowStart = rowID;
+		rowEnd = rowID;
+	END
+
+	// action on all selected rows in backward order
+	// to minimize record shifting
+	rowID = rowEnd;
+	WHILE (rowID >= rowStart) DO
+		recNo = AlarmGetDsp(listAN + rowID, "RecNo");
+		IF (recNo >= 0) THEN
+//			retValue = PLSAlmDspSetRecEnable(recNo,
+//				AlarmGetDsp(listAN + rowID, "Tag"),
+//				AlarmGetDsp(listAN + rowID, "Custom1"), disable);
+			retValue = _PLSAlmDsp_Row_DisableByRef(IntToStr(recNo) + " " + AlarmGetDsp(listAN + rowID, "Cluster"), disable);
+		ELSE
+			// quit loop
+			rowID = rowStart;
+		END
+
+		rowID = rowID - 1;
+	END
+
+	RETURN retValue;
+END
+
+// <comments>
+// <summary>Gets the first selected row index</summary>
+// <param name="listID">ID of the list.</param>
+// <returns>Selected row Index</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlmDsp_GetSelectedRowStart(INT listID)
+	INT listAN = TabAlarm_GetAn(listID);
+	INT rowID = 0;
+
+	WHILE ("" <> AlarmGetDsp(listAn + rowID, "RecNo")) DO
+		IF TabAlarm_Row_Selected(listID, rowID) THEN
+			RETURN rowID;
+		END
+		rowID = rowID + 1;
+	END
+	RETURN -1;
+END
+
+// <comments>
+// <summary>Gets the last selected row index</summary>
+// <param name="listID">ID of the list.</param>
+// <param name="rowStart">Starting row index</param>
+// <returns>Selected row Index</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlmDsp_GetSelectedRowEnd(INT listID, INT rowStart)
+	INT listAN = TabAlarm_GetAn(listID);
+	INT rowID = rowStart;
+
+	IF (rowStart < 0) THEN
+		RETURN -1;
+	END
+	WHILE ("" <> AlarmGetDsp(listAN + rowID, "RecNo")) DO
+		IF NOT TabAlarm_Row_Selected(listID, rowID) THEN
+			RETURN rowID - 1;
+		END
+		rowID = rowID + 1;
+	END
+	RETURN rowID - 1;
+END
+
+// <comments>
+// <summary>
+//		Gets the Display Value of an Alarm row/column
+// </summary>
+// <remarks>
+//		22-Nov-2010
+//		Set up customizatoin to instruct the tab style alarm list to call this function
+//		for getting alarm field value.
+// </remarks>
+// <param name="listID">A unique handle number that identifies a particular list</param>
+// <param name="recordAN">A unique number that identifies a particular row AN</param>
+// <param name="sColumnField">A unique string that identifies a particular column Field</param>
+// <returns>Display Value of an Alarm row/column</returns>
+// </comments>
+STRING FUNCTION PLSAlarm_GetDispValue(INT listID, INT recordAN, STRING sColumnField)
+
+	STRING	sStateDesc;
+	STRING	sComment;
+	INT		nType;
+	INT		nCategory;
+	INT		nPosDescStart;
+	INT		nPosDescEnd		= -1;
+	INT		nPosStateStart;
+	INT		nPosStateEnd	= -1;
+	INT		nPosEquipStart;
+	INT		nPosEquipEnd	= -1;
+	INT		nPosUserStart;
+	INT		nPosUserEnd		= -1;
+	INT		nPosComment		= -1;
+	STRING	sValue			= "";
+	INT		nLen;
+	INT		nPos;
+	INT		nRawValue;
+	
+		
+	//  Added lines to differentiate different data in retrieved text values AND modify to match PLS 
+	//     alarm data formats
+
+	//**********************************************
+
+	// 5-Sep-08, get the customised StateDesc CSV STRING (OnText, OffText, AckText, ClearText) from the Desc field
+	// this will automatically display the correct state FOR analogue as well:
+	//	- IF alarm IS on, Desc field will contain the current alarm state, i.e. HIGH, HighHigh, Deviation, etc.
+	//	- IF alarm IS off, Desc field will still contain the OFF text. However, since no OFF text IS specified, it will be defaulted to Disappearance
+
+	SELECT CASE (StrLower(sColumnField))
+		CASE "timems"
+			nType = AlarmGetInfo(TabAlarm_GetAn(listID), 3);
+			SELECT CASE (nType)
+				CASE 10
+					sValue = AlarmGetDsp(recordAN, "OnTime");
+					nLen = StrLength(sValue);					
+					nPos = PLSAlmDspGetTimeMSPos(sValue);
+					IF (nLen <= 1) THEN 
+						sValue = "";
+					ELSE 
+						sValue = sValue + "." + StrPad(AlarmGetDsp(recordAN, "OnMilli"),"0",-3) + StrRight(sValue, nPos); 
+					END
+
+				CASE ELSE
+					sValue = AlarmGetDsp(recordAN, "Time");
+					nLen = StrLength(sValue);
+					nPos = PLSAlmDspGetTimeMSPos(sValue);
+					IF (nLen <= 1) THEN 
+						sValue = "";
+					ELSE 
+						sValue = StrLeft(sValue, nLen-nPos) + "." + StrPad(AlarmGetDsp(recordAN, "Millisec"),"0",-3) + StrRight(sValue, nPos);
+					END
+			END SELECT
+
+		CASE "ontime"
+			sValue = AlarmGetDsp(recordAN, "OnTime");
+			IF (StrLength(sValue) <= 1) THEN sValue = ""; END
+
+		CASE "ontimems"
+			sValue = AlarmGetDsp(recordAN, "OnTime");
+			nLen = StrLength(sValue);
+			nPos = PLSAlmDspGetTimeMSPos(sValue);
+			IF (nLen <= 1) THEN 
+				sValue = "";
+			ELSE
+				sValue = StrLeft(sValue, nLen-nPos) + "." + StrPad(AlarmGetDsp(recordAN, "OnMilli"),"0",-3) + StrRight(sValue, nPos);
+			END
+
+		CASE "offtime"
+			nCategory = _PLSAlarm_GetCategory(recordAN);
+			IF (_PLSALM_EVENT <> nCategory) THEN
+				sValue = AlarmGetDsp(recordAN, "OffTime");
+				IF (StrLength(sValue) <= 1) THEN sValue = ""; END
+			END
+
+		CASE "offtimems"
+			nCategory = _PLSAlarm_GetCategory(recordAN);
+			IF (_PLSALM_EVENT <> nCategory) THEN
+				sValue = AlarmGetDsp(recordAN, "OffTime");
+				nLen = StrLength(sValue);
+				nPos = PLSAlmDspGetTimeMSPos(sValue);
+				IF (nLen <= 1) THEN
+					sValue = "";
+				ELSE
+					sValue = StrLeft(sValue, nLen-nPos) + "." + StrPad(AlarmGetDsp(recordAN, "OffMilli"),"0",-3) + StrRight(sValue, nPos);
+				END
+			END
+
+		CASE "acktime"
+			sValue = AlarmGetDsp(recordAN, "AckTime");
+			IF (StrLength(sValue) <= 1) THEN sValue = ""; END
+
+		CASE "acktimems"
+			sValue = AlarmGetDsp(recordAN, "AckTime");
+			nLen = StrLength(sValue);
+			nPos = PLSAlmDspGetTimeMSPos(sValue);
+			IF (nLen <= 1) THEN 
+				sValue = "";
+			ELSE
+				sValue = StrLeft(sValue, nLen-nPos) + "." + StrPad(AlarmGetDsp(recordAN, "AckMilli"),"0",-3) + StrRight(sValue, nPos);
+			END
+
+		CASE "name"
+			sComment = _PLSAlarm_GetComment(recordAN);
+			nPosDescStart = _PLSAlarm_GetDescStart(sComment);
+			nPosDescEnd = _PLSAlarm_GetDescEnd(nPosDescStart, sComment);
+			IF (nPosDescEnd = -1) THEN nPosDescStart = -1; END
+
+			IF (nPosDescStart > -1) THEN
+				sValue = StrMid(sComment, nPosDescStart+3, nPosDescEnd-nPosDescStart-3);
+				sValue = PLSStrWordCSV(sValue, 1);
+			ELSE
+				sValue = AlarmGetDsp(recordAN, "Name");
+			END
+
+		CASE "desc"
+			sComment = _PLSAlarm_GetComment(recordAN);
+			nPosDescStart = _PLSAlarm_GetDescStart(sComment);
+			nPosDescEnd = _PLSAlarm_GetDescEnd(nPosDescStart, sComment);
+			IF (nPosDescEnd = -1) THEN nPosDescStart = -1; END
+
+			IF (nPosDescStart > -1) THEN
+				sValue = StrMid(sComment, nPosDescStart+3, nPosDescEnd-nPosDescStart-3);
+				sValue = PLSStrWordCSV(sValue, 2);
+			ELSE
+				sValue = AlarmGetDsp(recordAN, "Desc");
+			END
+
+		CASE "username"
+			sComment = _PLSAlarm_GetComment(recordAN);			
+			nPosUserStart = _PLSAlarm_GetUserStart(sComment);
+			nPosUserEnd = _PLSAlarm_GetUserEnd(nPosUserStart , sComment);
+			IF (nPosUserEnd = -1) THEN nPosUserStart = -1; END
+			
+			// 15-Oct-08 <U>UserName,FullName</U> tag support
+			IF (nPosUserStart > -1) THEN
+				sValue = StrMid(sComment, nPosUserStart+3, nPosUserEnd-nPosUserStart-3);
+				sValue = PLSStrWordCSV(sValue, 1);
+			ELSE
+				sValue = AlarmGetDsp(recordAN, "UserName");
+				IF (sValue = "System") THEN sValue = ""; END
+			END
+
+		CASE "fullname"
+			sComment = _PLSAlarm_GetComment(recordAN);			
+			nPosUserStart = _PLSAlarm_GetUserStart(sComment);
+			nPosUserEnd = _PLSAlarm_GetUserEnd(nPosUserStart , sComment);
+			IF (nPosUserEnd = -1) THEN nPosUserStart = -1; END
+			
+			// 15-Oct-08 <U>UserName,FullName</U> tag support
+			IF (nPosUserStart > -1) THEN
+				sValue = StrMid(sComment, nPosUserStart+3, nPosUserEnd-nPosUserStart-3);
+				sValue = PLSStrWordCSV(sValue, 2);
+			ELSE
+				sValue = AlarmGetDsp(recordAN, "FullName");
+				IF (sValue = "System") THEN sValue = ""; END
+			END
+
+		CASE "comment"
+			sComment = _PLSAlarm_GetComment(recordAN);	
+			nPosComment = _PLSAlarm_GetCommentStart(sComment);
+			IF (nPosComment > -1) THEN
+				sValue = "";
+				sValue = sValue + StrRight(sComment, StrLength(sComment)-nPosComment-4);
+			ELSE
+				sValue = sComment;
+			END
+
+		CASE "state", "sumstate"
+			nType = AlarmGetInfo(TabAlarm_GetAn(listID), 3);
+			sStateDesc = _PLSAlarm_GetStateDesc(recordAN, nType);
+			nCategory = _PLSAlarm_GetCategory(recordAN);
+			sComment = _PLSAlarm_GetComment(recordAN);
+			nPosStateStart = _PLSAlarm_GetStateStart(sComment);
+			nPosStateEnd = _PLSAlarm_GetStateEnd(nPosStateStart , sComment);
+			IF (nPosStateEnd = -1) THEN nPosStateStart = -1; END		
+		
+			IF (nPosStateStart > -1) THEN
+				sValue = StrMid(sComment, nPosStateStart+3, nPosStateEnd-nPosStateStart-3);
+			ELSE
+			// Removing OnTime==OffTime condition
+//				IF ((_PLSALM_EVENT = nCategory) OR
+//					(((AlarmGetDsp(recordAN, "OnTime") <> "0") AND
+//						(AlarmGetDsp(recordAN, "OnTime") = AlarmGetDsp(recordAN, "OffTime"))))) THEN
+				IF (_PLSALM_EVENT = nCategory) THEN
+					sValue = "Event";
+				ELSE
+					sValue = AlarmGetDsp(recordAN, "State");
+				END
+			END
+
+			// 4-Dec-08 Call PLSAlmDspGetDefaultStateText() to get default state text rather than using hard-coded values
+			IF (StrLength(sStateDesc) > 0) THEN
+				IF (sValue = "ON")  THEN sValue = PLSStrWordCSV(sStateDesc, 1, PLSAlmDspGetDefaultStateText(sValue)); END
+				IF (sValue = "OFF") THEN sValue = PLSStrWordCSV(sStateDesc, 2, PLSAlmDspGetDefaultStateText(sValue)); END
+				IF (sValue = "ACK") THEN sValue = PLSStrWordCSV(sStateDesc, 3, PLSAlmDspGetDefaultStateText(sValue)); END
+				IF (sValue = "CLE") THEN sValue = PLSStrWordCSV(sStateDesc, 4, PLSAlmDspGetDefaultStateText(sValue)); END
+				// 14-Nov-08 Interpret enable and disble text from the Desc field as well if defined
+				IF (sValue = "ENA") THEN sValue = PLSStrWordCSV(sStateDesc, 5, PLSAlmDspGetDefaultStateText(sValue)); END
+				IF (sValue = "DIS") THEN sValue = PLSStrWordCSV(sStateDesc, 6, PLSAlmDspGetDefaultStateText(sValue)); END
+			ELSE
+				sValue = PLSAlmDspGetDefaultStateText(sValue);
+			END
+
+		CASE "custom1"
+			sComment = _PLSAlarm_GetComment(recordAN);
+			nPosEquipStart = _PLSAlarm_GetEquipStart(sComment);
+			nPosEquipEnd = _PLSAlarm_GetEquipEnd(nPosEquipStart , sComment);
+			IF (nPosEquipEnd = -1) THEN nPosEquipStart = -1; END		
+		
+			IF (nPosEquipStart > -1) THEN
+				sValue = StrMid(sComment, nPosEquipStart+3, nPosEquipEnd-nPosEquipStart-3);
+			ELSE
+				sValue = AlarmGetDsp(recordAN, "Custom1");
+			END
+
+		CASE "custom2"
+			sComment = _PLSAlarm_GetComment(recordAN);
+			nPosDescStart = _PLSAlarm_GetDescStart(sComment);
+			nPosDescEnd = _PLSAlarm_GetDescEnd(nPosDescStart, sComment);
+			IF (nPosDescEnd = -1) THEN nPosDescStart = -1; END		
+		
+			sValue = AlarmGetDsp(recordAN, "Custom2");
+			// 18-Sep-09, treat events added by the user as PCBased as well which always has <D>...</D> in its comment field
+			IF ("PCBased" = StrLeft(sValue, 7)) OR
+				(nPosDescStart > -1) THEN
+				sValue = StrToLocalText("@(PCBased)");
+			ELSE
+				sValue = StrToLocalText("@(Onboard)");
+			END
+		
+		CASE "tsquality"
+			nRawValue = HighByte(StrToInt(AlarmGetDsp(recordAN, "Quality")));
+			
+			IF (nRawValue = 0) THEN
+				sValue = StrToLocalText("@(No Time Sync Information)");
+			ELSE
+				// check IF leap seconds are known
+				IF (0x80 = (0x80 BITAND nRawValue)) THEN
+					sValue = StrToLocalText("@(Leap Seconds Known - )");
+				ELSE
+					sValue = "";
+				END
+				// remove leap seconds bit
+				nRawValue = 0x7F BITAND nRawValue;
+				// determine enumeration
+				IF (0 <> (0x40 BITAND nRawValue)) THEN
+					sValue = sValue + StrToLocalText("@(Clock Failure)");
+				ELSE
+					IF (0 <> (0x20 BITAND nRawValue)) THEN
+						sValue = sValue + StrToLocalText("@(Clock Not Syncronized)");
+					ELSE
+						IF (nRawValue >= 31) THEN
+							sValue = sValue + StrToLocalText("@(Unspecified)");
+						ELSE
+							SELECT CASE (nRawValue)
+								CASE 25
+									sValue = sValue + StrToLocalText("@(Clock In Sync)") + " (>250ms)";
+								CASE 26
+									sValue = sValue + StrToLocalText("@(Clock In Sync)") + " (>50ms)";
+								CASE 27
+									sValue = sValue + StrToLocalText("@(Clock In Sync)");
+								CASE 28
+									sValue = sValue + StrToLocalText("@(TS Init)");
+								CASE 29
+									sValue = sValue + StrToLocalText("@(IO Channel Error)");
+								CASE 30
+									sValue = sValue + StrToLocalText("@(Invalid)");
+								CASE ELSE
+									sValue = sValue + StrToLocalText("@(Clock In Sync)") + " (<" + IntToStr(nRawValue * 10) + "ms)";
+							END SELECT
+						END
+					END
+				END
+			END
+
+		CASE "category"
+			sValue = _PLSAlarm_GetCategory(recordAN);
+			sValue = ConvertEnumToCategory(sValue);
+			IF StrLength(sValue) = 0 THEN
+				sValue = _PLSAlarm_GetCategory(recordAN);
+			END
+		CASE ELSE
+			sValue = AlarmGetDsp(recordAN, sColumnField);
+	END SELECT
+
+	RETURN sValue;
+END
+
+// <comments>
+// <summary>
+// Gets the comment field from a record
+// </summary>
+// <param name="recordAN">Record Animation Number.</param>
+// <returns>Value in the Comment field.</returns>
+// </comments>
+PRIVATE
+STRING FUNCTION _PLSAlarm_GetComment(INT recordAN)
+	RETURN AlarmGetDsp(recordAN, "Comment");
+END
+
+// <comments>
+// <summary>
+// Gets the Category field from a record
+// </summary>
+// <param name="recordAN">Record Animation Number</param>
+// <returns>Value in the Category field.</returns>
+// </comments>
+PRIVATE
+STRING FUNCTION _PLSAlarm_GetCategory(INT recordAN)
+	RETURN AlarmGetDsp(recordAN, "Category");
+END
+
+// <comments>
+// <summary>
+// Gets index of the End Description identifier
+// </summary>
+// <param name="nStart">Start index.</param>
+// <param name="sComment">Comment.</param>
+// <returns>Index of the End Description identifier.</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetDescEnd(INT nStart, STRING sComment)
+	INT nEnd = -1;
+	IF(nStart > -1) THEN
+		nEnd = StrSearch(0, sComment, "</D>");
+	END
+	RETURN nEnd;	
+END
+
+// <comments>
+// <summary>
+// Gets index of the End Equipment identifier.
+// </summary>
+// <param name="nStart">Start index.</param>
+// <param name="sComment">Comment.</param>
+// <returns>Index of the End Equipment identifier.</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetEquipEnd(INT nStart, STRING sComment)
+	INT nEnd = -1;
+	IF(nStart > -1) THEN
+		nEnd = StrSearch(0, sComment, "</E>");
+	END
+	RETURN nEnd;	
+END
+
+// <comments>
+// <summary>
+// Gets index of the End State identifier.
+// </summary>
+// <param name="nStart">Start index.</param>
+// <param name="sComment">Comment.</param>
+// <returns>Index of the End State identifier.</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetStateEnd(INT nStart, STRING sComment)
+	INT nEnd = -1;
+	IF(nStart > -1) THEN
+		nEnd = StrSearch(0, sComment, "</S>");
+	END
+	RETURN nEnd;	
+END
+
+// <comments>
+// <summary>
+// Gets index of the End User identifier.
+// </summary>
+// <param name="nStart">Start index.</param>
+// <param name="sComment">Comment.</param>
+// <returns>Index of the End user identifier.</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetUserEnd(INT nStart, STRING sComment)
+	INT nEnd = -1;
+	IF(nStart > -1) THEN
+		nEnd = StrSearch(0, sComment, "</U>");
+	END
+	RETURN nEnd;	
+END
+
+// <comments>
+// <summary>
+// Gets index of the Start Description identifier
+// </summary>
+// <param name="sComment">Comment</param>
+// <returns>Index of the Start Description identifier</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetDescStart(STRING sComment)
+	RETURN StrSearch(0, sComment, "<D>");
+END
+
+// <comments>
+// <summary>
+// Gets index of the Start Comment identifier.
+// </summary>
+// <param name="sComment">Comment</param>
+// <returns>Index of the Start Comment identifier</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetCommentStart(STRING sComment)
+	INT nPosComment = _PLSAlarm_GetDescEnd(_PLSAlarm_GetDescStart(sComment), sComment);
+	INT nPosStateEnd = _PLSAlarm_GetStateEnd(_PLSAlarm_GetStateStart(sComment), sComment);
+	INT nPosEquipEnd = _PLSAlarm_GetEquipEnd(_PLSAlarm_GetEquipStart(sComment), sComment);
+	INT nPosUserEnd = _PLSAlarm_GetUserEnd(_PLSAlarm_GetUserStart(sComment), sComment);
+
+	IF (nPosStateEnd > nPosComment) THEN nPosComment = nPosStateEnd; END
+	IF (nPosEquipEnd > nPosComment) THEN nPosComment = nPosEquipEnd; END
+	IF (nPosUserEnd > nPosComment) THEN nPosComment = nPosUserEnd; END
+	
+	RETURN nPosComment;
+END
+
+// <comments>
+// <summary>
+// Gets index of the Start Equipment identifier.
+// </summary>
+// <param name="sComment">Comment</param>
+// <returns>Index of the Start Equipment identifier</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetEquipStart(STRING sComment)
+	RETURN StrSearch(0, sComment, "<E>");
+END
+
+// <comments>
+// <summary>
+// Gets index of the Start State identifier.
+// </summary>
+// <param name="sComment">Comment</param>
+// <returns>Index of the Start State identifier</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetStateStart(STRING sComment)
+	RETURN StrSearch(0, sComment, "<S>");
+END
+
+// <comments>
+// <summary>
+// Gets index of the Start User identifier.
+// </summary>
+// <param name="sComment">Comment</param>
+// <returns>Index of the Start User identifier</returns>
+// </comments>
+PRIVATE
+INT FUNCTION _PLSAlarm_GetUserStart(STRING sComment)
+	RETURN StrSearch(0, sComment, "<U>");
+END
+
+// <comments>
+// <summary>
+// Gets the state description field from a record
+// </summary>
+// <param name="recordAN">Record Animation Number</param>
+// <param name="nType">Alarm Type</param>
+// <returns>Value in the State field.</returns>
+// </comments>
+PRIVATE
+STRING FUNCTION _PLSAlarm_GetStateDesc(INT recordAN, INT nType)
+	STRING sStateDesc = "";	
+	IF (nType = 10) THEN
+		sStateDesc = AlarmGetDsp(recordAN, "SumDesc");
+	ELSE
+		sStateDesc = AlarmGetDsp(recordAN, "Desc");
+	END
+	
+	RETURN sStateDesc;
+END

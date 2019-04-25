@@ -1,0 +1,198 @@
+//INT OldWid;
+//INT PA_Open;
+//INT InsertMode;
+
+
+FUNCTION PLSEquipShowDetail_ShowList_Vanpro(INT nPosX, INT nPosY)
+
+	ErrSet(1);
+
+	STRING	sEquip		= AssGetProperty("Equip", "TagName", 1);
+	INT		nParentWin	= WinNumber();
+	INT		nParentWinPosX;
+	INT		nTolerance = 10;
+
+	// 30-Apr-10 slap new window to right of equipment dialog
+	nParentWinPosX = StrToInt(PageInfo(14));
+	nPosX = nParentWinPosX + StrToInt(PageInfo(12));
+	nPosY = PageInfo(15);
+
+	// Display the equipment list page
+	PLSEquipListDisplay(sEquip, nPosX, nPosY, nParentWin)
+
+	// 30-Apr-10 slap new window to left of equipment dialog if does not fit screen
+	IF (WinNumber() <> nParentWin) THEN
+		IF (nPosX - StrToInt(PageInfo(14)) > nTolerance) THEN
+			nPosX = nParentWinPosX - StrToInt(PageInfo(12));
+			WinPos(nPosX, nPosY);
+		END
+	END
+END
+
+!Vanpro CHYU 2015/12/21 New
+FUNCTION PLSEquipShowDetail_ShowAlarmSP_Vanpro()
+
+	ErrSet(1);
+
+	STRING	sEquip	= AssGetProperty("Equip", "TagName", 1);
+	STRING	sType		= AssGetProperty("Type", "TagName", 1);
+	INT		nParentWin	= StrToInt(PLSDspPageInfo(8));
+	INT		nWin		= WinNumber();
+	INT		nSelection;
+	INT		nRows;
+
+	STRING sResolution = PLSDspGetScreenResolution();
+	
+	SELECT CASE sResolution
+		CASE "WUXGA"
+			nRows= 40;
+		CASE "XGA"
+			nRows= 21;
+		CASE "HD1080"
+			nRows= 38;
+		CASE ELSE
+			nRows= 32;
+	END SELECT
+	
+	IF (nParentWin > -1) THEN WinSelect(nParentWin); ELSE WinSelect(0); END
+
+	DspPopupMenu(0, StrToLocalText("@(Analog)"));
+	DspPopupMenu(0, StrToLocalText("@(Digital)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(All)"));
+	nSelection = DspPopupMenu(-1, "");
+	SELECT CASE nSelection
+	CASE 1
+		WinSelect(nWin);
+		WinFree();
+		PLSAlmSPDspPage(sEquip, "Analog", "", nRows);
+	CASE 2
+		WinSelect(nWin);
+		WinFree();
+		PLSAlmSPDspPage(sEquip, "Digital", "", nRows);
+	CASE 3
+		WinSelect(nWin);
+		WinFree();
+		PLSAlmSPDspPage(sEquip, "", "", nRows);
+	END SELECT
+END
+
+
+!GPT RTSchwinger 2016/09/30
+STRING FUNCTION ASS_IODevice_To_EquipName(STRING sIODevice,STRING sCluster="")
+    IF iDebug_On THEN
+        ErrLog("Init:ASS_IODevice_to_EquipName Params: sCluster: " + sCluster + " sIODevice: " + sIODevice);
+    END
+    STRING sEquip;
+    INT iSession;
+    INT iTBResult,iTBHandle;
+
+    //Get IODEVICE Name directly by browsing variable database
+    iSession = EquipBrowseOpen("IODEVICE=" + sIODevice, "NAME", sCluster);
+    IF iDebug_On THEN  
+        ErrLog("1.Equip_PopUp:ASS_IODevice_to_EquipName.IODevice.iSession: " + sIODevice + " Session: " + IntToStr(iSession));
+    END
+	      //IF iSession <> -1 THEN
+	      //Get IODEVICE Name by browsing variable database for TAFPREFIX
+	          iSession = EquipBrowseOpen("TAGPREFIX=" + sIODevice, "NAME", sCluster);
+	          IF iDebug_On THEN  
+                ErrLog("2.Equip_PopUp:ASS_IODevice_to_EquipName.TAGPREFIX.iSession: " + sIODevice + " Session: " + IntToStr(iSession));
+            END
+	          
+	          //IF iSession does not equal -1 retrieve equipment record from Database
+	          IF iSession <> -1 THEN
+		            iTBResult = EquipBrowseFirst(iSession);
+		            //IF iSession does not equal -1 retrieve equipment Name from record
+		            IF iTBResult <> -1 THEN
+		        	      sEquip = EquipBrowseGetField(iSession , "Name");
+		        	      IF iDebug_On THEN
+		        	          ErrLog("3.Equip_PopUp:ASS_IODevice_To_EquipName.sEquip:IF TBResult " + sEquip);
+		        	      END
+		        END
+		        iTBResult = EquipBrowseClose(iSession);
+	      END
+  
+  IF iDebug_On THEN
+				ErrLog("4.Equip_PopUp:ASS_IODevice_To_EquipName.sEquip: " + sEquip);
+	END
+	Ass(-2,4,"'" + sEquip + "'",0);
+	IF iDebug_On THEN
+				ErrLog("5.Equip_PopUp:ASS_IODevice_To_EquipName.sEquip: " + sEquip);
+	END
+	
+	RETURN sEquip;
+END
+
+FUNCTION EquipAssMetadataWin(STRING sPage,INT iMode=512+256+32+2)
+	INT x, y;
+	REAL ScaleX, ScaleY;
+	DspGetMouse(x, y);
+	PageTransformCoords(WinNumber(), x, y, x, y, 0);
+	ScaleX = StrToReal(PageInfo(16));
+	ScaleY = StrToReal(PageInfo(17));
+	x = x / ScaleX;
+	y = y / ScaleY;
+	INT RtnfromAss = AssMetadataWin(sPage,x,y,iMode);
+END
+
+FUNCTION EquipAssMetadataChainWin(STRING sPage,INT iMode=512+256+32+2)
+	INT	x, y;
+	REAL ScaleX, ScaleY;
+
+	DspGetMouse(x, y);
+	PageTransformCoords(WinNumber(), x, y, x, y, 0);
+	ScaleX = StrToReal(PageInfo(16));
+	ScaleY = StrToReal(PageInfo(17));
+	x = x / ScaleX;
+	y = y / ScaleY;
+	AssChainWin(sPage,x,y,iMode);
+END
+
+FUNCTION EquipShowAlarmList()
+INT iSleepTime = 100;
+INT iDisplayAn = 1000;
+STRING sEquip = AssGetProperty(4, "TagName", 1);
+	SleepMS(iSleepTime);
+	PLSEquipShowDetail_OnShown(iDisplayAn);
+	WinTitle(sEquip);
+END
+
+FUNCTION EquipShowAlarmList2(STRING sEquip)
+	Ass(-2,"4","'" + sEquip + "'",0);
+	AssChainPopUp("!EquipAlarmList");
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION EquipShowFuMenu()
+	INT iSelection;
+	!------------------------------------------------------
+	!                   Equip Menu
+	!------------------------------------------------------
+	DspPopupMenu(0, StrToLocalText("@(Show Trend)"));
+	DspPopupMenu(0, StrToLocalText("@(Show Alarm Setpoint)"));
+	!DspPopupMenu(0, StrToLocalText("@(Show Tag List)"));
+	DspPopupMenu(0, StrToLocalText("@(Page Print)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	iSelection = DspPopupMenu(-1,"");
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	SELECT CASE iSelection
+		CASE 1
+			PLSEquipShowDetail_ShowTrend_Vanpro();
+		CASE 2	
+			PLSEquipShowDetail_ShowAlarmSP_Vanpro();
+		CASE 3
+			!PLSEquipShowDetail_ShowList_Vanpro(0,0);
+			PagePrint();
+		CASE 4
+			AssChainPopUp("!EquipAlarmList");
+	END SELECT
+END
+
+FUNCTION EquipPageDisplay(STRING sEquip,STRING sCluster="",STRING sPage="Page",INT iMode=0)
+	sPage=EquipGetProperty(sEquip,sPage,iMode,sCluster);
+	IF sPage <> "" THEN
+		PageDisplay(sPage);
+	END
+END	
+

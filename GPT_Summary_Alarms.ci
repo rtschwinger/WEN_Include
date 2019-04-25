@@ -1,0 +1,118 @@
+FUNCTION SummaryAlarms()
+	INT hSumAlm;
+	INT iRecord;
+	INT iDevSeekErr;
+	INT iAlmCnt;			//number of alarms found
+	STRING sAlmTag;			//alarm tag
+	STRING sAlmFilter;		//equipment name
+	STRING sFilter;			
+	
+	ErrSet(1); // Enable user error checking
+	
+	// Open DBF
+	hSumAlm = DevOpen("Sum_Alm");
+	
+	IF hSumAlm <> -1 THEN
+		//Moves to first row on the dbf
+		iRecord = 1;
+		DevSeek(hSumAlm, iRecord);
+		
+		WHILE(1) DO
+			sAlmTag = DevGetField(hSumAlm , "TAG");
+			sAlmFilter = DevGetField(hSumAlm , "FILTER");
+			
+			//Count alarms meeting the following conditions:
+			//--The beginning of the alarm's equipment name matches that of the equipment being inspected
+			//--The alarm is not a summary alarm (ends in _SumAlm)
+			//--The alarm is NOT an Event (category 1004)
+			//--LOW and HIGH Alarms will not be included in the Summary Alarms
+			sFilter = "CUSTOM8=" + sAlmFilter + "* AND NOT CATEGORY=1004";
+			iAlmCnt = AlarmCount(1, sFilter, 1, 0); //last parameter must be 0 or alarms never come in
+			
+			IF(iAlmCnt > 0) THEN
+				TraceMsg("Alarm Count for : " + sFilter + " is : " + IntToStr(iAlmCnt));
+			    TagWrite("SUMMARY_DSK\" + sFilter + "\Int\St\SumAlm\Cnt",iAlmCnt);
+				TagWrite(sAlmTag, 1);
+			ELSE
+				TraceMsg("Alarm Count for : " + sFilter + " is : " + IntToStr(iAlmCnt));
+			    TagWrite("SUMMARY_DSK\" + sFilter + "\Int\St\SumAlm\Cnt",iAlmCnt);
+				TagWrite(sAlmTag, 0);
+			END
+			SleepMS(100);
+			
+			iRecord = iRecord + 1;
+			iDevSeekErr = DevSeek(hSumAlm , iRecord);
+			IF iDevSeekErr <> 0 THEN
+				iRecord = 1;
+				DevSeek(hSumAlm, iRecord);
+				Sleep(1);
+			END // END IF
+		END // END WHILE
+	END // END IF
+END //END FUNCTION
+
+
+FUNCTION SESummaryAlarms()
+
+    INT hSumAlm, iRecord, iDevSeekErr, iCommCnt, iWrnCnt, iAlmCnt, iSumAlm;
+    STRING sAlmTag, sAlmFilter, sFilter;
+
+    ErrSet(1); // Enable user error checking
+
+    // Open DBF
+    hSumAlm = DevOpen("SumAlm");
+
+    IF hSumAlm = 1 THEN
+        DebugMsg("Summary device not ready.");
+    END
+
+    IF hSumAlm <> -1 THEN
+        //Moves to first row on the dbf
+        iRecord = 1;
+        DevSeek(hSumAlm, iRecord);
+        WHILE(1) DO
+            sAlmTag = DevGetField(hSumAlm, "TAG");
+            sAlmFilter = DevGetField(hSumAlm, "FILTER");
+
+            //Check for COMMS FAILURE Alarm (EEHealth) and log count
+            sFilter = "EQUIPMENT=" + sAlmFilter + " AND (TAG=*EEHealth)";
+            iCommCnt = AlarmCount(11, sFilter, 1, 0);
+
+            //Check for MEDIUM AND LOW Alarms (Category '1002' AND '1003') and log count. Excludes EEHealth tags.
+            sFilter = "EQUIPMENT=" + sAlmFilter + " AND ((CATEGORY=1002) OR (CATEGORY=1003)) AND NOT (TAG=*EEHealth)";
+            iWrnCnt = AlarmCount(11, sFilter, 1, 0);
+
+            //Check for HIGH Alarms (Category '1001') and log count. Excludes EEHealth tags.
+            sFilter = "EQUIPMENT=" + sAlmFilter + " AND (CATEGORY=1001) AND NOT (TAG=*EEHealth)";
+            iAlmCnt = AlarmCount(11, sFilter, 1, 0);
+
+            //Create enumerated value based on counts
+            // Normal = 0
+            // Comms Loss = BITAND 1
+            // Warning = BITAND 2
+            // Fault = BITAND 4
+
+            iSumAlm = 0; //Reset summary alarm value
+
+            IF(iCommCnt > 0) THEN
+                iSumAlm = iSumAlm + 1;
+            END
+
+            IF(iWrnCnt > 0) THEN
+                iSumAlm = iSumAlm + 2;
+            END
+
+            IF(iAlmCnt > 0) THEN
+                iSumAlm = iSumAlm + 4;
+            END
+            TagWrite(sAlmTag, iSumAlm, 0, 1); //Synchronous Tag Write
+            iRecord = iRecord + 1; //Move to next record
+            iDevSeekErr = DevSeek(hSumAlm, iRecord);
+            IF iDevSeekErr <> 0 THEN //EOF
+                iRecord = 1;
+                DevSeek(hSumAlm, iRecord);
+                SleepMS(100);
+            END // END IF
+        END // END WHILE
+    END // END IF
+END //END FUNCTION

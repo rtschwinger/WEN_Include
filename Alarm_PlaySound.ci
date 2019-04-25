@@ -1,0 +1,22 @@
+!Alarm Sound Effects
+FUNCTION AlarmSound()
+	INT record;
+	STRING sName;
+	STRING sFile;
+	STRING sCitecParam;	
+	
+	ErrSet(1)
+	!Get the Name of the sound, the name is defined in the tag2 of the alarm tag
+	record = AlarmFirstTagRec("", "", "");
+	IF record <> -1 THEN
+		sName = AlarmGetFieldRec(record,"custom7");  ! original is Custom2
+		IF sName="" THEN	
+			sCitecParam=ParameterGet("Alarm","Sound",sFile=PathWave + "alarm.wav");
+		ELSE
+			sCitecParam=ParameterGet("Alarm","Sound","alarm.wav");
+		END
+	ELSE	
+		sCitecParam=ParameterGet("Alarm","Sound1","alarm.wav");
+	END
+	DspPlaySound(sCitecParam,0);
+END

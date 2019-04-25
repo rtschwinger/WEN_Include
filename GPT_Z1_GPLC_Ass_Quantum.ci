@@ -1,0 +1,651 @@
+!********************** PLC Quantum DIO **********************
+!GPT RTSchwinger 2016/08/14 New
+FUNCTION Quantum_ASS_DIO(STRING strTAG,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING sRev1="353",STRING sRev2="00")
+	!Dim
+	STRING sEquip,sTitle;
+	STRING sType1,sType2,sType3;
+	
+	!Init
+	strDevice=strTAG;								/* strTAG is the Device Name */
+	strCluster=sCluster;
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+
+	sEquip = strTAG;								/* Equip */
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strTAG + "'",0);
+	Ass(-2,"Title","'" + "Rack " + sRack + ",Slot " + sSlot + "'",0);
+	!------------------------------------------------------
+	!                   Type Ass
+	!------------------------------------------------------
+	Ass(-2,"Type1","'" + "140" + "'",0);
+	Ass(-2,"Type2","'" + sType + " " + sRev1 + " " + sRev2 + "'",0);
+	IF sType = "DDI" THEN Ass(-2,"Type3","'" + "DC INPUT MODULE" + "'",0); END
+	IF sType = "DDO" THEN Ass(-2,"Type3","'" + "DC OUTPUT MODULE" + "'",0); END
+	!------------------------------------------------------
+	!             Variable and Msg Ass
+	!------------------------------------------------------
+	Quantum_ASS_TAG(strTAG,strCluster,sRack,sSlot,sType,sRev1,sRev2);
+	Quantum_ASS_MSG(strTAG,strCluster,sRack,sSlot,sType,sRev1,sRev2);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	EquipAssMetadataWin("!qPLC_DIO_Popup");
+	WinTitle("PLC I/O Popup");
+END
+
+!********************** PLC Quantum Tag **********************
+FUNCTION Quantum_ASS_TAG(STRING strTAG,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING Rev1="353",STRING Rev2="00")
+	INT i;
+	STRING sItem;
+	
+	FOR i = 0 TO 31 DO
+		sItem = sCluster + strTAG + "\GGIO" + sRack + "\SLOT" + sSlot + "\" + sType + "[" + IntToStr(i) + "]";
+		Ass(-2,"Tag" + IntToStr(i+1),sItem,0);
+	END
+END
+
+!********************** PLC Quantum Msg **********************
+FUNCTION Quantum_ASS_MSG(STRING strTAG,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING Rev1="353",STRING Rev2="00")
+	STRING sFunction,sArgs;
+	
+	sFunction = strTAG + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+	sArgs = "";
+	TaskCall(sFunction, sArgs);
+END
+
+!********************** PLC Quantum Msg Call **********************
+FUNCTION Global_LO_PLC_Rack2_Slot3_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-a-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-a-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-a-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-a-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-a-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-a-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-a-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-a-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-1-a-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-a-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-a-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-a-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-a-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-a-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-a-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-a-2 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-a-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-a-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-1-a-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-1-a-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-1-a-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-1-a-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-1-a-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-1-a-3 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-1-b-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-1-b-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-1-b-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-1-b-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-1-b-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-1-b-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-1-b-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-1-b-1 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot4_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" +  " 1. ATP B1-1-b-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" +  " 2. ATP B1-1-b-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" +  " 3. ATP B1-1-b-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" +  " 4. ATP B1-1-b-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" +  " 5. ATP B1-1-b-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" +  " 6. ATP B1-1-b-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" +  " 7. ATP B1-1-b-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" +  " 8. ATP B1-1-b-2 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" +  " 9. ATP B1-1-b-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-b-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-b-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-b-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-b-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-b-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-b-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-b-3 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-c-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-c-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-1-c-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-1-c-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-1-c-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-1-c-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-1-c-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-1-c-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-1-c-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-1-c-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-1-c-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-1-c-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-1-c-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-1-c-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-1-c-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-1-c-2 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot5_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-c-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-c-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-c-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-c-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-c-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-c-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-c-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-c-3 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-1-d-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-d-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-d-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-d-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-d-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-d-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-d-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-d-1 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-d-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-d-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-1-d-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-1-d-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-1-d-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-1-d-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-1-d-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-1-d-2 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-c-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-c-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-c-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-c-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-c-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-c-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-c-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-c-3 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot6_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" +  " 1. ATP B1-2-a-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" +  " 2. ATP B1-2-a-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" +  " 3. ATP B1-2-a-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" +  " 4. ATP B1-2-a-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" +  " 5. ATP B1-2-a-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" +  " 6. ATP B1-2-a-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" +  " 7. ATP B1-2-a-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" +  " 8. ATP B1-2-a-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" +  " 9. ATP B1-2-a-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-2-a-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-2-a-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-2-a-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-2-a-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-2-a-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-2-a-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-2-a-2 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-2-a-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-2-a-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-2-a-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-2-a-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-2-a-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-2-a-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-a-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-a-3 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-b-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-b-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-b-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-b-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-b-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-b-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-b-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-b-1 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot7_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" +  " 1. ATP B1-2-b-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" +  " 2. ATP B1-2-b-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" +  " 3. ATP B1-2-b-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" +  " 4. ATP B1-2-b-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" +  " 5. ATP B1-2-b-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" +  " 6. ATP B1-2-b-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" +  " 7. ATP B1-2-b-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" +  " 8. ATP B1-2-b-2 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" +  " 9. ATP B1-2-b-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-2-b-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-2-b-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-2-b-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-2-b-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-2-b-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-2-b-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-2-b-3 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-2-c-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-2-c-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-2-c-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-2-c-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-2-c-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-2-c-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-c-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-c-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-c-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-c-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-c-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-c-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-c-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-c-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-c-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-c-2 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot8_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" +  " 1. GEN B1-1-a TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg2","'" +  " 2. GEN B1-1-b TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg3","'" +  " 3. GEN B1-1-c TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg4","'" +  " 4. GEN B1-1-d TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg5","'" +  " 5. GEN B1-2-a TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg6","'" +  " 6. GEN B1-2-b TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg7","'" +  " 7. GEN B1-2-c TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg8","'" +  " 8. SPARE" + "'",0);
+	Ass(-2,"Msg9","'" +  " 9. GLOBAL PLC DC24 PS1" + "'",0);
+	Ass(-2,"Msg10","'" + "10. GLOBAL PLC DC24 PS2" + "'",0);
+	Ass(-2,"Msg11","'" + "11. SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12. SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13. SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14. SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15. SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16. SPARE" + "'",0);
+	
+	Ass(-2,"Msg17","'" + "17. SPARE" + "'",0);
+	Ass(-2,"Msg18","'" + "18. SPARE" + "'",0);
+	Ass(-2,"Msg19","'" + "19. SPARE" + "'",0);
+	Ass(-2,"Msg20","'" + "20. SPARE" + "'",0);
+	Ass(-2,"Msg21","'" + "21. SPARE" + "'",0);
+	Ass(-2,"Msg22","'" + "22. SPARE" + "'",0);
+	Ass(-2,"Msg23","'" + "23. SPARE" + "'",0);
+	Ass(-2,"Msg24","'" + "24. SPARE" + "'",0);
+	Ass(-2,"Msg25","'" + "25. SPARE" + "'",0);
+	Ass(-2,"Msg26","'" + "26. SPARE" + "'",0);
+	Ass(-2,"Msg27","'" + "27. SPARE" + "'",0);
+	Ass(-2,"Msg28","'" + "28. SPARE" + "'",0);
+	Ass(-2,"Msg29","'" + "29. SPARE" + "'",0);
+	Ass(-2,"Msg30","'" + "30. SPARE" + "'",0);
+	Ass(-2,"Msg31","'" + "31. SPARE" + "'",0);
+	Ass(-2,"Msg32","'" + "32. SPARE" + "'",0);	
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot9_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-a-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-a-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-a-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-a-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-a-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-a-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-b-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-b-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-1-b-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-b-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-b-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-b-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-c-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-c-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-c-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-c-2 IR Source Transfer Inhibit Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-c-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-c-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-1-d-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-1-d-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-1-d-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-1-d-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-c-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-c-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-a-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-a-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-a-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-a-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-a-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-a-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-b-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-b-1 IR Source Transfer Inhibit Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack2_Slot10_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-2-b-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-2-b-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-2-b-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-2-b-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-2-c-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-2-c-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-2-c-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-2-c-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. SPARE" + "'",0);
+	Ass(-2,"Msg10","'" + "10. SPARE" + "'",0);
+	Ass(-2,"Msg11","'" + "11. SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12. SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13. SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14. SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15. SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16. SPARE" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. SPARE" + "'",0);
+	Ass(-2,"Msg18","'" + "18. SPARE" + "'",0);
+	Ass(-2,"Msg19","'" + "19. SPARE" + "'",0);
+	Ass(-2,"Msg20","'" + "20. SPARE" + "'",0);
+	Ass(-2,"Msg21","'" + "21. SPARE" + "'",0);
+	Ass(-2,"Msg22","'" + "22. SPARE" + "'",0);
+	Ass(-2,"Msg23","'" + "23. SPARE" + "'",0);
+	Ass(-2,"Msg24","'" + "24. SPARE" + "'",0);
+	Ass(-2,"Msg25","'" + "25. SPARE" + "'",0);
+	Ass(-2,"Msg26","'" + "26. SPARE" + "'",0);
+	Ass(-2,"Msg27","'" + "27. SPARE" + "'",0);
+	Ass(-2,"Msg28","'" + "28. SPARE" + "'",0);
+	Ass(-2,"Msg29","'" + "29. SPARE" + "'",0);
+	Ass(-2,"Msg30","'" + "30. SPARE" + "'",0);
+	Ass(-2,"Msg31","'" + "31. SPARE" + "'",0);
+	Ass(-2,"Msg32","'" + "32. SPARE" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot3_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-e-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-e-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-e-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-e-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-e-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-e-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-e-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-e-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-1-e-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-e-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-e-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-e-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-e-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-e-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-e-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-e-2 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-e-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-e-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-1-e-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-1-e-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-1-e-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-1-e-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-1-e-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-1-e-3 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-1-f-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-1-f-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-1-f-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-1-f-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-1-f-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-1-f-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-1-f-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-1-f-1 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot4_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-f-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-f-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-f-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-f-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-f-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-f-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-f-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-f-2 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-1-f-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-f-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-f-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-f-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-f-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-f-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-f-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-f-3 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-g-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-g-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-1-g-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-1-g-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-1-g-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-1-g-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-1-g-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-1-g-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-1-g-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-1-g-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-1-g-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-1-g-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-1-g-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-1-g-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-1-g-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-1-g-2 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot5_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-g-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-g-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-g-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-g-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-g-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-g-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-g-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-g-3 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-2-d-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-2-d-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-2-d-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-2-d-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-2-d-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-2-d-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-2-d-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-2-d-1 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-2-d-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-2-d-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-2-d-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-2-d-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-2-d-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-2-d-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-d-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-d-2 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-d-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-d-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-d-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-d-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-d-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-d-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-d-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-d-3 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot6_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-2-e-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-2-e-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-2-e-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-2-e-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-2-e-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-2-e-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-2-e-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-2-e-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-2-e-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-2-e-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-2-e-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-2-e-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-2-e-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-2-e-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-2-e-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-2-e-2 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-2-e-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-2-e-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-2-e-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-2-e-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-2-e-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-2-e-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-e-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-e-3 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-f-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-f-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-f-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-f-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-f-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-f-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-f-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-f-1 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot7_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-2-f-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-2-f-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-2-f-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-2-f-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-2-f-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-2-f-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-2-f-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-2-f-2 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-2-f-3 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-2-f-3 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-2-f-3 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-2-f-3 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-2-f-3 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-2-f-3 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-2-f-3 System Normal Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-2-f-3 Normal Source Available Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-2-g-1 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-2-g-1 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-2-g-1 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-2-g-1 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-2-g-1 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-2-g-1 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-g-1 System Normal Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-g-1 Normal Source Available Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-g-2 Normal Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-g-2 Normal Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-g-2 IR Breaker Status (b)" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-g-2 IR Breaker Status (a)" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-g-2 IR Source Preferred Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-g-2 IR Source Request Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-g-2 System Normal Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-g-2 Normal Source Available Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot8_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. GEN B1-1-e TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. GEN B1-1-f TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. GEN B1-1-g TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. GEN B1-2-d TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. GEN B1-2-e TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. GEN B1-2-f TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. GEN B1-2-g TROUBLE CONTACT" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. SPARE" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. SPARE" + "'",0);
+	Ass(-2,"Msg10","'" + "10. SPARE" + "'",0);
+	Ass(-2,"Msg11","'" + "11. SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12. SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13. SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14. SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15. SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16. SPARE" + "'",0);
+	
+	Ass(-2,"Msg17","'" + "17. SPARE" + "'",0);
+	Ass(-2,"Msg18","'" + "18. SPARE" + "'",0);
+	Ass(-2,"Msg19","'" + "19. SPARE" + "'",0);
+	Ass(-2,"Msg20","'" + "20. SPARE" + "'",0);
+	Ass(-2,"Msg21","'" + "21. SPARE" + "'",0);
+	Ass(-2,"Msg22","'" + "22. SPARE" + "'",0);
+	Ass(-2,"Msg23","'" + "23. SPARE" + "'",0);
+	Ass(-2,"Msg24","'" + "24. SPARE" + "'",0);
+	Ass(-2,"Msg25","'" + "25. SPARE" + "'",0);
+	Ass(-2,"Msg26","'" + "26. SPARE" + "'",0);
+	Ass(-2,"Msg27","'" + "27. SPARE" + "'",0);
+	Ass(-2,"Msg28","'" + "28. SPARE" + "'",0);
+	Ass(-2,"Msg29","'" + "29. SPARE" + "'",0);
+	Ass(-2,"Msg30","'" + "30. SPARE" + "'",0);
+	Ass(-2,"Msg31","'" + "31. SPARE" + "'",0);
+	Ass(-2,"Msg32","'" + "32. SPARE" + "'",0);	
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot9_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-1-e-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-1-e-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-1-e-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-1-e-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-1-e-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-1-e-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-1-f-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-1-f-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. ATP B1-1-f-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg10","'" + "10. ATP B1-1-f-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg11","'" + "11. ATP B1-1-f-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg12","'" + "12. ATP B1-1-f-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg13","'" + "13. ATP B1-1-g-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg14","'" + "14. ATP B1-1-g-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg15","'" + "15. ATP B1-1-g-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg16","'" + "16. ATP B1-1-g-2 IR Source Transfer Inhibit Status" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. ATP B1-1-g-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg18","'" + "18. ATP B1-1-g-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg19","'" + "19. ATP B1-2-d-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg20","'" + "20. ATP B1-2-d-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg21","'" + "21. ATP B1-2-d-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg22","'" + "22. ATP B1-2-d-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg23","'" + "23. ATP B1-2-d-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg24","'" + "24. ATP B1-2-d-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg25","'" + "25. ATP B1-2-e-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg26","'" + "26. ATP B1-2-e-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg27","'" + "27. ATP B1-2-e-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg28","'" + "28. ATP B1-2-e-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg29","'" + "29. ATP B1-2-e-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg30","'" + "30. ATP B1-2-e-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg31","'" + "31. ATP B1-2-f-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg32","'" + "32. ATP B1-2-f-1 IR Source Transfer Inhibit Status" + "'",0);
+END
+
+FUNCTION Global_LO_PLC_Rack3_Slot10_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1. ATP B1-2-f-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg2","'" + "  2. ATP B1-2-f-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg3","'" + "  3. ATP B1-2-f-3 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg4","'" + "  4. ATP B1-2-f-3 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg5","'" + "  5. ATP B1-2-g-1 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg6","'" + "  6. ATP B1-2-g-1 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg7","'" + "  7. ATP B1-2-g-2 Bypass Transfer Time Delay Status" + "'",0);
+	Ass(-2,"Msg8","'" + "  8. ATP B1-2-g-2 IR Source Transfer Inhibit Status" + "'",0);
+	Ass(-2,"Msg9","'" + "  9. SPARE" + "'",0);
+	Ass(-2,"Msg10","'" + "10. SPARE" + "'",0);
+	Ass(-2,"Msg11","'" + "11. SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12. SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13. SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14. SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15. SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16. SPARE" + "'",0);
+	!Msg17~32
+	Ass(-2,"Msg17","'" + "17. SPARE" + "'",0);
+	Ass(-2,"Msg18","'" + "18. SPARE" + "'",0);
+	Ass(-2,"Msg19","'" + "19. SPARE" + "'",0);
+	Ass(-2,"Msg20","'" + "20. SPARE" + "'",0);
+	Ass(-2,"Msg21","'" + "21. SPARE" + "'",0);
+	Ass(-2,"Msg22","'" + "22. SPARE" + "'",0);
+	Ass(-2,"Msg23","'" + "23. SPARE" + "'",0);
+	Ass(-2,"Msg24","'" + "24. SPARE" + "'",0);
+	Ass(-2,"Msg25","'" + "25. SPARE" + "'",0);
+	Ass(-2,"Msg26","'" + "26. SPARE" + "'",0);
+	Ass(-2,"Msg27","'" + "27. SPARE" + "'",0);
+	Ass(-2,"Msg28","'" + "28. SPARE" + "'",0);
+	Ass(-2,"Msg29","'" + "29. SPARE" + "'",0);
+	Ass(-2,"Msg30","'" + "30. SPARE" + "'",0);
+	Ass(-2,"Msg31","'" + "31. SPARE" + "'",0);
+	Ass(-2,"Msg32","'" + "32. SPARE" + "'",0);
+END

@@ -1,0 +1,434 @@
+!********************** REF62020 Power Relay **********************
+! GPT RTS 2016/09/04
+FUNCTION Relay_ASS_REF620(STRING strTAG,STRING sCluster,STRING sPRType)
+	!Dim
+	STRING sType,sEquip;
+	ErrLog("strTAG: " + strTAG);
+	sType = StrRight(sType,6);
+	ErrLog("sType: " + sType);
+	!Init
+	strDevice=strTAG;								/* strTAG is the Device Name */
+  strCluster=sCluster;
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+	sType = "REF620";									/* Type */
+	sEquip = strTAG;								/* Equip */
+	
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	!strTAG = EquipGetProperty(sEquip,"IODevice",0,sCluster)
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strTAG + "'",0);
+	ASS_IODevice_To_EquipName(strTAG,sCluster);
+	!------------------------------------------------------
+	!        Variable and Alarm and Trend Tags Ass
+	!------------------------------------------------------
+	Equip_ASS_VCB(strTAG,strCluster,sPRType);
+END
+
+! GPT RTS 2016/09/04
+FUNCTION Relay_REF620_EquipPopup_L(STRING strTAG,STRING sCluster,STRING sPRType)
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Relay_ASS_REF620(strTAG,sCluster,sPRType);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	SELECT CASE sPRType
+		CASE "Tie"
+			EquipAssMetadataWin("!VCB_REF620_TIE");
+		CASE "Incomer" 
+			EquipAssMetadataWin("!VCB_REF620_INCOMER");
+		CASE "Feeder"
+			EquipAssMetadataWin("!VCB_REF620_FEEDER");
+	END SELECT
+
+	!---------------------------------------------
+END
+
+! GPT RTS 2016/09/04
+FUNCTION Relay_REF620_EquipPopup_R(STRING strTAG,STRING sCluster,STRING sPRType)
+	STRING sType = "REF620";
+	STRING sPage;
+	INT iSelection;
+	
+	SELECT CASE sPRType
+		CASE "Tie"
+			sPage = "TIE";
+		CASE "Incomer"
+			sPage = "INCOMER";
+		CASE "Feeder"
+			sPage = "FEEDER";
+	END SELECT
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Relay_ASS_REF620(strTAG,sCluster,sPRType);
+	!------------------------------------------------------
+	!                   Equip Menu
+	!------------------------------------------------------
+	DspPopupMenu(0, StrToLocalText("@(Current)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+	DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	iSelection = DspPopupMenu(-1,"");
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	SELECT CASE iSelection
+		CASE 1	
+			sPage = "Current"
+		CASE 2
+			Get_UserManual("Relay_REF620");
+		CASE 3
+			Get_Drawing("Relay_REF620");
+		CASE 4
+			AssChainPopUp("!EquipAlarmList");
+	END SELECT
+	
+	IF sPage <> "" THEN
+	  IF iDebug_On THEN
+	     ErrLog("REF620_Popup:" + "!Relay_" + sType + "_" + sPage);
+	  END
+		EquipAssMetadataWin("!VCB_" + sType + "_" + sPage);
+	END
+END
+
+! GPT RTS 2016/09/04
+FUNCTION Relay_REF620_EquipPopup_M(STRING strTAG,STRING sCluster,STRING sPRType)
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Relay_ASS_REF620(strTAG,sCluster,sPRType);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	EquipAssMetadataWin("!VCB_REF620_SIM");
+	!---------------------------------------------
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION Equip_ASS_VCB(STRING strTAG,STRING strCluster,STRING sPRType)
+	STRING sHTR = "HTR";
+	STRING sRPT = "RPT";
+  
+  SELECT CASE sPRType
+		CASE "Tie"
+				!@(REF 620 87B Bus Differential)
+				AssIEC_VCB(strTAG,"BusDiff",strCluster);
+				!@(Breaker Status - Closed)
+				AssIEC_VCB(strTAG,"CB_Closed",strCluster);
+				!@(Breaker Trip Status)
+				AssIEC_VCB(strTAG,"CB_Trip",strCluster);
+		CASE "Incomer" 
+				!Only Used by the Main Incomer
+				!@(Active Energy Out of the Load)
+				AssIEC(strTAG,"TotWh",strCluster);
+				!@(Power Factor)
+				AssIEC(strTAG,"PFTOT",strCluster);
+				!@(Frequency)
+				AssIEC(strTAG,"HZ",strCluster);
+				!@(Active Power)
+				AssIEC(strTAG,"WTOT",strCluster);
+				!@(Reactive Power)
+				AssIEC(strTAG,"VARTOT",strCluster);
+				!@(Apparent Power)
+				AssIEC(strTAG,"VATOT",strCluster);
+				!@(Voltage A-B)
+				AssIEC(strTAG,"VAB",strCluster);
+				!@(Voltage B-C)
+				AssIEC(strTAG,"VBC",strCluster);
+				!@(Voltage C-A)
+				AssIEC(strTAG,"VCA",strCluster);
+				!@(REF 620 Current A)
+				AssIEC_VCB(strTAG,"IA",strCluster);
+				!@(REF 620 Current B)
+				AssIEC_VCB(strTAG,"IB",strCluster);
+				!@(REF 620 Current C)
+				AssIEC_VCB(strTAG,"IC",strCluster);
+				!@(REF 620 Current Neutral)
+				AssIEC_VCB(strTAG,"IN",strCluster);
+				!@(REF 620 Current Avg)
+				AssIEC_VCB(strTAG,"IAVG",strCluster);
+				!@(REF 620 Demand Current A)
+				AssIEC_VCB(strTAG,"IADmd",strCluster);
+				!@(REF 620 Demand Current B)
+				AssIEC_VCB(strTAG,"IBDmd",strCluster);
+				!@(REF 620 Demand Current C)
+				AssIEC_VCB(strTAG,"ICDmd",strCluster);
+				!@(Breaker Status - Closed)
+				AssIEC_VCB(strTAG,"CB_Closed",strCluster);
+				!@(Breaker Trip Status)
+				AssIEC_VCB(strTAG,"CB_Trip",strCluster);
+				!@(REF 620 87B Bus Differential)
+				AssIEC_VCB(strTAG,"BusDiff",strCluster);
+				!@(REF 620 Current N)
+				AssIEC_VCB(strTAG,"Neut",strCluster);
+				!@(REF 620 50/51)
+				AssIEC_VCB(strTAG,"R50",strCluster);
+				!@(REF 620 50/51N)
+				AssIEC_VCB(strTAG,"R50N",strCluster);	
+				!@(REF 620 High High Temp Alarm)
+				AssIEC_VCB(strTAG,"TempHH",strCluster);	
+				!@(REF 620 Door Open Alarm)
+				AssIEC_VCB(strTAG,"DoorOpen",strCluster);
+		CASE "Feeder"
+				!These are used by all Feeder Relays 
+				!@(REF 620 Current A)
+				AssIEC_VCB(strTAG,"IA",strCluster);
+				!@(REF 620 Current B)
+				AssIEC_VCB(strTAG,"IB",strCluster);
+				!@(REF 620 Current C)
+				AssIEC_VCB(strTAG,"IC",strCluster);
+				!@(REF 620 Current N)
+				AssIEC_VCB(strTAG,"Neut",strCluster);
+				!@(REF 620 Current Avg)
+				AssIEC_VCB(strTAG,"IAVG",strCluster);
+				!@(REF 620 Demand Current A)
+				AssIEC_VCB(strTAG,"IADmd",strCluster);
+				!@(REF 620 Demand Current B)
+				AssIEC_VCB(strTAG,"IBDmd",strCluster);
+				!@(REF 620 Demand Current C)
+				AssIEC_VCB(strTAG,"ICDmd",strCluster);
+				!@(Breaker Status - Closed)
+				AssIEC_VCB(strTAG,"CB_Closed",strCluster);
+				!@(Breaker Trip Status)
+				AssIEC_VCB(strTAG,"CB_Trip",strCluster);
+				!@(REF 620 87B Bus Differential)
+				AssIEC_VCB(strTAG,"BusDiff",strCluster);
+				!@(REF 620 50/51)
+				AssIEC_VCB(strTAG,"R50",strCluster);
+				!@(REF 620 50/51N)
+				AssIEC_VCB(strTAG,"R50N",strCluster);	
+				!@(REF 620 High High Temp Alarm)
+				AssIEC_VCB(strTAG,"TempHH",strCluster);	
+				!@(REF 620 Door Open Alarm)
+				AssIEC_VCB(strTAG,"DoorOpen",strCluster);
+	END SELECT
+
+
+	!@(Breaker Trip Status)
+	AssIEC_VCB(strTAG,"Trip_Tag",strCluster);
+	!@(Breaker Trip Status)
+	AssIEC_VCB(strTAG,"RO_Tag",strCluster);
+	!@(Breaker Trip Status)
+	AssIEC_VCB(strTAG,"RI_Tag",strCluster);
+	!@(Breaker Trip Status)
+	AssIEC_VCB(strTAG,"TP_Tag",strCluster);
+	!@(Breaker Trip Status)
+	AssIEC_VCB(strTAG,"OC_Tag",strCluster);
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION AssIEC_VCB(STRING sIODevice,STRING sItemTag,STRING sCluster,STRING sHTR="")
+STRING sItem,sTag;
+STRING sRPT = "RPT";
+
+SELECT CASE sItemTag
+	
+	!@(External Equipment Health)	
+	CASE "COMM","\LPHD1\EEHealth1"	
+		sItem = "COMM";
+		sTag = "\LPHD1\EEHealth1";
+	!Only Used by the Main Incomer	
+	!@(Active Energy)	
+	CASE "TotWh","\MMTR1\TotWh"	
+		sItem = "TotWh";
+		sTag = "\MMTR1\TotWh";
+	!@(Power Factor)	
+	CASE "PFTOT","\MMXU1\TotPF"	
+		sItem = "PFTOT";
+		sTag = "\MMXU1\TotPF";
+	!@(Frequency)	
+	CASE "HZ","\MMXU1\Hz"	
+		sItem = "HZ";
+		sTag = "\MMXU1\Hz";
+	!@(Active Power)	
+	CASE "WTOT","\MMXU1\TotW"	
+		sItem = "WTOT";
+		sTag = "\MMXU1\TotW";
+	!@(Reactive Power)	
+	CASE "VARTOT","\MMXU1\TotVAr"	
+		sItem = "VARTOT";
+		sTag = "\MMXU1\TotVAr";
+	!@(Apparent Power)	
+	CASE "VATOT","\MMXU1\TotVA"	
+		sItem = "VATOT";
+		sTag = "\MMXU1\TotVA";
+	!@(Voltage A-B)	
+	CASE "VAB","\MMXU1\PPV\phsAB"	
+		sItem = "VAB";
+		sTag = "\MMXU1\PPV\phsAB";
+	!@(Voltage B-C)	
+	CASE "VBC","\MMXU1\PPV\phsBC"	
+		sItem = "VBC";
+		sTag = "\MMXU1\PPV\phsBC";
+	!@(Voltage C-A)	
+	CASE "VCA","\MMXU1\PPV\phsCA"	
+		sItem = "VCA";
+		sTag = "\MMXU1\PPV\phsCA";
+	!@(Voltage L-L Avg)	
+	CASE "VLLAVG","\MMXU1\PPV\zavg"	
+		sItem = "VLLAVG";
+		sTag = "\MMXU1\PPV\zavg";
+	!These are used by all Relays
+	!@(Current Avg)	
+	CASE "IAVG","\MMXU1\A\zavg"	
+		sItem = "IAVG";
+		sTag = "\MMXU1\A\zavg";
+	!@(Current A)	
+	CASE "IA","\MMXU1\A\phsA"	
+		sItem = "IA";
+		sTag = "\MMXU1\A\phsA";
+	!@(Current B)	
+	CASE "IB","\MMXU1\A\phsB"	
+		sItem = "IB";
+		sTag = "\MMXU1\A\phsB";
+	!@(Current C)	
+	CASE "IC","\MMXU1\A\phsC"	
+		sItem = "IC";
+		sTag = "\MMXU1\A\phsC";	  	
+	!@(Demand Current Average)	
+	CASE "DmdIAVG","\MMXU1\A\Dmd\zavg"	
+		sItem = "DmdIAVG";
+		sTag = "\MMXU1\A\Dmd\zavg";
+	!@(Demand Current A)	
+	CASE "IADmd","\MMXU1\A\Dmd\phsA"	
+		sItem = "IADmd";
+		sTag = "\MMXU1\A\Dmd\phsA";
+	!@(Demand Current B)	
+	CASE "IBDmd","\MMXU1\A\Dmd\phsB"	
+		sItem = "IBDmd";
+		sTag = "\MMXU1\A\Dmd\phsB";
+	!@(Demand Current C)	
+	CASE "ICDmd","\MMXU1\A\Dmd\phsC"	
+		sItem = "ICDmd";
+		sTag = "\MMXU1\A\Dmd\phsC";	  	
+	!@(Current N)	
+	CASE "IN","\MMXU1\A\neut"	
+		sItem = "IN";
+		sTag = "\MMXU1\A\neut";
+	!@(Breaker Status)	
+	CASE "CB_Status","\XCBR1\Pos"	
+		sItem = "CB_Status";
+		sTag = "\XCBR1\Pos";
+	!@(Breaker Status - Closed)
+	CASE "CB_Closed","\XCBR1\Pos_On"	
+		sItem = "CB_Closed";
+		sTag = "\XCBR1\Pos_On";
+	!@(Breaker Status - Open)
+	CASE "CB_Open","\XCBR1\Pos_Off"	
+		sItem = "CB_Open";
+		sTag = "\XCBR1\Pos_Off";
+	!@(Breaker Trip Status)
+	CASE "CB_Trip","\PTRC1\Tr"	
+		sItem = "CB_Trip";
+		sTag = "\PTRC1\Tr";
+	!@(REF 620 BUS Differential)
+	CASE "BusDiff","\XCBR1\BUS\Differential"	
+		sItem = "BusDiff";
+		sTag = "\XCBR1\BUS\Differential";
+	!@(REF 620 50/51)
+	CASE "R50","\A51_PTOC1\Op"	
+		sItem = "R50";
+		sTag = "\A51_PTOC1\Op";
+	!@(REF 620 50N/51N)
+	CASE "R50N","\A51N_PTOC1\Op"		
+		sItem = "R50N";
+		sTag = "\A51N_PTOC1\Op";
+  !@(REF 620 High High Temp Alarm)
+	CASE "TempHH","\XFMR\HH\TempAlm"		
+		sItem = "TempHH";
+		sTag = "\XFMR\HH\TempAlm";
+  !@(REF 620 Door Open Alarm)
+	CASE "DoorOpen","\LPDH\DoorAlm\Op"		
+		sItem = "DoorOpen";
+		sTag = "\LPDH\DoorAlm\Op";
+	!@(Breaker Simulate Trip Status)
+	CASE "Trip_Tag","\PTRC1\Tr"	
+		sItem = "Trip_Tag";
+		sTag = "\PTRC1\Tr";
+	!@(Breaker Simulate Open/Close Status)	
+	CASE "OC_Tag","\XCBR1\Pos_On"	
+		sItem = "OC_Tag";
+		sTag = "\XCBR1\Pos_On";
+	!@(Breaker Simulate Racked Out Status)
+	CASE "RO_Tag","\XCBR1\Pos_On"	
+		sItem = "RO_Tag";
+		sTag = "\XCBR1\Pos_On";
+	!@(Breaker Simulate Racked In Status)	
+	CASE "RI_Tag","\XCBR1\Pos_On"	
+		sItem = "RI_Tag";
+		sTag = "\XCBR1\Pos_On";
+	!@(Breaker Simulate Test Position Status)	
+	CASE "TP_Tag","\XCBR1\Pos_On"	
+		sItem = "TP_Tag";
+		sTag = "\XCBR1\Pos_On";
+	!@(Other)
+	CASE ELSE
+  		sItem = sItemTag;
+		  sTag = sItemTag;
+	END SELECT
+	
+	INT iAssReturn = 0;
+	 
+	iAssReturn = Ass(-2,sItem,sCluster + sIODevice + sTag,0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("VCB Assign item : " + sItem );
+				ErrLog("VCB Assign IODevice : " + sIODevice );
+				ErrLog("VCB Assign TAG : " + sTag );
+				ErrLog("VCB Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem,"'" + sIODevice + sTag + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("VCB A_Assign item : " + sItem );
+				ErrLog("VCB A_Assign IODevice : " + sIODevice );
+				ErrLog("VCB A_Assign TAG : " + sTag );
+				ErrLog("VCB A_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_On",sCluster + sIODevice + sTag + strON,0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("VCB Assign_On item : " + sItem );
+				ErrLog("VCB Assign_On IODevice : " + sIODevice );
+				ErrLog("VCB Assign_On TAG : " + sTag );
+				ErrLog("VCB Assign_On Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_Dis",sCluster + sIODevice + sTag + strDIS,0);
+		IF iAssReturn THEN
+		 	IF iDebug_On THEN
+		 	  ErrLog("--------------------------------------------" );
+				ErrLog("VCB Assign_Dis item : " + sItem );
+				ErrLog("VCB Assign_Dis IODevice : " + sIODevice );
+				ErrLog("VCB Assign_Dis TAG : " + sTag );
+				ErrLog("VCB Assign_Dis Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		// Assign Trend Tag whether it exists or not
+	iAssReturn = Ass(-2,"T_" + sItem,"'" + sIODevice + sTag + sHTR + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("VCB Trend_Assign item : " + sItem );
+				ErrLog("VCB Trend_Assign IODevice : " + sIODevice );
+				ErrLog("VCB Trend_Assign TAG : " + sTag );
+				ErrLog("VCB Trend_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+    iAssReturn = 0;
+  	
+END	

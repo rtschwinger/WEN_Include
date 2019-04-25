@@ -1,0 +1,62 @@
+
+FUNCTION EquipFilterList()
+STRING sEquip = PageGetStr("EquipFilter");
+STRING sEquipFilter;
+OBJECT List,iFont;
+INT iFilter,nErr;
+
+	IF sEquip <> "" THEN
+		sEquipFilter = "NAME=" + "*" + sEquip + "*";
+	ELSE
+		sEquipFilter = "NAME=*";
+	END
+	
+	List = ObjectByName("EquipList");
+	iFont = _ObjectGetProperty(List,"Font");
+	_ObjectCallMethod(List,"Clear")
+	iFilter = EquipBrowseOpen(sEquipFilter,"Name")
+	
+	sEquip = "";
+	IF iFilter >=0 THEN
+		nErr = EquipBrowseFirst(iFilter)
+		IF nErr <> 0 THEN
+			EquipBrowseClose(iFilter);
+			IF(0 = StrLength(sEquip)) THEN
+				_ObjectCallMethod(List,"AddItem","查無設備請檢查關鍵字");
+				_ObjectSetProperty(List,"ListIndex",0)
+				_ObjectSetProperty(iFont, "Name", "微軟正黑體")
+				_ObjectSetProperty(iFont, "Size", 12)
+			END
+		ELSE
+			WHILE nErr = 0 DO
+				sEquip = EquipBrowseGetField(iFilter,"Name");
+				IF sEquip <> "" THEN
+					_ObjectCallMethod(List,"AddItem",sEquip);
+				END
+				nErr = EquipBrowseNext(iFilter);
+			END
+			EquipBrowseClose(iFilter);
+			_ObjectSetProperty(List,"ListIndex",0)
+			_ObjectSetProperty(iFont, "Name", "微軟正黑體")
+			_ObjectSetProperty(iFont, "Size", 16)
+		END
+	END
+END
+
+STRING
+FUNCTION EquipFilterList_ReadValue()
+OBJECT List
+STRING sValue
+   INT iIndex
+   List = ObjectByName("EquipList")
+   sValue = _ObjectGetProperty(List,"Value")
+RETURN sValue
+END
+
+FUNCTION EquipFilterList_GoToPage()
+STRING sEquip,sPage,sCluster;
+sEquip = EquipFilterList_ReadValue();
+sCluster = EquipGetCluster(sEquip);
+sPage = EquipGetProperty(sEquip,"Page",2,sCluster);
+PageDisplay(sPage);
+END

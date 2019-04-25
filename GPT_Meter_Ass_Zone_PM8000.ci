@@ -1,0 +1,720 @@
+!!********************** PM8000 Power Meter **********************
+! GPT RTS 2016/08/17 New
+FUNCTION Meter_ASS_PM8000_ZONE(STRING sTAGPFX,STRING sCluster,STRING sZone,INT iMeterConfig)
+  !Dim
+  STRING sType,sEquip,sRtnIOToEQ,sDotCluster;
+  
+  !Init
+  strDevice=sTAGPFX;                /* sTAGPFX is the Device Name */
+  sDotCluster=sCluster;
+  IF sDotCluster <> "" THEN sDotCluster = sDotCluster + "."; END
+  sType = "PM8000";               /* Type */
+  sEquip = sTAGPFX;               /* Equip */
+
+  !------------------------------------------------------
+  !                   Equip Ass
+  !------------------------------------------------------
+  Ass(-2,"Cluster","'" + sCluster + "'",0);
+  Ass(-2,"Type","'" + sType + "'",0);
+  Ass(-2,"Equip","'" + sTAGPFX + "'",0);
+  IF iDebug_On THEN
+     ErrLog("************ Start Equip Ass IO Dev to Equip Name *****************");
+     ErrLog("2:Meter_ZONE_ASS_PM8000: Cluster: " + sCluster + " Type: " + sType + " TAG PREFIX: " + sTAGPFX);
+  END
+  sRtnIOToEQ = ASS_IODevice_To_EquipName(sTAGPFX,sCluster);
+  IF iDebug_On THEN
+     ErrLog("Return From ASS_IODevice_To_EquipName: " + sRtnIOToEQ); 
+     ErrLog("************ End Equip Ass IO Dev to Equip Name ss*****************");
+  END
+  !------------------------------------------------------
+  !        Variable and Alarm and Trend Tags Ass
+  !------------------------------------------------------
+  Equip_ASS_Meter(sTAGPFX,sDotCluster);
+  !------------------------------------------------------
+  !        IO Status MSG Ass
+  !------------------------------------------------------
+  Ass(-2,"Title","'" + sTAGPFX + "'",0);
+  Ass(-2,"Type1","'" + "DI MODULE" + "'",0);
+  Ass(-2,"Type2","'" + "" + "'",0);
+  Ass(-2,"Type3","'" + "Standard IO" + "'",0);
+  Ass(-2,"Type4","'" + "Optional IO" + "'",0);
+  PM8000_ASS_MSG_ZONE(sTAGPFX,sDotCluster,sZone,iMeterConfig);
+END
+
+INT
+FUNCTION PM8000_ASS_POPUP_MSG(STRING sGearName)
+	INT hDBFDevice;
+	INT iMsgCntr = 1;
+	STRING sPM8K_IO_Descr;
+	STRING sPM8K_IO_Area;
+	STRING sPM8K_IO_MName;
+	STRING sPM8K_IO_MNameLbl;
+	
+	ErrLog("PM8000 Gearname: " +  sGearName );
+	ErrSet(1);
+	STRING sGear = StrLeft(sGearName,11);
+	STRING sUPS = StrLeft(sGearName,3);//Check for UPS SWBD meter 	 
+	STRING sGear_DBF = CharReplace("_","-", sGear); 
+	//ErrLog("PM8000 GearDBF: " +  sGear_DBF );
+	hDBFDevice = DevOpen("PMDCPM8KMap",16); //Open Device
+	//ErrLog("PM8K DBF Handle: " + IntToStr(hDBFDevice))
+	IF hDBFDevice = -1 THEN
+		DspError("DBFDevice Device Error!!");
+		//TraceMsg("Unable to Open DBF Device ");
+		Message("@(Database Access Error!)", "@(Does someone have the file open?)", 0); 
+		RETURN FALSE;
+	ELSE
+		WHILE NOT DevEOF(hDBFDevice) DO
+			sPM8K_IO_Area = DevGetField(hDBFDevice,"AREA");
+			sPM8K_IO_Descr = DevGetField(hDBFDevice,"DESCR");
+			sPM8K_IO_MName = DevGetField(hDBFDevice,"METERNAME");
+			IF (sGear_DBF = sPM8K_IO_Area) AND (sPM8K_IO_MName = sGearName) THEN
+		          //ErrLog("------------------------------------------------");
+		          //ErrLog("String Returned: " + sPM8K_IO_Area);
+		          //ErrLog("String Returned: " + sPM8K_IO_Descr);
+		          //ErrLog("------------------------------------------------");
+		          IF sUPS <> "UPS" THEN
+					    Ass(-2,"Msg" + IntToStr(iMsgCntr),"'"	+	 IntToStr(iMsgCntr)	+	".)	"	+	sGear_DBF	+	"	 "	+	sPM8K_IO_Descr + "'",0);
+					    //ErrLog("String Assigned: "	+	 IntToStr(iMsgCntr)	+	".)	"	+	sGear_DBF	+	"	"	+	sPM8K_IO_Descr);
+					    iMsgCntr = iMsgCntr	+	1;
+				  ELSE
+					    Ass(-2,"Msg" + IntToStr(iMsgCntr),"'"	+	 IntToStr(iMsgCntr)	+	".)	"	+	sPM8K_IO_Descr + "'",0);
+					    //ErrLog("String Assigned: "	+	 IntToStr(iMsgCntr)	+	".)	"	+	sPM8K_IO_Descr);
+					    iMsgCntr = iMsgCntr	+	1;				  
+				  END	    
+				  	    	    
+				  	    	    	    	    
+			END
+      DevNext(hDBFDevice);
+    END //WHILE DO
+  END
+    DevClose(hDBFDevice); //Close Device
+END
+
+! GPT RTS 2016/08/17 New
+FUNCTION Meter_PM8000_Zone_EquipPopup_L(STRING sTAGPFX,STRING sCluster,STRING sZone, INT iMeterConfig)
+
+  IF iDebug_On THEN
+         ErrLog("Meter_PM8000_Zone_EquipPopup_L.Tag Prefix: " + sTAGPFX + " MeterConfig: " + IntToStr(iMeterConfig) + " Zone: " + sZone );
+  END
+  !------------------------------------------------------
+  !                   Equip Ass
+  !------------------------------------------------------
+  Meter_ASS_PM8000_ZONE(sTAGPFX,sCluster,sZone,iMeterConfig);
+  !------------------------------------------------------
+  !                   Equip PopUp
+  !------------------------------------------------------
+  EquipAssMetadataWin("!Meter_PM8000_Main");
+  !------------------------------------------------------
+  !                   Equip Alarm List
+  !------------------------------------------------------
+  !EquipShowAlarmList();  !Into the General Page Event
+END
+
+! GPT RTS 2016/08/17 New
+FUNCTION Meter_PM8000_Zone_EquipPopup_R(STRING sTAGPFX,STRING sCluster,STRING sZone, INT iMeterConfig)
+  STRING sType = "PM8000";
+  STRING sPage;
+  INT iSelection;
+  
+  IF iDebug_On THEN
+         ErrLog("Meter_PM8000_Zone_EquipPopup_R.Tag Prefix: " + sTAGPFX + " MeterConfig: " + IntToStr(iMeterConfig) + " Zone: " + sZone );
+  END
+  !------------------------------------------------------
+  !                   Equip Ass
+  !------------------------------------------------------
+  Meter_ASS_PM8000_ZONE(sTAGPFX,sCluster,sZone,iMeterConfig);
+  !------------------------------------------------------
+  !                   Equip Menu
+  !------------------------------------------------------
+  DspPopupMenu(0, StrToLocalText("@(Voltage)"));
+  DspPopupMenu(0, StrToLocalText("@(Current)"));
+  DspPopupMenu(0, StrToLocalText("@(Power)"));
+  DspPopupMenu(0, StrToLocalText("@(Power Factor)"));
+  DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+  DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+  DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+  DspPopupMenu(0, StrToLocalText("@(I/O Status)"));
+  DspPopupMenu(0, StrToLocalText("@(Waveform Viewer)"));
+  iSelection = DspPopupMenu(-1,"");
+  !------------------------------------------------------
+  !                   Equip PopUp
+  !------------------------------------------------------
+  SELECT CASE iSelection
+    CASE 1
+      sPage = "Voltage"
+    CASE 2  
+      sPage = "Current"
+    CASE 3
+      sPage = "Power"
+    CASE 4
+      sPage = "PF"
+    CASE 5
+      Get_UserManual("PM8000");
+    CASE 6
+      Get_Drawing("PM8000");
+    CASE 7
+      AssChainPopUp("!EquipAlarmList");
+    CASE 8
+      EquipAssMetadataWin("!Meter_IO_PopUp");
+    !CASE 9
+    ! PLSWaveformShowViewer("F:\ProgramData\Schneider Electric\PowerSCADA Expert\v8.1\Data\waveformdb",sTAGPFX) 
+    ! //PLSWaveformSearchGetResult(sTAGPFX,sCluster)
+  END SELECT
+  
+  IF sPage <> "" THEN
+    EquipAssMetadataWin("!Meter_" + sType + "_" + sPage);
+  END
+END
+
+
+
+!********************** PM8000 Msg **********************
+FUNCTION PM8000_ASS_MSG_ZONE(STRING sTAGPFX,STRING sCluster,STRING sZone,INT iMeterConfig)
+      STRING sFunction,sArgs, sEGReturn, sCPReturn, sATPReturn;
+      IF iDebug_On THEN
+             ErrLog("PM8000_ASS_MSG_ZONE.Tag Prefix: " + sTAGPFX + " MeterConfig: " + IntToStr(iMeterConfig) + " Zone: " + sZone );
+      END
+      sEGReturn = StrSearch(12,sTAGPFX,"MeterEG");
+      sATPReturn = StrSearch(0,sTAGPFX,"ATP");
+      IF iDebug_On THEN
+             ErrLog("StrSearch Return EG: " + sEGReturn + " CP: " + sEGReturn + " ATP: " + sATPReturn);
+      END
+      
+    IF StrSearch(0,sTAGPFX,"ATP") > -1 THEN
+    	sFunction = "PM8000_Zone_ATP_Msg"; 
+        sArgs = "sTAGPFX,sZone,IntToStr(iMeterConfig)";
+        IF iDebug_On THEN
+            ErrLog("ATP TaskCall Function: " + sFunction + " TaskCall Args: " + sArgs );
+        END
+        PM8000_Zone_ATP_Msg(sTAGPFX,sZone,IntToStr(iMeterConfig));
+    ELSE IF StrSearch(12,sTAGPFX,"MeterEG") > -1 THEN
+    		sFunction = "PMDC_Zone_MeterEG_Msg";
+        	sArgs = "sTAGPFX,sZone,IntToStr(iMeterConfig)";
+        IF iDebug_On THEN
+        	ErrLog("EG TaskCall Function: " + sFunction + " TaskCall Args: " + sArgs );
+        END
+        PMDC_Zone_MeterEG4_Msg(sTAGPFX,sZone,IntToStr(iMeterConfig));
+      ELSE
+      	PMDC_Zone_Meter_Msg(sTAGPFX,sZone,IntToStr(iMeterConfig));
+    END END
+    
+    SELECT CASE sTAGPFX
+    		//Mechanical PMDC Meter DIO Assignments
+    	  CASE  "PMDC_B3_1_q_MeterEG16","PMDC_B3_1_q_MeterCP1","PMDC_B3_1_q_MeterCP2","PMDC_B3_1_q_MeterCP3",
+              "PMDC_B3_1_q_MeterCP4","PMDC_B3_1_q_MeterCP5","PMDC_B3_1_q_MeterCP10","PMDC_B3_1_q_MeterCP11",
+              "PMDC_B3_1_r_MeterEG15","PMDC_B3_1_r_MeterCP1","PMDC_B3_1_r_MeterCP3","PMDC_B3_1_r_MeterCP4",
+              "PMDC_B3_1_r_MeterCP5","PMDC_B3_1_r_MeterCP6","PMDC_B3_2_q_MeterEG15","PMDC_B3_2_q_MeterCP1",
+              "PMDC_B3_2_q_MeterCP2","PMDC_B3_2_q_MeterCP3","PMDC_B3_2_q_MeterCP4","PMDC_B3_2_q_MeterCP5",
+              "PMDC_B3_2_q_MeterCP7","PMDC_B3_2_q_MeterCP11","PMDC_B3_2_q_MeterCP12","PMDC_B3_2_r_MeterEG15",
+              "PMDC_B3_2_r_MeterCP1","PMDC_B3_2_r_MeterCP3","PMDC_B3_2_r_MeterCP4","PMDC_B3_2_r_MeterCP5",
+              "PMDC_B3_2_s_MeterEG18","PMDC_B3_2_s_MeterCP1","PMDC_B3_2_s_MeterCP3","PMDC_B3_2_s_MeterCP4",
+              "PMDC_B3_2_s_MeterCP5","PMDC_B3_2_s_MeterCP7","PMDC_B3_2_s_MeterCP8"
+							sFunction = "PM8000_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+				//UOS Switch Board Meter DIO Assignments		
+				CASE 	"UPS_B3_2_r_2_UB1_MeterQ1_4_1","UPS_B3_2_r_2_UB1_MeterQ1_4_2","UPS_B3_2_r_2_UB1_MeterQ1_4_3","UPS_B3_2_r_2_UB1_MeterQ1_4_4",
+							"UPS_B3_2_r_2_UB1_MeterQ1_4_5","UPS_B3_2_r_2_UB1_MeterQ1_4_6","UPS_B3_2_r_2_UB1_MeterQ1_4_7","UPS_B3_2_r_2_UB1_MeterQ1_4_8",
+							"UPS_B3_2_r_2_UB1_MeterQ1_4_9","UPS_B3_2_r_2_UB1_MeterQ1_4_10","UPS_B3_1_r_2_UA1_MeterQ1_4_1","UPS_B3_1_r_2_UA1_MeterQ1_4_2",
+							"UPS_B3_1_r_2_UA1_MeterQ1_4_3","UPS_B3_1_r_2_UA1_MeterQ1_4_4","UPS_B3_1_r_2_UA1_MeterQ1_4_5","UPS_B3_1_r_2_UA1_MeterQ1_4_6",				
+							"UPS_B3_1_r_2_UA1_MeterQ1_4_7","UPS_B3_1_r_2_UA1_MeterQ1_4_8","UPS_B3_1_r_2_UA1_MeterQ1_4_9","UPS_B3_1_r_2_UA1_MeterQ1_4_10"
+							sFunction = "PM8000_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+				//IR PMDC Meter DIO Assignments
+				CASE 	"PMDC_B3_1_i_MeterEG5","PMDC_B3_1_i_MeterQ1_1","PMDC_B3_1_i_MeterQ1_2","PMDC_B3_1_i_MeterQ1_3","PMDC_B3_1_i_MeterQ1_4",
+							"PMDC_B3_2_i_MeterEG5","PMDC_B3_2_i_MeterQ1_1","PMDC_B3_2_i_MeterQ1_2","PMDC_B3_2_i_MeterQ1_3","PMDC_B3_2_i_MeterQ1_4"
+				     	sFunction = "PM8000_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+				//Zone 5 Critical PMDC Meter DIO Assignments			
+				CASE 	"PMDC_B3_1_a_MeterEG4","PMDC_B3_1_b_MeterEG4","PMDC_B3_1_c_MeterEG4","PMDC_B3_1_d_MeterEG4"
+						 	,"PMDC_B3_2_a_MeterEG4","PMDC_B3_2_b_MeterEG4","PMDC_B3_2_c_MeterEG4"
+				     	sFunction = "PM8000_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+				//Zone 6 Critical PMDC Meter DIO Assignments			
+				CASE 	"PMDC_B3_1_e_MeterEG4","PMDC_B3_1_f_MeterEG4","PMDC_B3_1_g_MeterEG4","PMDC_B3_2_d_MeterEG4"
+						 	,"PMDC_B3_2_e_MeterEG4","PMDC_B3_2_f_MeterEG4","PMDC_B3_2_g_MeterEG4"
+				     	sFunction = "PM8000_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+				//Zone 7 Critical PMDC Meter DIO Assignments			
+				CASE 	"PMDC_B3_1_h_MeterEG4","PMDC_B3_1_j_MeterEG4","PMDC_B3_1_k_MeterEG4","PMDC_B3_1_m_MeterEG4"
+						 	,"PMDC_B3_2_h_MeterEG4","PMDC_B3_2_j_MeterEG4","PMDC_B3_2_k_MeterEG4"
+				     	sFunction = "PM8000_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+		END SELECT			
+    
+    TaskCall(sFunction, sArgs);
+END
+
+
+FUNCTION PM8000_Zone_ATP_Msg(STRING sGearName,STRING sZone, INT iMeterConfig)
+   STRING sPMDCName = StrLeft(sGearName,11); 
+   STRING sPanel = CharReplace("_","-", sPMDCName);
+      IF iDebug_On THEN
+         ErrLog("PMDC_Zone_PM8000_ATP_Meter_MSG.Tag Prefix: " + sPanel + " PMDC Name: " + sGearName + " Zone: " + sZone );
+      END
+      !Msg1~27
+      Ass(-2,"Msg1","'" + "1.) " + sPanel + " PS1 (DC Source 1) " + "'",0);
+      Ass(-2,"Msg2","'" + "2.) " + sPanel + " PS2 (DC Source 2) " + "'",0);
+      Ass(-2,"Msg3","'" + "3.) " + sPanel + " SPARE " + "'",0);
+	  Ass(-2,"Msg4","'" + "None" + "'",0);
+	  Ass(-2,"Msg5","'" + "None" + "'",0);
+	  Ass(-2,"Msg6","'" + "None" + "'",0);
+	  Ass(-2,"Msg7","'" + "None" + "'",0);
+	  Ass(-2,"Msg8","'" + "None" + "'",0);
+	  Ass(-2,"Msg9","'" + "None" + "'",0);
+	  Ass(-2,"Msg10","'" + "None" + "'",0);
+	  Ass(-2,"Msg11","'" + "None" + "'",0);
+	  Ass(-2,"Msg12","'" + "None" + "'",0);
+	  Ass(-2,"Msg13","'" + "None" + "'",0);
+	  Ass(-2,"Msg14","'" + "None" + "'",0);
+	  Ass(-2,"Msg15","'" + "None" + "'",0);
+	  Ass(-2,"Msg16","'" + "None" + "'",0);
+      
+END
+
+STRING 
+FUNCTION PM8000_Check_Msg(STRING sTAGPFX,STRING sZone, INT iMeterConfig)
+   STRING sFunction = "PM8000" + "_Msg";
+   INT iCheck=iMeterConfig;
+   
+   IF iCheck THEN
+     sFunction = sTAGPFX + "_MSG";
+   END
+   RETURN sFunction;
+END
+
+
+!PMDC_Meter_EG4 
+FUNCTION PMDC_Zone_MeterEG4_Msg(STRING sGearName, STRING sZone,INT iMeterConfig )
+      STRING sPMDCName = StrLeft(sGearName,11); 
+      STRING sPanel = CharReplace("_","-", sPMDCName);
+      IF iDebug_On THEN
+         ErrLog("PMDC_Zone_PM8000_MeterEG4_MSG.Tag Prefix: " + sPanel + " Zone: " + sZone );
+      END
+      !Msg1~3 Standard IO
+      SELECT CASE sZone
+         CASE "Z1"
+            Ass(-2,"Msg1","'" + "1.) " + sPanel + "24VDC PS1  Health" + "'",0);
+            Ass(-2,"Msg2","'" + "2.) " + sPanel + "24VDC PS2  Health" + "'",0);
+            Ass(-2,"Msg3","'" + "3.) " + sPanel + "SPARE" + "'",0);
+         CASE "Z2","Z3","Z4"
+            Ass(-2,"Msg1","'" + " 1.) " + sPanel + " 52X Breaker Open/Close Status" + "'",0);
+            Ass(-2,"Msg2","'" + " 2.) " + sPanel + " 52X Breaker Trip Status" + "'",0);
+            Ass(-2,"Msg3","'" + " 3.) " + sPanel + " MDGF Fault Status" + "'",0);
+         CASE ELSE
+            Ass(-2,"Msg1","'" + "1.) " + sPanel + "SPARE" + "'",0);
+            Ass(-2,"Msg2","'" + "2.) " + sPanel + "SPARE" + "'",0);
+            Ass(-2,"Msg3","'" + "3.) " + sPanel + "SPARE" + "'",0);  
+      END SELECT    
+	  
+	  Ass(-2,"Msg4","'" + "None" + "'",0);
+	  Ass(-2,"Msg5","'" + "None" + "'",0);
+	  Ass(-2,"Msg6","'" + "None" + "'",0);
+	  Ass(-2,"Msg7","'" + "None" + "'",0);
+	  Ass(-2,"Msg8","'" + "None" + "'",0);
+	  Ass(-2,"Msg9","'" + "None" + "'",0);
+	  Ass(-2,"Msg10","'" + "None" + "'",0);
+	  Ass(-2,"Msg11","'" + "None" + "'",0);
+	  Ass(-2,"Msg12","'" + "None" + "'",0);
+	  Ass(-2,"Msg13","'" + "None" + "'",0);
+	  Ass(-2,"Msg14","'" + "None" + "'",0);
+	  Ass(-2,"Msg15","'" + "None" + "'",0);
+	  Ass(-2,"Msg16","'" + "None" + "'",0);
+END 
+
+!
+FUNCTION PMDC_Zone_Meter_Msg(STRING sTAGPFX, STRING sZone,INT iMeterConfig )
+
+      SELECT CASE sTAGPFX
+         !PMDC_B1_1_i_Q1_1  
+         CASE "PMDC_B1_1_i_MeterQ1_1" 
+           !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-i-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-i-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-i-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_i_Q1_2  
+         CASE "PMDC_B1_1_i_MeterQ1_2" 
+           !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-i-MCCB Q1-4 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-i-MCCB Q1-5 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-i-MCCB Q1-6 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_q_Q1_3  
+         CASE "PMDC_B1_1_i_MeterQ1_3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-i-MCCB Q1-1 Breaker Tripped " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-i-MCCB Q1-2 Breaker Tripped " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-i-MCCB Q1-3 Breaker Tripped " + "'",0);
+         !PMDC_B1_1_i_Q1_4  
+         CASE "PMDC_B1_1_i_MeterQ1_4" 
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-i-MCCB Q1-4 Breaker Tripped " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-i-MCCB Q1-5 Breaker Tripped " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-i-MCCB Q1-6 Breaker Tripped " + "'",0);
+         !IRPMDC_B1_1_i_EG5 
+         CASE "PMDC_B1_1_i_MeterEG5"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC B1-1-i-24VDC PS1 Health" + "'",0); 
+             Ass(-2,"Msg2","'" + "2.) PMDC B1-1-i-24VDC PS2 Health" + "'",0); 
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         !PMDC_B1_1_q_CP1 
+         CASE "PMDC_B1_1_q_MeterCP1"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-q-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-q-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-q-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_q_CP3 
+         CASE "PMDC_B1_1_q_MeterCP3"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-q-MCCB Q1-4 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-q-MCCB Q1-5 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-q-MCCB Q1-6 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_q_CP4 
+         CASE "PMDC_B1_1_q_MeterCP4"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-q-MCCB Q1-7 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-q-MCCB Q1-8 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-q-MCCB Q1-9 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_q_CP5 
+         CASE "PMDC_B1_1_q_MeterCP5"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-q-MCCB Q1-10 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-q-MCCB Q1-11 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-q-MCCB Q1-12 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_q_CP7 
+         CASE "PMDC_B1_1_q_MeterCP7"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-q-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-q-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-q-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_1_q_EG9 
+         CASE "PMDC_B1_1_q_EG9"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-q-MCCB Q1-10 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-q-MCCB Q1-11 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-q-MCCB Q1-12 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_r_CP1 
+         CASE "PMDC_B1_1_r_MeterCP1"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-r-ACB Q1-1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-r-ACB Q1-2 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-r-ACB Q1-3 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_r_CP3 
+         CASE "PMDC_B1_1_r_MeterCP3"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-r-MCCB Q1-4 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-r-MCCB Q1-5 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-r-MCCB Q1-6 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_r_CP5 
+         CASE "PMDC_B1_1_r_MeterCP5"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-r-MCCB Q1-7 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-r-MCCB Q1-8 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-r-MCCB Q1-9 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_r_CP6 
+         CASE "PMDC_B1_1_r_MeterCP6"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-r-MCCB Q1-10 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-r-MCCB Q1-11 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-r-MCCB Q1-12 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_r_CP17  
+         CASE "PMDC_B1_1_r_MeterCP7"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-r-MCCB Q1-13 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-r-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-r-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_1_r_EG9 
+         CASE "PMDC_B1_1_r_MeterEG9"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-r-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-r-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-r-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_s_EG18  
+         CASE "PMDC_B1_1_s_MeterEG18" 
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-s-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-s-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-s-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_1_s_CP15  
+         CASE "PMDC_B1_1_s_MeterCP15" 
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-s-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-s-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-s-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_1_s_CP6 
+         CASE "PMDC_B1_1_s_MeterCP6"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-s-MCCB Q1-7 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-s-MCCB Q1-8 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-s-MCCB Q1-9 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_s_CP7 
+         CASE "PMDC_B1_1_s_MeterCP7"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-s-MCCB Q1-10 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-s-MCCB Q1-11 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-s-MCCB Q1-12 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_s_CP1 
+         CASE "PMDC_B1_1_s_MeterCP1"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-s-MCCB Q1-1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-s-MCCB Q1-2 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-s-MCCB Q1-3 Breaker Open/Close" + "'",0);
+         !PMDC_B1_1_s_CP3 
+         CASE "PMDC_B1_1_s_MeterCP3"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-1-s-MCCB Q1-4 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-1-s-MCCB Q1-5 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-1-s-MCCB Q1-6 Breaker Open/Close" + "'",0);
+         !PMDC_B1_2_q_CP1 
+         CASE "PMDC_B1_2_q_MeterCP1"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-q-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-q-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-q-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_q_CP9 
+         CASE "PMDC_B1_2_q_MeterCP9"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-q-MCCB Q1-4 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-q-MCCB Q1-5 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-q-MCCB Q1-6 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_q_CP3 
+         CASE "PMDC_B1_2_q_MeterCP3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-q-MCCB Q1-7 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-q-MCCB Q1-8 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-q-MCCB Q1-9 Breaker Open/Close " + "'",0);
+		!PMDC_B1_2_q_CP5	
+		CASE "PMDC_B1_2_q_MeterCP5"
+	     !Msg1~3 Standard IO
+	        Ass(-2,"Msg1","'" + "  1. PMDC-B1-2-q-" + "'",0);
+	        Ass(-2,"Msg2","'" + "  2. PMDC-B1-2-q-" + "'",0);
+	        Ass(-2,"Msg3","'" + "  3. PMDC-B1-2-q-" + "'",0); 
+         !PMDC_B1_2_q_EG2 
+         CASE "PMDC_B1_2_q_MeterEG2"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-q-MCCB Q1-10 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-q-MCCB Q1-11 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-q-MCCB Q1-12 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_q_CP4 
+         CASE "PMDC_B1_2_q_MeterCP4"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-q-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-q-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-q-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_2_r_CP1 
+         CASE "PMDC_B1_2_r_MeterCP1"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_r_MeterCP2  
+         CASE "PMDC_B1_2_r_MeterCP2"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-4 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-MCCB Q1-5 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-MCCB Q1-6 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_r_MeterCP3  
+         CASE "PMDC_B1_2_r_MeterCP3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-7 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-MCCB Q1-8 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-MCCB Q1-9 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_r_MeterCP4  
+         CASE "PMDC_B1_2_r_MeterCP4"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-10 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-MCCB Q1-11 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-MCCB Q1-12 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_r_MeterCP5  
+         CASE "PMDC_B1_2_r_MeterCP5"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_2_r_MeterCP12
+         CASE "PMDC_B1_2_r_MeterCP12"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_2_r_MeterCP14 
+         CASE "PMDC_B1_2_r_MeterCP14"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-r-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-r-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-r-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_2_s_CP1 
+         CASE "PMDC_B1_2_s_MeterCP1"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-s-MCCB Q1-1 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-s-MCCB Q1-2 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-s-MCCB Q1-3 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_s_MeterCP6  
+         CASE "PMDC_B1_2_s_MeterCP6"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-s-MCCB Q1-4 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-s-MCCB Q1-5 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-s-MCCB Q1-6 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_r_MeterCP2  
+         CASE "PMDC_B1_2_s_MeterCP2"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-s-MCCB Q1-7 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-s-MCCB Q1-8 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-s-MCCB Q1-9 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_s_MeterCP7  
+         CASE "PMDC_B1_2_s_MeterCP7"  
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-s-MCCB Q1-10 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-s-MCCB Q1-11 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-s-MCCB Q1-12 Breaker Open/Close " + "'",0);
+         !PMDC_B1_2_s_MeterCP8  
+         CASE "PMDC_B1_2_s_MeterCP8"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) PMDC-B1-2-s-MCCB Q1-13 Breaker Open/Close " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) PMDC-B1-2-s-24VDC PS1  Health" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) PMDC-B1-2-s-24VDC PS2  Health" + "'",0);
+         !PMDC_B1_2_s_MeterEG18
+         CASE "PMDC_B1_2_s_MeterEG18"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) SPARE" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) SPARE" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_r_2_UA1_MeterQ1_4_1"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_r_2_UA1_MeterQ1_4_2"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_r_2_UA1_MeterQ1_4_3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-2 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-2 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_r_2_UA1_MeterQ1_4_4"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-3 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-3 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_r_2_UA1_MeterQ1_4_5"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-4 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-4 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_s_3_UB1_MeterQ1_4_1"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_s_3_UB1_MeterQ1_4_2"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_s_3_UB1_MeterQ1_4_3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-2 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-2 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_s_3_UB1_MeterQ1_4_4"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-3 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-3 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_s_3_UB1_MeterQ1_4_5"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-4 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-4 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_r_7_UB1_MeterQ1_4_1"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_r_7_UB1_MeterQ1_4_2"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_r_7_UB1_MeterQ1_4_3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-2 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-2 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_r_7_UB1_MeterQ1_4_4"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-3 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-3 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_2_r_7_UB1_MeterQ1_4_5"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-4 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-4 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_s_12_UA1_MeterQ1_4_1"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_s_12_UA1_MeterQ1_4_2"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-1 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-1 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_s_12_UA1_MeterQ1_4_3"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-2 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-2 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_s_12_UA1_MeterQ1_4_4"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-3 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-3 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "UPS_B1_1_s_12_UA1_MeterQ1_4_5"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) Q1-4 Breaker Open/Close" + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1-4 Breaker Trip" + "'",0);
+             Ass(-2,"Msg3","'" + "3.) SPARE" + "'",0);
+         CASE "PMDC_B1_2_i_MeterQ1_1"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.)  52L Breaker Open/Close Status " + "'",0);
+             Ass(-2,"Msg2","'" + "2.)  52L Breaker Trip Status  " + "'",0);
+             Ass(-2,"Msg3","'" + "3.)  TVSS Status " + "'",0);
+         CASE "PMDC_B1_2_i_MeterQ1_2"
+          !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) SPARE " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1_5 Breaker Open/Close Status  " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) Q1_6 Breaker Open/Close Status " + "'",0);
+         CASE "PMDC_B1_2_i_MeterQ1_3"
+           !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.)  52X Breaker Open/Close Status " + "'",0);
+             Ass(-2,"Msg2","'" + "2.)  52X Breaker Trip Status  " + "'",0);
+             Ass(-2,"Msg3","'" + "3.)  MDGF Status " + "'",0);
+         CASE "PMDC_B1_2_i_MeterQ1_4"
+           !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.) SPARE " + "'",0);
+             Ass(-2,"Msg2","'" + "2.) Q1_5 Breaker Trip Status  " + "'",0);
+             Ass(-2,"Msg3","'" + "3.) Q1_6 Breaker Trip Status " + "'",0);
+         CASE "PMDC_B1_2_i_MeterEG5"
+           !Msg1~3 Standard IO
+             Ass(-2,"Msg1","'" + "1.)  PS1 (DC Source 1) " + "'",0);
+             Ass(-2,"Msg2","'" + "2.)  PS2 (DC Source 2) " + "'",0);
+             Ass(-2,"Msg3","'" + "3.)  SPARE " + "'",0);
+    END SELECT
+	Ass(-2,"Msg4","'" + "None" + "'",0);
+	Ass(-2,"Msg5","'" + "None" + "'",0);
+	Ass(-2,"Msg6","'" + "None" + "'",0);
+	Ass(-2,"Msg7","'" + "None" + "'",0);
+	Ass(-2,"Msg8","'" + "None" + "'",0);
+	Ass(-2,"Msg9","'" + "None" + "'",0);
+	Ass(-2,"Msg10","'" + "None" + "'",0);
+	Ass(-2,"Msg11","'" + "None" + "'",0);
+	Ass(-2,"Msg12","'" + "None" + "'",0);
+	Ass(-2,"Msg13","'" + "None" + "'",0);
+	Ass(-2,"Msg14","'" + "None" + "'",0);
+	Ass(-2,"Msg15","'" + "None" + "'",0);
+	Ass(-2,"Msg16","'" + "None" + "'",0);
+ END

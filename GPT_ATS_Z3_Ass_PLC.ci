@@ -1,0 +1,248 @@
+INT PLCSG_hWin = -2; //For the next new window or page displayed.
+
+
+FUNCTION ATP_Ass_PLC_Z3(STRING strTAG,STRING sCluster)
+	!Dim
+	STRING sType,sEquip;
+	
+	!Init
+	strDevice=strTAG;								/* strTAG is the Device Name */
+	strCluster=sCluster;
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+	sType = "ATP";									/* Type */
+	sEquip = strTAG;								/* Equip */
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strTAG + "'",0);
+	ASS_IODevice_To_EquipName(strTAG,sCluster);
+	!------------------------------------------------------
+	!        Variable and Alarm and Trend Tags Ass
+	!------------------------------------------------------
+	Equip_ASS_ATP_PLC_Z3(strTAG,strCluster);
+END
+
+! GPT RTS 2016/11/13 
+FUNCTION ATP_PLC_Z3_EquipPopup(STRING strTAG,STRING sCluster)
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	ATP_Ass_PLC_Z3(strTAG,sCluster);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	IF strTAG = "ATP_B1_2_p" THEN	
+		EquipAssMetadataWin("!ATP_GPLC_2Col_Status");	
+	ELSE
+		EquipAssMetadataWin("!ATP_GPLC_3Col_Status");	
+	END  //END IF
+END // END FUNCTION ATS_PLC_EquipPopup
+
+! GPT RTS 2016/11/13 
+FUNCTION Equip_ASS_ATP_PLC_Z3(STRING strTAG,STRING sCluster)
+	STRING sRack,sSlot,sItem,sItemG;
+	STRING sRackATP1,sRackATP2,sRackATP3;
+	STRING sSlotATP1,sSlotATP2,sSlotATP3;
+	STRING sHotStandbyA,sHotStandbyB
+	STRING sArea = StrRight(strTAG,6);	//Area Name
+	INT iAddrG1,iAddrG2,iAddrG3;		//Gen Address
+	STRING sType="DDI";
+	STRING sDevice="Global_LO_PLC2";
+	STRING sDevice1,sDevice2;		//M340 Device
+	INT iBit1,iBit2;					//M340 Address
+	INT sBitATP1,sBitATP2,sBitATP3;
+	INT i,j,k;
+   	DebugMsg("Page Name is:  " + DspPageInfo(0));
+	!Address
+	SELECT CASE sArea
+		CASE "B1_2_m"
+			sRackATP1 = 3;
+			sSlotATP1 = 3;
+			sBitATP1 =0;
+			sRackATP2 = 3;
+			sSlotATP2 = 3;
+			sBitATP2 =8;
+			sRackATP3 = 3;
+			sSlotATP3 = 3;
+			sBitATP3 =16;
+			sRack = 2;
+			sSlot = 3;
+			iAddrG1	= 3;//GGIO?
+			iAddrG2 = 8;//SLOT?
+			iAddrG3 = 0;//REGISTER-BIT?
+			sDevice1 = "PMDC_B1_2_m_M340";
+			sDevice2 = "PMDC_B1_2_m_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_2_m Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_1_n"
+			sRackATP1 = 3;
+			sSlotATP1 = 3;
+			sBitATP1 =24;
+			sRackATP2 = 3;
+			sSlotATP2 = 4;
+			sBitATP2 =0;
+			sRackATP3 = 3;
+			sSlotATP3 = 4;
+			sBitATP3 =8;
+			sRack = 2;
+			sSlot = 4;
+			iAddrG1	= 3;
+			iAddrG2 = 8;
+			iAddrG3 = 1;
+			sDevice1 = "PMDC_B1_1_n_M340";
+			sDevice2 = "PMDC_B1_1_n_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_1_n Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_2_n"
+			sRackATP1 = 3;
+			sSlotATP1 = 4;
+			sBitATP1 =16;
+			sRackATP2 = 3;
+			sSlotATP2 = 4;
+			sBitATP2 =24;
+			sRackATP3 = 3;
+			sSlotATP3 = 5;
+			sBitATP3 =0;
+			sRack = 2;
+			sSlot = 5;
+			iAddrG1	= 3;
+			iAddrG2 = 8;
+			iAddrG3 = 2;
+			sDevice1 = "PMDC_B1_2_n_M340";
+			sDevice2 = "PMDC_B1_2_n_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_2_n Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_1_o"
+			sRackATP1 = 3;
+			sSlotATP1 = 5;
+			sBitATP1 =8;
+			sRackATP2 = 3;
+			sSlotATP2 = 5;
+			sBitATP2 =16;
+			sRackATP3 = 3;
+			sSlotATP3 = 5;
+			sBitATP3 = 24;
+			sRack = 2;
+			sSlot = 6;
+			iAddrG1	= 3;
+			iAddrG2 = 8;
+			iAddrG3 = 3;			
+			sDevice1 = "PMDC_B1_1_o_M340";
+			sDevice2 = "PMDC_B1_1_o_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_1_o Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_2_o"
+			sRackATP1 = 3;
+			sSlotATP1 = 6;
+			sBitATP1 =0;
+			sRackATP2 = 3;
+			sSlotATP2 = 6;
+			sBitATP2 =8;
+			sRackATP3 = 3;
+			sSlotATP3 = 6;
+			sBitATP3 = 16;
+			sRack = 2;
+			sSlot = 7;
+			iAddrG1	= 3;
+			iAddrG2 = 8;
+			iAddrG3 = 4;
+			sDevice1 = "PMDC_B1_2_o_M340";
+			sDevice2 = "PMDC_B1_2_o_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_2_o Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_1_p"
+			sRackATP1 = 3;
+			sSlotATP1 = 6;
+			sBitATP1 =24;
+			sRackATP2 = 3;
+			sSlotATP2 = 7;
+			sBitATP2 =0;
+			sRackATP3 = 3;
+			sSlotATP3 = 7;
+			sBitATP3 = 8;
+			sRack = 2;
+			sSlot = 8;
+			iAddrG1	= 3;
+			iAddrG2 = 8;
+			iAddrG3 = 5;
+			sDevice1 = "PMDC_B1_1_p_M340";
+			sDevice2 = "PMDC_B1_1_p_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_1_p Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_2_p"
+			sRackATP1 = 3;
+			sSlotATP1 = 7;
+			sBitATP1 =16;
+			sRackATP2 = 3;
+			sSlotATP2 = 7;
+			sBitATP2 =24;
+			sRack = 3;
+			sSlot = 7;
+			iAddrG1	= 3;
+			iAddrG2 = 8;
+			iAddrG3 = 6;
+			sDevice1 = "PMDC_B1_2_p_M340";
+			sDevice2 = "PMDC_B1_2_p_M340";
+			iBit1 = 20; //Start bits on PMDC M340 PLC Array for 300kA bus duct
+			iBit2 = 23; //Start bits on PMDC M340 PLC Array for 150kA bus duct
+			//ErrLog("B1_2_p Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));	
+	END SELECT
+
+
+	!MW for HMI ATP Status Tag
+	FOR j = 0 TO 15 DO
+		!ATS-1
+		sItem = sCluster + sDevice + "\LPHD\HMI\ATP_" + sArea + "_1\Status" + "[" + IntToStr(j) + "]";
+		Ass(-2,IntToStr(j+100),sItem,0);
+		!ATS-2
+		sItem = sCluster + sDevice + "\LPHD\HMI\ATP_" + sArea + "_2\Status" + "[" + IntToStr(j) + "]";
+		Ass(-2,IntToStr(j+200),sItem,0);
+		!ATS-3
+		sItem = sCluster + sDevice + "\LPHD\HMI\ATP_" + sArea + "_3\Status" + "[" + IntToStr(j) + "]";
+		Ass(-2,IntToStr(j+300),sItem,0);
+	END
+	
+	!GEN
+	sItemG = sCluster + sDevice + "\GGIO" + IntToStr(iAddrG1) + "\SLOT" + IntToStr(iAddrG2) + "\" + sType + "[" + IntToStr(iAddrG3) + "]";
+	Ass(-2,"141",sItemG,0);
+	Ass(-2,"241",sItemG,0);
+	Ass(-2,"341",sItemG,0);
+	
+	!SPD 300KA West for M340 IO Address
+	STRING sBit1_0 = IntToStr(iBit1);
+	STRING sBit1_1 = IntToStr(iBit1+1);
+	STRING sBit1_2 = IntToStr(iBit1+2);
+	
+	!SPD 300KA West for M340 IO Address
+	Ass(PLCSG_hWin,"142",sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_0 + "]",0);
+	//ErrLog("B1 ATP 300K Equip_ASS_M340 :" + sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_0 + "]");
+	Ass(PLCSG_hWin,"242",sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_1 + "]",0);
+	//ErrLog("B1 ATP 300K Equip_ASS_M340 :" + sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_1 + "]");
+	Ass(PLCSG_hWin,"342",sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_2 + "]",0);
+	//ErrLog("B1 ATP 300K Equip_ASS_M340 :" + sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_2 + "]");
+	
+	!SPD 150KA East for M340 IO Address
+	STRING sBit2_0 = IntToStr(iBit2);
+	STRING sBit2_1 = IntToStr(iBit2+1);
+	STRING sBit2_2 = IntToStr(iBit2+2);
+	
+	!SPD 150KA East for M340 IO Address
+	Ass(-2,"143",sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + sBit2_0 + "]",0);
+	//ErrLog("B1 ATP 150K Equip_ASS_M340 :" + sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + sBit2_0 + "]");
+	Ass(-2,"243",sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + sBit2_1 + "]",0);
+	//ErrLog("B1 ATP 150K Equip_ASS_M340 :" + sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + sBit2_1 + "]");
+	Ass(-2,"343",sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + sBit2_2 + "]",0);
+	//ErrLog("B1 ATP 150K Equip_ASS_M340 :" + sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + sBit2_2 + "]");
+	
+	!System Global PLC Assignment for ATP Popup PLC Status
+	Ass(-2,"51",sCluster + sDevice + "\LPHD\HotStandby\CpuA\Status[8]",0);
+	Ass(-2,"52",sCluster + sDevice + "\LPHD\HotStandby\CpuB\Status[8]",0);
+END

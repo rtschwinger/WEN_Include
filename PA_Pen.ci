@@ -1,0 +1,685 @@
+// PA.ci  v1.1  See Citect Knowledge Base article Q4166
+
+
+// Adds a pen to the first pane of the Process Analyst. If there is no pane 1, it is added.
+//
+// Arguments:
+//
+// sPaObjectName   Process analyst object name (properties window | Access[Identification] tab | Object Name)
+// sPen            Trend/alarm tag name
+// nNameMode       1    Display trend/alarm comment (default)
+//                 2    Display trend/alarm tag name
+//                 3    Display "Pen"
+// nPenType        4097 Analog trend (default)
+//                 4098 Digital trend
+//                 4099 Alarm tag
+//
+// nPenColor       Packed RGB color number (default is automatic colors)
+//
+// Note: See the PackedRGB() and CitectColourToPackedRGB() functions for creating custom pen colors.
+//
+
+!筆顏色定義
+INT nPenColors[15] = 0x000000, 0xE61900, 0x07258B, 0x007D00, 0xFF3366, 0x0033DC, 0x007D6D, 
+                     0xFF33CC, 0x808080, 0x66CC00, 0xCCCC00, 0x3399CC, 0x3399FF, 0x33CC99, 0x0CC6E7;
+                     
+STRING TrendPenName[8];
+
+STRING
+FUNCTION
+FindCommentFromTrendPen(STRING sPenAndCluster)
+	STRING 	sComment		= "";
+	INT		hTrendBrowse	= -1;
+	INT		status			= 0;
+	INT		dotPos			= -1;
+	STRING	sPen			= "";
+	STRING	sCluster		= "";
+	
+	!!!!
+//	INT hClient;
+//	STRING temp;
+	
+	ErrSet(1);	
+	
+	IF sPenAndCluster <> "" THEN
+		dotPos = StrSearch(0, sPenAndCluster, ".");
+		IF  dotPos > 0 THEN
+			sCluster = StrLeft(sPenAndCluster, dotPos);
+			sPen = StrRight(sPenAndCluster, StrLength(sPenAndCluster) - 1 - dotPos);			
+		ELSE
+			sPen = sPenAndCluster;		
+		END
+
+		!!!!!
+//		hClient=MsgOpen("Trend",0,0,sCluster);
+//		IF hClient<>-1 THEN	
+//			temp="^"" + sPen + "^"" + "," + "^"NAME, COMMENT^"" ;// + "," + sCluster;
+//			hTrendBrowse=MsgRPC(hClient,"TrnBrowseOpen",temp,0);				
+//		END	
+//		IF hTrendBrowse <> -1 THEN
+//			temp="^"" + IntToStr(hTrendBrowse) + "^""	
+//			status = MsgRPC(hClient,"TrnBrowseFirst",temp,0);
+//			IF status = 0 THEN
+//				temp="^"" + IntToStr(hTrendBrowse) + "," + "^"COMMENT^"";
+//				sComment = MsgRPC(hClient,"TrnBrowseGetField",temp,0);
+//
+//			END
+//		END		
+
+		hTrendBrowse = TrnBrowseOpen("NAME=" + sPen, "NAME, COMMENT", sCluster);
+		
+		IF hTrendBrowse <> -1 THEN	
+			status = TrnBrowseFirst(hTrendBrowse);
+			IF status = 0 THEN
+				sComment = TrnBrowseGetField(hTrendBrowse, "COMMENT");
+			END
+		END
+		TrnBrowseClose(hTrendBrowse);
+		
+	END
+	
+	ErrSet(0);
+		
+	RETURN sComment;
+END
+
+
+
+
+
+FUNCTION 
+PaAddPen(STRING sPaObjectName, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+//PaAddPen(STRING sPaObjectName, STRING sPen, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+ 
+    OBJECT hPA;
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	INT I;
+	
+	!New Add
+	STRING 	strComment;
+
+	
+	
+//	  ! 自動產生Pane	    
+//    hPA = ObjectByName(sPaObjectName);
+//    hPanes = _ObjectGetProperty(hPA, "Panes");
+//    
+//    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+//    
+//    IF nPaneCount = 0 THEN
+//        _ObjectCallMethod(hPanes, "Create", "Pane1");
+//    END
+
+    
+	! 開啟Template.pav檔案
+	hPA	= ObjectByName(sPaObjectName);
+	_ObjectCallMethod(hPA, "LoadFromFile", "Template.pav", 0);    
+ 
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+    
+    !若沒有Pane,則增加一組Pane
+    IF nPaneCount = 0 THEN
+        _ObjectCallMethod(hPanes, "Create", "Pane1");
+    END       
+        
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+    
+    !加入Trend Pen
+    TrendPenName[0]=SETW_TREND1;
+    TrendPenName[1]=SETW_TREND2;    
+    TrendPenName[2]=SETW_TREND3;    
+    TrendPenName[3]=SETW_TREND4;    
+    TrendPenName[4]=SETW_TREND5;    
+    TrendPenName[5]=SETW_TREND6;
+    TrendPenName[6]=SETW_TREND7;
+    TrendPenName[7]=SETW_TREND8;
+    
+    FOR I= 0 TO 7 DO
+	    !產生Trend Pen1
+	    IF TrendPenName[I]<>"" THEN
+		    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+		    
+		    !設定Pen的range
+			//_ObjectCallMethod(hPen, "PutVerticalAxisSpan", 0, 1000);
+			
+//			!自動調整y軸座標
+//			_ObjectSetProperty(hPen, "VerticalAxisAutoscale", -1);
+					    
+		    !設定Trend Pen 的Data Point
+		    _ObjectSetProperty(hPen, "DataPoint", TrendPenName[I])
+
+			
+			!Read the TrendTag comment
+			strComment = FindCommentFromTrendPen(TrendPenName[I]);
+			IF strComment<>"" THEN 	
+				_ObjectSetProperty(hPen, "Name", strComment);
+			END	
+				    
+		    
+			!設定pen的顏色
+		    nPenColor = nPenColors[I MOD 15];
+		    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+			!設定pen的寬度		    
+			_ObjectSetProperty(hPen, "LineWidth", 1);		    
+		    
+	    END    
+    END
+    
+    !清除tag name
+    //CLEAR_TREND_TAG();	
+    
+    
+END
+
+// DISPLAY POPUP TREND DISPLAY OF DCS System
+FUNCTION DCS_TREND( 
+				STRING sCluster = "", STRING STR1 = "", STRING STR2 = "", STRING STR3 = "", 
+	 			STRING STR4 = "", STRING STR5 = "", STRING STR6 = "", STRING STR7 = "", STRING STR8 = "")
+		
+		SETW_TREND8="";
+		SETW_TREND7="";
+		SETW_TREND6="";
+		SETW_TREND5="";
+		SETW_TREND4="";	
+		SETW_TREND3="";
+		SETW_TREND2="";
+		SETW_TREND1="";
+		
+		
+		IF STR1<>"" THEN SETW_TREND1=sCluster + "." + strTRN + STR1; END;
+		IF STR2<>"" THEN SETW_TREND2=sCluster + "." + strTRN + STR2; END;	 
+		IF STR3<>"" THEN SETW_TREND3=sCluster + "." + strTRN + STR3; END;	  
+		IF STR4<>"" THEN SETW_TREND4=sCluster + "." + strTRN + STR4; END;	   
+		IF STR5<>"" THEN SETW_TREND5=sCluster + "." + strTRN + STR5; END;	    
+		IF STR6<>"" THEN SETW_TREND6=sCluster + "." + strTRN + STR6; END;	     
+		IF STR7<>"" THEN SETW_TREND7=sCluster + "." + strTRN + STR7; END;	      
+		IF STR8<>"" THEN SETW_TREND8=sCluster + "." + strTRN + STR8; END;
+		
+		 
+		//WinCloseAllChildren();
+		PagePopUp("TrendProcess_DCS");
+		WinPos(5,5);
+
+
+END
+
+// DISPLAY POPUP TREND DISPLAY OF DCS System
+FUNCTION DCS_866_TREND( 
+				STRING sCluster = "", STRING STR1 = "", STRING STR2 = "", STRING STR3 = "", 
+	 			STRING STR4 = "", STRING STR5 = "", STRING STR6 = "", STRING STR7 = "", STRING STR8 = "")
+		
+		SETW_TREND8="";
+		SETW_TREND7="";
+		SETW_TREND6="";
+		SETW_TREND5="";
+		SETW_TREND4="";	
+		SETW_TREND3="";
+		SETW_TREND2="";
+		SETW_TREND1="";
+		
+		
+		IF STR1<>"" THEN SETW_TREND1=sCluster + "." + strTRN + STR1; END;
+		IF STR2<>"" THEN SETW_TREND2=sCluster + "." + strTRN + STR2; END;	 
+		IF STR3<>"" THEN SETW_TREND3=sCluster + "." + strTRN + STR3; END;	  
+		IF STR4<>"" THEN SETW_TREND4=sCluster + "." + strTRN + STR4; END;	   
+		IF STR5<>"" THEN SETW_TREND5=sCluster + "." + strTRN + STR5; END;	    
+		IF STR6<>"" THEN SETW_TREND6=sCluster + "." + strTRN + STR6; END;	     
+		IF STR7<>"" THEN SETW_TREND7=sCluster + "." + strTRN + STR7; END;	      
+		IF STR8<>"" THEN SETW_TREND8=sCluster + "." + strTRN + STR8; END;
+		
+		 
+		//WinCloseAllChildren();
+		PagePopUp("TrendProcess_DCS_866");
+		WinPos(5,5);
+
+
+END
+
+// DISPLAY POPUP TREND DISPLAY OF DCS System
+FUNCTION DCS_HTR_TREND( 
+				STRING sCluster = "", STRING STR1 = "", STRING STR2 = "", STRING STR3 = "", 
+	 			STRING STR4 = "", STRING STR5 = "", STRING STR6 = "", STRING STR7 = "", STRING STR8 = "")
+		
+		SETW_TREND8="";
+		SETW_TREND7="";
+		SETW_TREND6="";
+		SETW_TREND5="";
+		SETW_TREND4="";	
+		SETW_TREND3="";
+		SETW_TREND2="";
+		SETW_TREND1="";
+		
+		
+		IF STR1<>"" THEN SETW_TREND1=sCluster + "." + strTRN + STR1; END;
+		IF STR2<>"" THEN SETW_TREND2=sCluster + "." + strTRN + STR2; END;	 
+		IF STR3<>"" THEN SETW_TREND3=sCluster + "." + strTRN + STR3; END;	  
+		IF STR4<>"" THEN SETW_TREND4=sCluster + "." + strTRN + STR4; END;	   
+		IF STR5<>"" THEN SETW_TREND5=sCluster + "." + strTRN + STR5; END;	    
+		IF STR6<>"" THEN SETW_TREND6=sCluster + "." + strTRN + STR6; END;	     
+		IF STR7<>"" THEN SETW_TREND7=sCluster + "." + strTRN + STR7; END;	      
+		IF STR8<>"" THEN SETW_TREND8=sCluster + "." + strTRN + STR8; END;
+		
+		 
+		//WinCloseAllChildren();
+		PagePopUp("TrendProcess_DCS_HTR");
+		WinPos(5,5);
+
+
+END
+
+
+FUNCTION 
+PaAddPen_DCS(STRING sPaObjectName, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+ 
+    OBJECT hPA;
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	INT I;
+
+    
+	! 開啟Template.pav檔案
+	hPA	= ObjectByName(sPaObjectName);
+	_ObjectCallMethod(hPA, "LoadFromFile", "DCS.pav", 0);    
+ 
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+    
+    !加入Trend Pen
+    TrendPenName[0]=SETW_TREND1;
+    TrendPenName[1]=SETW_TREND2;    
+    TrendPenName[2]=SETW_TREND3;    
+    TrendPenName[3]=SETW_TREND4;    
+    TrendPenName[4]=SETW_TREND5;    
+//    TrendPenName[5]=SETW_TREND6;
+//    TrendPenName[6]=SETW_TREND7;
+//    TrendPenName[7]=SETW_TREND8;
+    
+    FOR I= 0 TO 4 DO
+	    !產生Trend Pen1
+	    IF TrendPenName[I]<>"" THEN
+	    
+	        hPane = _ObjectCallMethod(hPanes, "get_Item", (I+1));
+    		hPens = _ObjectGetProperty(hPane, "Pens");
+	    
+		    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+					    
+		    !設定Trend Pen 的Data Point
+		    _ObjectSetProperty(hPen, "DataPoint", TrendPenName[I]);
+		    
+			!設定pen的顏色
+		    nPenColor = nPenColors[I MOD 15];
+		    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+			!設定pen的寬度		    
+			_ObjectSetProperty(hPen, "LineWidth", 1);		    
+		    
+	    END    
+    END
+    
+    !清除tag name
+    //CLEAR_TREND_TAG();	
+        
+END
+
+FUNCTION 
+PaAddPen_DCS_866(STRING sPaObjectName, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+ 
+    OBJECT hPA;
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	INT I;
+	
+	! 開啟Template.pav檔案
+	hPA	= ObjectByName(sPaObjectName);
+	_ObjectCallMethod(hPA, "LoadFromFile", "Template.pav", 0);    
+ 
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+    
+    !若沒有Pane,則增加一組Pane
+    IF nPaneCount = 0 THEN
+        _ObjectCallMethod(hPanes, "Create", "Pane1");
+    END       
+        
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+    
+    !加入Trend Pen
+    TrendPenName[0]=SETW_TREND1;
+    TrendPenName[1]=SETW_TREND2;    
+    TrendPenName[2]=SETW_TREND3;    
+    TrendPenName[3]=SETW_TREND4;    
+    TrendPenName[4]=SETW_TREND5;    
+    TrendPenName[5]=SETW_TREND6;
+    TrendPenName[6]=SETW_TREND7;
+    TrendPenName[7]=SETW_TREND8;
+    
+    FOR I= 0 TO 7 DO
+	    !產生Trend Pen1
+	    IF TrendPenName[I]<>"" THEN
+		    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+		    
+		    !設定Pen的range
+			//_ObjectCallMethod(hPen, "PutVerticalAxisSpan", 0, 1000);
+			
+//			!自動調整y軸座標
+//			_ObjectSetProperty(hPen, "VerticalAxisAutoscale", -1);
+					    
+		    !設定Trend Pen 的Data Point
+		    _ObjectSetProperty(hPen, "DataPoint", TrendPenName[I]);
+		    
+			!設定pen的顏色
+		    nPenColor = nPenColors[I MOD 15];
+		    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+			!設定pen的寬度		    
+			_ObjectSetProperty(hPen, "LineWidth", 1);		    
+		    
+	    END    
+    END
+    
+    !清除tag name
+    //CLEAR_TREND_TAG();	
+    
+    
+//
+//	
+//
+//    
+//	! 開啟Template.pav檔案
+//	hPA	= ObjectByName(sPaObjectName);
+//	_ObjectCallMethod(hPA, "LoadFromFile", "template.pav", 0);    
+// 
+//    hPanes = _ObjectGetProperty(hPA, "Panes");
+//    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+//    
+//    !加入Trend Pen
+//    TrendPenName[0]=SETW_TREND1;
+
+    
+//    FOR I= 0 TO 0 DO
+//	    !產生Trend Pen1
+//	    IF TrendPenName[I]<>"" THEN
+//	    
+//	        hPane = _ObjectCallMethod(hPanes, "get_Item", (I+1));
+//    		hPens = _ObjectGetProperty(hPane, "Pens");
+//	    
+//		    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+//					    
+//		    !設定Trend Pen 的Data Point
+//		    _ObjectSetProperty(hPen, "DataPoint", TrendPenName[I]);
+//		    
+//			!設定pen的顏色
+//		    nPenColor = nPenColors[I MOD 15];
+//		    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+//			!設定pen的寬度		    
+//			_ObjectSetProperty(hPen, "LineWidth", 1);		    
+//		    
+//	    END    
+//    END
+//    
+//    !清除tag name
+//    //CLEAR_TREND_TAG();	
+        
+END
+
+FUNCTION 
+PaAddPen_DCS_HTR(STRING sPaObjectName, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+ 
+    OBJECT hPA;
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	INT I;
+
+    
+	! 開啟Template.pav檔案
+	hPA	= ObjectByName(sPaObjectName);
+	_ObjectCallMethod(hPA, "LoadFromFile", "DCS_HTR.pav", 0);    
+ 
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+    
+    !加入Trend Pen
+    TrendPenName[0]=SETW_TREND1;
+    TrendPenName[1]=SETW_TREND2;    
+    TrendPenName[2]=SETW_TREND3;    
+    TrendPenName[3]=SETW_TREND4;    
+    TrendPenName[4]=SETW_TREND5;    
+    TrendPenName[5]=SETW_TREND6;
+    TrendPenName[6]=SETW_TREND7;
+//    TrendPenName[7]=SETW_TREND8;
+    
+    FOR I= 0 TO 6 DO
+	    !產生Trend Pen1
+	    IF TrendPenName[I]<>"" THEN
+	    
+	        hPane = _ObjectCallMethod(hPanes, "get_Item", (I+1));
+    		hPens = _ObjectGetProperty(hPane, "Pens");
+	    
+		    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+					    
+		    !設定Trend Pen 的Data Point
+		    _ObjectSetProperty(hPen, "DataPoint", TrendPenName[I]);
+		    
+			!設定pen的顏色
+		    nPenColor = nPenColors[I MOD 15];
+		    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+			!設定pen的寬度		    
+			_ObjectSetProperty(hPen, "LineWidth", 1);		    
+		    
+	    END    
+    END
+    
+    !清除tag name
+    //CLEAR_TREND_TAG();	
+        
+END
+
+
+
+
+
+FUNCTION Event_PA_CommandExecuted(OBJECT hPA, STRING commandId)
+
+	SELECT CASE commandID
+	CASE "PA_YScale"
+		PA_YScale(hPA);
+	CASE "PA_AutoScale"
+		PA_AutoScale(hPA);		
+	END SELECT
+	
+	
+	
+
+END
+ 
+
+!調整Y Scale
+FUNCTION PA_YScale(OBJECT hPA) 
+
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	INT Index;  
+ 
+ 	INT iMax=1000;
+ 	INT iMin=0;
+
+ 	STRING sTmpMax;
+ 	STRING sTmpMin;
+
+ 	
+ 	
+	/* 產生表單 */
+	FormNew("Range Setting",40,10,10);
+	
+	FormPrompt(0,0,"Please input the Limit:");			
+
+	FormInput(2,3,"Max : ",sTmpMax,20);
+	FormInput(2,4,"Min : ",sTmpMin,20);
+	FormButton(5 ,6,"   OK   ", 0, 1);
+	FormButton(25,6," Cancel ", 0, 2);
+
+	IF FormRead(0)=0 THEN
+
+		IF sTmpMax<>"" THEN
+			iMax=StrToInt(sTmpMax);				
+		END
+		IF sTmpMin<>"" THEN
+			iMin=StrToInt(sTmpMin);				
+		END
+
+	END
+ 	
+	
+ 	
+    hPanes = _ObjectGetProperty(hPA, "Panes");            
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count"); 
+	FOR Index=1 TO nPen DO
+		hPen = _ObjectCallMethod(hPens, "get_Item", Index);
+		!設定Pen的range
+		_ObjectSetProperty(hPen, "VerticalAxisAutoScale", "0");
+		_ObjectCallMethod(hPen, "PutVerticalAxisSpan", iMin, iMax);
+	END
+	  
+
+END
+
+!調整auto Scale
+FUNCTION PA_AutoScale(OBJECT hPA) 
+
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	INT Index;  
+
+    hPanes = _ObjectGetProperty(hPA, "Panes");            
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count"); 
+	FOR Index=1 TO nPen DO
+		hPen = _ObjectCallMethod(hPens, "get_Item", Index);
+		!設定Pen的range
+		_ObjectSetProperty(hPen, "VerticalAxisAutoScale", "-1");
+	END
+	  
+
+END
+
+
+
+
+
+
+
+
+
+FUNCTION 
+PaAddPen1(STRING sPaObjectName, STRING sPen, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+ 
+    OBJECT hPA;
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;
+	INT nPen;
+	    
+    hPA = ObjectByName(sPaObjectName);
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    
+    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+    
+    IF nPaneCount = 0 THEN
+        _ObjectCallMethod(hPanes, "Create", "Pane1");
+    END
+    
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+    _ObjectSetProperty(hPen, "DataPoint", sPen);
+
+    IF nPenColor = -1 THEN
+        nPen = _ObjectGetProperty(hPens, "Count") - 1;
+        nPenColor = nPenColors[nPen MOD 15];
+    END
+    
+    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+END
+
+FUNCTION 
+PaAddPen2(STRING sPaObjectName, STRING sPen, INT nNameMode = 1, INT nPenType = 4097, INT nPenColor = -1)
+ 
+    OBJECT hPA;
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;		!Pane 的數目
+	INT nPen;			!Pen 的筆數
+	    
+//    hPA = ObjectByName(sPaObjectName);
+//    hPanes = _ObjectGetProperty(hPA, "Panes");
+//    
+//    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+//    
+//    IF nPaneCount = 0 THEN
+//        _ObjectCallMethod(hPanes, "Create", "Pane1");
+//    END
+    
+	! 開啟Template.pav檔案
+	hPA	= ObjectByName(sPaObjectName);
+	_ObjectCallMethod(hPA, "LoadFromFile", "Template.pav", 0);    
+ 
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPaneCount = _ObjectGetProperty(hPanes, "Count");
+    
+    !若沒有Pane,則增加一組Pane
+    IF nPaneCount = 0 THEN
+        _ObjectCallMethod(hPanes, "Create", "Pane1");
+    END       
+        
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+    
+    !產生Trend Pen
+    hPen = _ObjectCallMethod(hPens, "Create", nPenType, nNameMode);
+    !設定Trend Pen 的Data Point
+    _ObjectSetProperty(hPen, "DataPoint", sPen);
+	
+	!設定pen的顏色
+    IF nPenColor = -1 THEN
+        nPen = _ObjectGetProperty(hPens, "Count") - 1;
+        nPenColor = nPenColors[nPen MOD 15];
+    END
+    _ObjectSetProperty(hPen, "LineColor", nPenColor);
+    
+    
+END
+
+

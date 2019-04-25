@@ -1,0 +1,859 @@
+!********************** DTSC200 TC **********************
+! GPT RTS 2016/08/17 New
+FUNCTION ATS_ASS_DTSC200(STRING strTAG,STRING sCluster)
+	!Dim
+	STRING sType,sEquip;
+	
+	!Init
+	strDevice=strTAG;								/* strTAG is the Device Name */
+	strCluster=sCluster;
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+	sType = "DTSC200";								/* Type */
+	sEquip = strTAG;								/* Equip */
+
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	!strTAG = EquipGetProperty(sEquip,"IODevice",0,sCluster)
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strTAG + "'",0);
+	ASS_IODevice_To_EquipName(strTAG,sCluster);
+	!------------------------------------------------------
+	!        Variable and Alarm and Trend Tags Ass
+	!------------------------------------------------------
+	Equip_ASS_WOODWARD(strTAG,strCluster);
+END
+
+! GPT RTS 2016/08/17 New
+FUNCTION ATS_DTSC200_EquipPopup_L(STRING strTAG,STRING sCluster)
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	ATS_ASS_DTSC200(strTAG,sCluster);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	!AssPopUp("!ATS_DTSC200_Main");
+	EquipAssMetadataWin("!ATS_DTSC200_Main");
+	!------------------------------------------------------
+	!                   Equip Alarm List
+	!------------------------------------------------------
+	!EquipShowAlarmList();	!Into the General Page Event
+END
+
+! GPT RTS 2016/08/17 New
+FUNCTION ATS_DTSC200_EquipPopup_R(STRING strTAG,STRING sCluster)
+	STRING sType = "DTSC200";
+	STRING sPage;
+	INT iSelection;
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	ATS_ASS_DTSC200(strTAG,sCluster);
+	!------------------------------------------------------
+	!                   Equip Menu
+	!------------------------------------------------------
+	DspPopupMenu(0, StrToLocalText("@(Voltage)"));
+	DspPopupMenu(0, StrToLocalText("@(Current)"));
+	DspPopupMenu(0, StrToLocalText("@(Power)/@(Energy)"));
+	DspPopupMenu(0, StrToLocalText("@(Alarm Status)"));
+	DspPopupMenu(0, StrToLocalText("@(Other Status)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+	DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	iSelection = DspPopupMenu(-1,"");
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	SELECT CASE iSelection
+		CASE 1
+			sPage = "Voltage"
+		CASE 2
+			sPage = "Current"
+		CASE 3
+			sPage = "Power"
+		CASE 4
+			sPage = "Alarm"
+		CASE 5
+			sPage = "Other"	
+		CASE 6
+			Get_UserManual("ATS_DTSC200");
+		CASE 7
+			Get_Drawing("ATS_DTSC200");
+		CASE 8
+			AssChainPopUp("!EquipAlarmList");
+	END SELECT
+	
+	IF sPage <> "" THEN
+		EquipAssMetadataWin("!ATS_" + sType + "_" + sPage);
+	END
+END
+
+
+! GPT RTS 2016/08/17New
+FUNCTION
+AssIEC_WW(STRING IODevice,STRING ItemTag,STRING Cluster,STRING sHTR="")
+STRING sItem,sTag;
+
+SELECT CASE ItemTag
+
+	!@(External Equipment Health)	
+	CASE "COMM","\LPHD1\EEHealth"	
+		sItem = "COMM";
+		sTag = "\LPHD1\EEHealth";
+	  	
+	!@(A Engine Test is active)	
+	CASE "ENG_Test","\GGIO\ENG_Test\stVal"	
+		sItem = "ENG_Test";
+		sTag = "\GGIO\ENG_Test\stVal";
+	  	
+	!@(A Load Test is active)	
+	CASE "LOAD_Test","\GGIO\LOAD_Test\stVal"	
+		sItem = "LOAD_Test";
+		sTag = "\GGIO\LOAD_Test\stVal";
+	  	
+	!@(A transfer failure occured)	
+	CASE "Trs_Fail","\GGIO\Trs_Fail\Op"	
+		sItem = "Trs_Fail";
+		sTag = "\GGIO\Trs_Fail\Op";
+	  	
+	!@(Actual Alarm: Inphase-Check timeout)	
+	CASE "AngInd","\RSYN\AngInd\Op"	
+		sItem = "AngInd";
+		sTag = "\RSYN\AngInd\Op";
+	  	
+	!@(Actual Alarm: Overlap time exceeded)	
+	CASE "OVP_TmExc","\GGIO\OVP_TmExc\Op"	
+		sItem = "OVP_TmExc";
+		sTag = "\GGIO\OVP_TmExc\Op";
+	  	
+	!@(Actual Alarm: S1 close failure)	
+	CASE "Cls_Fail_N","\GGIO\Cls_Fail_N\Op"	
+		sItem = "Cls_Fail_N";
+		sTag = "\GGIO\Cls_Fail_N\Op";
+	  	
+	!@(Actual Alarm: S1 open failure)	
+	CASE "Opn_Fail_N","\GGIO\Opn_Fail_N\Op"	
+		sItem = "Opn_Fail_N";
+		sTag = "\GGIO\Opn_Fail_N\Op";
+	  	
+	!@(Actual Alarm: S1 Overfrequency)	
+	CASE "PTOF_N","\PTOF_N\Op"	
+		sItem = "PTOF_N";
+		sTag = "\PTOF_N\Op";
+	  	
+	!@(Actual Alarm: S1 Overvoltage)	
+	CASE "PTOV_N","\PTOV_N\Op"	
+		sItem = "PTOV_N";
+		sTag = "\PTOV_N\Op";
+	  	
+	!@(Actual Alarm: S1 Phase rotation mismatch)	
+	CASE "PhRoMis_N","\GGIO\PhRoMis_N\Op"	
+		sItem = "PhRoMis_N";
+		sTag = "\GGIO\PhRoMis_N\Op";
+	  	
+	!@(Actual Alarm: S1 Underfrequency)	
+	CASE "PTUF_N","\PTUF_N\Op"	
+		sItem = "PTUF_N";
+		sTag = "\PTUF_N\Op";
+	  	
+	!@(Actual Alarm: S1 Undervoltage)	
+	CASE "PTUV_N","\PTUV_N\Op"	
+		sItem = "PTUV_N";
+		sTag = "\PTUV_N\Op";
+	  	
+	!@(Actual Alarm: S1 voltage imbalance)	
+	CASE "PDIF_N","\PDIF_N\V\Op"	
+		sItem = "PDIF_N";
+		sTag = "\PDIF_N\V\Op";
+	  	
+	!@(Actual Alarm: S2 close failure)	
+	CASE "Cls_Fail_IR","\GGIO\Cls_Fail_IR\Op"	
+		sItem = "Cls_Fail_IR";
+		sTag = "\GGIO\Cls_Fail_IR\Op";
+	  	
+	!@(Actual Alarm: S2 open failure)	
+	CASE "Opn_Fail_IR","\GGIO\Opn_Fail_IR\Op"	
+		sItem = "Opn_Fail_IR";
+		sTag = "\GGIO\Opn_Fail_IR\Op";
+	  	
+	!@(Actual Alarm: S2 Overfrequency)	
+	CASE "PTOF_IR","\PTOF_IR\Op"	
+		sItem = "PTOF_IR";
+		sTag = "\PTOF_IR\Op";
+	  	
+	!@(Actual Alarm: S2 Overvoltage)	
+	CASE "PTOV_IR","\PTOV_IR\Op"	
+		sItem = "PTOV_IR";
+		sTag = "\PTOV_IR\Op";
+	  	
+	!@(Actual Alarm: S2 Phase rotation mismatch)	
+	CASE "PhRoMis_IR","\GGIO\PhRoMis_IR\Op"	
+		sItem = "PhRoMis_IR";
+		sTag = "\GGIO\PhRoMis_IR\Op";
+	  	
+	!@(Actual Alarm: S2 Underfrequency)	
+	CASE "PTUF_IR","\PTUF_IR\Op"	
+		sItem = "PTUF_IR";
+		sTag = "\PTUF_IR\Op";
+	  	
+	!@(Actual Alarm: S2 Undervoltage)	
+	CASE "PTUV_IR","\PTUV_IR\Op"	
+		sItem = "PTUV_IR";
+		sTag = "\PTUV_IR\Op";
+	  	
+	!@(Actual Alarm: S2 voltage imbalance)	
+	CASE "PDIF_IR","\PDIF_IR\V\Op"	
+		sItem = "PDIF_IR";
+		sTag = "\PDIF_IR\V\Op";
+	  	
+	!@(Actual Alarm: Startfailure S1)	
+	CASE "StrFail_N","\GGIO\StrFail_N\Op"	
+		sItem = "StrFail_N";
+		sTag = "\GGIO\StrFail_N\Op";
+	  	
+	!@(Actual Alarm: Startfailure S2)	
+	CASE "StrFail_IR","\GGIO\StrFail_IR\Op"	
+		sItem = "StrFail_IR";
+		sTag = "\GGIO\StrFail_IR\Op";
+	  	
+	!@(Actual Alarm: Transfer switch mechanical fail)	
+	CASE "TrsSw_Fail","\GGIO\TrsSw_Fail\Op"	
+		sItem = "TrsSw_Fail";
+		sTag = "\GGIO\TrsSw_Fail\Op";
+	  	
+	!@(Actual Alarm: Unintended Stop S1)	
+	CASE "UITDStp_N","\GGIO\UITDStp_N\Op"	
+		sItem = "UITDStp_N";
+		sTag = "\GGIO\UITDStp_N\Op";
+	  	
+	!@(Actual Alarm: Unintended Stop S2)	
+	CASE "UITDStp_IR","\GGIO\UITDStp_IR\Op"	
+		sItem = "UITDStp_IR";
+		sTag = "\GGIO\UITDStp_IR\Op";
+	  	
+	!@(ATS Controller is in Inhibit Mode)	
+	CASE "ATS_Inh","\GGIO\ATS_Inh\stVal"	
+		sItem = "ATS_Inh";
+		sTag = "\GGIO\ATS_Inh\stVal";
+	  	
+	!@(Battery voltage)	
+	CASE "ZBAT_Vol","\ZBAT\Vol\Mag"	
+		sItem = "ZBAT_Vol";
+		sTag = "\ZBAT\Vol\Mag";
+	  	
+	!@(CAN interface Error)	
+	CASE "CAN_Err","\GGIO\CAN_Err\Op"	
+		sItem = "CAN_Err";
+		sTag = "\GGIO\CAN_Err\Op";
+	  	
+	!@(Cooldown timer S1 is timing at the moment)	
+	CASE "CldTm_N","\GGIO\CldTm_N\stVal"	
+		sItem = "CldTm_N";
+		sTag = "\GGIO\CldTm_N\stVal";
+	  	
+	!@(Cooldown timer S2 is timing at the moment)	
+	CASE "CldTm_IR","\GGIO\CldTm_IR\stVal"	
+		sItem = "CldTm_IR";
+		sTag = "\GGIO\CldTm_IR\stVal";
+	  	
+	!@(Delay Bypass)	
+	CASE "Delay_Bypass","\GGIO\Delay_Bypass\stVal"	
+		sItem = "Delay_Bypass";
+		sTag = "\GGIO\Delay_Bypass\stVal";
+	  	
+	!@(Inphase check for transfer direc- tion S1->S2)	
+	CASE "SynPrg_N_To_IR","\RSYN\SynPrg\N_To_IR\stVal"	
+		sItem = "SynPrg_N_To_IR";
+		sTag = "\RSYN\SynPrg\N_To_IR\stVal";
+	  	
+	!@(Inphase check for transfer direc- tion S2->S1)	
+	CASE "SynPrg_IR_To_N","\RSYN\SynPrg\IR_To_N\stVal"	
+		sItem = "SynPrg_IR_To_N";
+		sTag = "\RSYN\SynPrg\IR_To_N\stVal";
+	  	
+	!@(IR ACB Close)	
+	CASE "IR_Close","\XCBR_IR\Pos_On\stVal"	
+		sItem = "IR_Close";
+		sTag = "\XCBR_IR\Pos_On\stVal";
+	  	
+	!@(IR ACB Open)	
+	CASE "IR_Open","\XCBR_IR\Pos_Off\stVal"	
+		sItem = "IR_Open";
+		sTag = "\XCBR_IR\Pos_Off\stVal";
+	  	
+	!@(IR Control Power OK)	
+	CASE "IR_Pwr","\GGIO\IR_Pwr\stVal"	
+		sItem = "IR_Pwr";
+		sTag = "\GGIO\IR_Pwr\stVal";
+	  	
+	!@(Load is powered by S1)	
+	CASE "LDPwr_N","\GGIO\LDPwr_N\stVal"	
+		sItem = "LDPwr_N";
+		sTag = "\GGIO\LDPwr_N\stVal";
+	  	
+	!@(Load is powered by S2)	
+	CASE "LDPwr_IR","\GGIO\LDPwr_IR\stVal"	
+		sItem = "LDPwr_IR";
+		sTag = "\GGIO\LDPwr_IR\stVal";
+	  	
+	!@(N ACB Close)	
+	CASE "N_Close","\XCBR_N\Pos_On\stVal"	
+		sItem = "N_Close";
+		sTag = "\XCBR_N\Pos_On\stVal";
+	  	
+	!@(N ACB Open)	
+	CASE "N_Open","\XCBR_N\Pos_Off\stVal"	
+		sItem = "N_Open";
+		sTag = "\XCBR_N\Pos_Off\stVal";
+	  	
+	!@(Normal Control Power OK)	
+	CASE "N_Pwr","\GGIO\N_Pwr\stVal"	
+		sItem = "N_Pwr";
+		sTag = "\GGIO\N_Pwr\stVal";
+	  	
+	!@(Outage timer S1 is timing at the moment)	
+	CASE "OutTm_N","\GGIO\OutTm_N\stVal"	
+		sItem = "OutTm_N";
+		sTag = "\GGIO\OutTm_N\stVal";
+	  	
+	!@(Outage timer S2 is timing at the moment)	
+	CASE "OutTm_IR","\GGIO\OutTm_IR\stVal"	
+		sItem = "OutTm_IR";
+		sTag = "\GGIO\OutTm_IR\stVal";
+	  	
+	!@(Phase angle between S1 and S2)	
+	CASE "DifAngClc","\RSYN\DifAngClc\instMag"	
+		sItem = "DifAngClc";
+		sTag = "\RSYN\DifAngClc\instMag";
+	  	
+	!@(Preferred Source Switch IR)	
+	CASE "PfrPos_IR","\CSWI\PfrPos_IR\stVal"	
+		sItem = "PfrPos_IR";
+		sTag = "\CSWI\PfrPos_IR\stVal";
+	  	
+	!@(Preferred Source Switch Normal)	
+	CASE "PfrPos_Normal","\CSWI\PfrPos_Normal\stVal"	
+		sItem = "PfrPos_Normal";
+		sTag = "\CSWI\PfrPos_Normal\stVal";
+	  	
+	!@(S1 Outage timer is timing or expired)	
+	CASE "Out_TmExc_N","\GGIO\Out_TmExc_N\stVal"	
+		sItem = "Out_TmExc_N";
+		sTag = "\GGIO\Out_TmExc_N\stVal";
+	  	
+	!@(S1 start fail delay counter timing or expired)	
+	CASE "Str_Fail_N","\GGIO\Str_Fail_N\stVal"	
+		sItem = "Str_Fail_N";
+		sTag = "\GGIO\Str_Fail_N\stVal";
+	  	
+	!@(S2 Outage timer is timing or expired)	
+	CASE "Out_TmExc_IR","\GGIO\Out_TmExc_IR\stVal"	
+		sItem = "Out_TmExc_IR";
+		sTag = "\GGIO\Out_TmExc_IR\stVal";
+	  	
+	!@(S2 start fail delay counter timing or expired)	
+	CASE "Str_Fail_IR","\GGIO\Str_Fail_IR\stVal"	
+		sItem = "Str_Fail_IR";
+		sTag = "\GGIO\Str_Fail_IR\stVal";
+	  	
+	!@(Source 1 is available)	
+	CASE "N_Av","\GGIO\Av_N\stVal"	
+		sItem = "N_Av";
+		sTag = "\GGIO\Av_N\stVal";
+	  	
+	!@(Source 1 is Available and Stable)	
+	CASE "N_AvSta","\GGIO\AvSta_N\stVal"	
+		sItem = "N_AvSta";
+		sTag = "\GGIO\AvSta_N\stVal";
+	  	
+	!@(Source 1: Current Phase A)	
+	CASE "N_IA","\MMXU_N\A\phsA"	
+		sItem = "N_IA";
+		sTag = "\MMXU_N\A\phsA";
+	  	
+	!@(Source 1: Current Phase B)	
+	CASE "N_IB","\MMXU_N\A\phsB"	
+		sItem = "N_IB";
+		sTag = "\MMXU_N\A\phsB";
+	  	
+	!@(Source 1: Current Phase C)	
+	CASE "N_IC","\MMXU_N\A\phsC"	
+		sItem = "N_IC";
+		sTag = "\MMXU_N\A\phsC";
+	  	
+	!@(Source 1: Frequency)	
+	CASE "N_HZ","\MMXU_N\Hz"	
+		sItem = "N_HZ";
+		sTag = "\MMXU_N\Hz";
+	  	
+	!@(Source 1: Positive active energy counter)	
+	CASE "N_DmdWh","\MMTR_N\TotMWh"	
+		sItem = "N_DmdWh";
+		sTag = "\MMTR_N\TotMWh";
+	  	
+	!@(Source 1: Positive reactive energy counter)	
+	CASE "N_DmdVArh","\MMTR_N\TotMVArh"	
+		sItem = "N_DmdVArh";
+		sTag = "\MMTR_N\TotMVArh";
+	  	
+	!@(Source 1: Power Factor)	
+	CASE "N_PFTOT","\MMXU_N\TotPF"	
+		sItem = "N_PFTOT";
+		sTag = "\MMXU_N\TotPF";
+	  	
+	!@(Source 1: Reactive power)	
+	CASE "N_VARTOT","\MMXU_N\TotKVAr"	
+		sItem = "N_VARTOT";
+		sTag = "\MMXU_N\TotKVAr";
+	  	
+	!@(Source 1: Real power)	
+	CASE "N_WTOT","\MMXU_N\TotKW"	
+		sItem = "N_WTOT";
+		sTag = "\MMXU_N\TotKW";
+	  	
+	!@(Source 1: Voltage 12)	
+	CASE "N_VAB","\MMXU_N\PPV\phsAB"	
+		sItem = "N_VAB";
+		sTag = "\MMXU_N\PPV\phsAB";
+	  	
+	!@(Source 1: Voltage 1-N)	
+	CASE "N_VAN","\MMXU_N\PhV\phsA"	
+		sItem = "N_VAN";
+		sTag = "\MMXU_N\PhV\phsA";
+	  	
+	!@(Source 1: Voltage 23)	
+	CASE "N_VBC","\MMXU_N\PPV\phsBC"	
+		sItem = "N_VBC";
+		sTag = "\MMXU_N\PPV\phsBC";
+	  	
+	!@(Source 1: Voltage 2-N)	
+	CASE "N_VBN","\MMXU_N\PhV\phsB"	
+		sItem = "N_VBN";
+		sTag = "\MMXU_N\PhV\phsB";
+	  	
+	!@(Source 1: Voltage 31)	
+	CASE "N_VCA","\MMXU_N\PPV\phsCA"	
+		sItem = "N_VCA";
+		sTag = "\MMXU_N\PPV\phsCA";
+	  	
+	!@(Source 1: Voltage 3-N)	
+	CASE "N_VCN","\MMXU_N\PhV\phsC"	
+		sItem = "N_VCN";
+		sTag = "\MMXU_N\PhV\phsC";
+	  	
+	!@(Source 2 is available)	
+	CASE "IR_Av","\GGIO\Av_IR\stVal"	
+		sItem = "IR_Av";
+		sTag = "\GGIO\Av_IR\stVal";
+	  	
+	!@(Source 2 is Available and Stable)	
+	CASE "IR_AvSta","\GGIO\AvSta_IR\stVal"	
+		sItem = "IR_AvSta";
+		sTag = "\GGIO\AvSta_IR\stVal";
+	  	
+	!@(Source 2: Current Phase A)	
+	CASE "IR_IA","\MMXU_IR\A\phsA"	
+		sItem = "IR_IA";
+		sTag = "\MMXU_IR\A\phsA";
+	  	
+	!@(Source 2: Current Phase B)	
+	CASE "IR_IB","\MMXU_IR\A\phsB"	
+		sItem = "IR_IB";
+		sTag = "\MMXU_IR\A\phsB";
+	  	
+	!@(Source 2: Current Phase C)	
+	CASE "IR_IC","\MMXU_IR\A\phsC"	
+		sItem = "IR_IC";
+		sTag = "\MMXU_IR\A\phsC";
+	  	
+	!@(Source 2: Frequency)	
+	CASE "IR_HZ","\MMXU_IR\Hz"	
+		sItem = "IR_HZ";
+		sTag = "\MMXU_IR\Hz";
+	  	
+	!@(Source 2: Positive active energy counter)	
+	CASE "IR_DmdWh","\MMTR_IR\TotMWh"	
+		sItem = "IR_DmdWh";
+		sTag = "\MMTR_IR\TotMWh";
+	  	
+	!@(Source 2: Positive reactive energy counter)	
+	CASE "IR_DmdVArh","\MMTR_IR\TotMVArh"	
+		sItem = "IR_DmdVArh";
+		sTag = "\MMTR_IR\TotMVArh";
+	  	
+	!@(Source 2: Power Factor)	
+	CASE "IR_PFTOT","\MMXU_IR\TotPF"	
+		sItem = "IR_PFTOT";
+		sTag = "\MMXU_IR\TotPF";
+	  	
+	!@(Source 2: Reactive power)	
+	CASE "IR_VARTOT","\MMXU_IR\TotKVAr"	
+		sItem = "IR_VARTOT";
+		sTag = "\MMXU_IR\TotKVAr";
+	  	
+	!@(Source 2: Real power)	
+	CASE "IR_WTOT","\MMXU_IR\TotKW"	
+		sItem = "IR_WTOT";
+		sTag = "\MMXU_IR\TotKW";
+	  	
+	!@(Source 2: Voltage 12)	
+	CASE "IR_VAB","\MMXU_IR\PPV\phsAB"	
+		sItem = "IR_VAB";
+		sTag = "\MMXU_IR\PPV\phsAB";
+	  	
+	!@(Source 2: Voltage 1-N)	
+	CASE "IR_VAN","\MMXU_IR\PhV\phsA"	
+		sItem = "IR_VAN";
+		sTag = "\MMXU_IR\PhV\phsA";
+	  	
+	!@(Source 2: Voltage 23)	
+	CASE "IR_VBC","\MMXU_IR\PPV\phsBC"	
+		sItem = "IR_VBC";
+		sTag = "\MMXU_IR\PPV\phsBC";
+	  	
+	!@(Source 2: Voltage 2-N)	
+	CASE "IR_VBN","\MMXU_IR\PhV\phsB"	
+		sItem = "IR_VBN";
+		sTag = "\MMXU_IR\PhV\phsB";
+	  	
+	!@(Source 2: Voltage 31)	
+	CASE "IR_VCA","\MMXU_IR\PPV\phsCA"	
+		sItem = "IR_VCA";
+		sTag = "\MMXU_IR\PPV\phsCA";
+	  	
+	!@(Source 2: Voltage 3-N)	
+	CASE "IR_VCN","\MMXU_IR\PhV\phsC"	
+		sItem = "IR_VCN";
+		sTag = "\MMXU_IR\PhV\phsC";
+	  	
+	!@(Source priority is S1)	
+	CASE "SrcPri_N","\GGIO\SrcPri_N\stVal"	
+		sItem = "SrcPri_N";
+		sTag = "\GGIO\SrcPri_N\stVal";
+	  	
+	!@(Source priority is S2)	
+	CASE "SrcPri_IR","\GGIO\SrcPri_IR\stVal"	
+		sItem = "SrcPri_IR";
+		sTag = "\GGIO\SrcPri_IR\stVal";
+	  	
+	!@(Sources OK for inphase-transfer)	
+	CASE "Src_Stable","\GGIO\Src_Stable\stVal"	
+		sItem = "Src_Stable";
+		sTag = "\GGIO\Src_Stable\stVal";
+	  	
+	!@(Stable timer S1 is timing at the moment)	
+	CASE "StaTm_N","\GGIO\StaTm_N\stVal"	
+		sItem = "StaTm_N";
+		sTag = "\GGIO\StaTm_N\stVal";
+	  	
+	!@(Stable timer S2 is timing at the moment)	
+	CASE "StaTm_IR","\GGIO\StaTm_IR\stVal"	
+		sItem = "StaTm_IR";
+		sTag = "\GGIO\StaTm_IR\stVal";
+	  	
+	!@(Switch is in NEUTRAL position)	
+	CASE "Pos_NEU","\CSWI\Pos_NEU\stVal"	
+		sItem = "Pos_NEU";
+		sTag = "\CSWI\Pos_NEU\stVal";
+	  	
+	!@(Switch is in OVERLAP position)	
+	CASE "Pos_OVP","\CSWI\Pos_OVP\stVal"	
+		sItem = "Pos_OVP";
+		sTag = "\CSWI\Pos_OVP\stVal";
+	  	
+	!@(Switch is in S1 position)	
+	CASE "Pos_N","\CSWI\Pos_N\stVal"	
+		sItem = "Pos_N";
+		sTag = "\CSWI\Pos_N\stVal";
+	  	
+	!@(Switch is in S2 position)	
+	CASE "Pos_IR","\CSWI\Pos_IR\stVal"	
+		sItem = "Pos_IR";
+		sTag = "\CSWI\Pos_IR\stVal";
+	  	
+	!@(Synchronicity has been established)	
+	CASE "Rel","\RSYN\Rel\stVal"	
+		sItem = "Rel";
+		sTag = "\RSYN\Rel\stVal";
+	  	
+	!@(Transfer Inhibit)	
+	CASE "Trs_Inh","\GGIO\Trs_Inh\stVal"	
+		sItem = "Trs_Inh";
+		sTag = "\GGIO\Trs_Inh\stVal";
+	  	
+	!@(Transfer to S1 is inhibited)	
+	CASE "TrsInh_N","\GGIO\TrsInh_N\stVal"	
+		sItem = "TrsInh_N";
+		sTag = "\GGIO\TrsInh_N\stVal";
+	  	
+	!@(Transfer to S2 is inhibited)	
+	CASE "TrsInh_IR","\GGIO\TrsInh_IR\stVal"	
+		sItem = "TrsInh_IR";
+		sTag = "\GGIO\TrsInh_IR\stVal";
+
+	!@(Other)
+	CASE ELSE
+  		sItem = ItemTag;
+		sTag = ItemTag;
+		
+	END SELECT
+	
+	Ass(-2,sItem,Cluster + IODevice + sTag,0);
+	Ass(-2,"A_" + sItem,"'" + IODevice + sTag + "'",0);
+	Ass(-2,"A_" + sItem + "_On",Cluster + IODevice + sTag + strON,0);
+	Ass(-2,"A_" + sItem + "_Dis",Cluster + IODevice + sTag + strDIS,0);
+	Ass(-2,"T_" + sItem,"'" + IODevice + sTag + sHTR + "'",0);
+  	
+END
+
+FUNCTION ATS_DTSC200_AutoAlmDis(STRING sCluster)
+
+	INT iAlmOn;
+	INT iAlmDis;
+	INT iAlmQuality;
+	INT iAlmTime;
+	INT TBHandle,TBResult;
+	STRING sAlarmTag;
+	INT iTime;
+	STRING sNotAlarmTag="\LPHD1\EEHealth"
+	INT iNotAlarmStatus;
+	STRING sEquip;
+	INT iEEHealth;
+
+	TBHandle = AlmBrowseOpen("TAG=*DTSC200*","TAG,Millisec,Custom1,Quality",sCluster);
+	iTime = TimeCurrent();
+	IF TBHandle <> -1 THEN
+		TBResult = AlmBrowseFirst(TBHandle);
+		WHILE (TBResult = 0) DO
+			sAlarmTag = AlmBrowseGetField(TBHandle ,  "TAG");
+			IF sCluster <> "" THEN
+				sAlarmTag = sCluster + "." + sAlarmTag;
+			END
+			iAlmOn = TagRead(sAlarmTag + strON)
+			iAlmDis = TagRead(sAlarmTag + strDIS)
+			sEquip = AlmBrowseGetField(TBHandle ,  "Custom1");
+			iEEHealth = TagRead(sCluster + "." + sEquip + sNotAlarmTag + strON);
+			iAlmTime = AlmBrowseGetField(TBHandle ,  "Millisec");
+			iNotAlarmStatus = StrSearch(0,sAlarmTag,sNotAlarmTag);
+			!******************************************************!
+			IF iEEHealth AND NOT iAlmOn THEN
+				IF iNotAlarmStatus = -1 THEN
+					TagWrite(sAlarmTag + strDIS,"1")
+				END
+			ELSE
+					TagWrite(sAlarmTag + strDIS,"0")
+			END
+	
+			TBResult = AlmBrowseNext(TBHandle);
+		END
+		TBResult = AlmBrowseClose(TBHandle);
+	END
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION Equip_ASS_WOODWARD(STRING strTAG,STRING strCluster)
+	STRING sHTR = "HTR";
+	STRING sRPT = "RPT";
+	
+	!@(External Equipment Health)
+	AssIEC_WW(strTAG,"COMM",strCluster);
+	!@(A Engine Test is active)
+	AssIEC_WW(strTAG,"ENG_Test",strCluster);
+	!@(A Load Test is active)
+	AssIEC_WW(strTAG,"LOAD_Test",strCluster);
+	!@(A transfer failure occured)
+	AssIEC_WW(strTAG,"Trs_Fail",strCluster);
+	!@(Actual Alarm: Inphase-Check timeout)
+	AssIEC_WW(strTAG,"AngInd",strCluster);
+	!@(Actual Alarm: Overlap time exceeded)
+	AssIEC_WW(strTAG,"OVP_TmExc",strCluster);
+	!@(Actual Alarm: S1 close failure)
+	AssIEC_WW(strTAG,"Cls_Fail_N",strCluster);
+	!@(Actual Alarm: S1 open failure)
+	AssIEC_WW(strTAG,"Opn_Fail_N",strCluster);
+	!@(Actual Alarm: S1 Overfrequency)
+	AssIEC_WW(strTAG,"PTOF_N",strCluster);
+	!@(Actual Alarm: S1 Overvoltage)
+	AssIEC_WW(strTAG,"PTOV_N",strCluster);
+	!@(Actual Alarm: S1 Phase rotation mismatch)
+	AssIEC_WW(strTAG,"PhRoMis_N",strCluster);
+	!@(Actual Alarm: S1 Underfrequency)
+	AssIEC_WW(strTAG,"PTUF_N",strCluster);
+	!@(Actual Alarm: S1 Undervoltage)
+	AssIEC_WW(strTAG,"PTUV_N",strCluster);
+	!@(Actual Alarm: S1 voltage imbalance)
+	AssIEC_WW(strTAG,"PDIF_N",strCluster);
+	!@(Actual Alarm: S2 close failure)
+	AssIEC_WW(strTAG,"Cls_Fail_IR",strCluster);
+	!@(Actual Alarm: S2 open failure)
+	AssIEC_WW(strTAG,"Opn_Fail_IR",strCluster);
+	!@(Actual Alarm: S2 Overfrequency)
+	AssIEC_WW(strTAG,"PTOF_IR",strCluster);
+	!@(Actual Alarm: S2 Overvoltage)
+	AssIEC_WW(strTAG,"PTOV_IR",strCluster);
+	!@(Actual Alarm: S2 Phase rotation mismatch)
+	AssIEC_WW(strTAG,"PhRoMis_IR",strCluster);
+	!@(Actual Alarm: S2 Underfrequency)
+	AssIEC_WW(strTAG,"PTUF_IR",strCluster);
+	!@(Actual Alarm: S2 Undervoltage)
+	AssIEC_WW(strTAG,"PTUV_IR",strCluster);
+	!@(Actual Alarm: S2 voltage imbalance)
+	AssIEC_WW(strTAG,"PDIF_IR",strCluster);
+	!@(Actual Alarm: Startfailure S1)
+	AssIEC_WW(strTAG,"StrFail_N",strCluster);
+	!@(Actual Alarm: Startfailure S2)
+	AssIEC_WW(strTAG,"StrFail_IR",strCluster);
+	!@(Actual Alarm: Transfer switch mechanical fail)
+	AssIEC_WW(strTAG,"TrsSw_Fail",strCluster);
+	!@(Actual Alarm: Unintended Stop S1)
+	AssIEC_WW(strTAG,"UITDStp_N",strCluster);
+	!@(Actual Alarm: Unintended Stop S2)
+	AssIEC_WW(strTAG,"UITDStp_IR",strCluster);
+	!@(ATS Controller is in Inhibit Mode)
+	AssIEC_WW(strTAG,"ATS_Inh",strCluster);
+	!@(Battery voltage)
+	AssIEC_WW(strTAG,"ZBAT_Vol",strCluster);
+	!@(CAN interface Error)
+	AssIEC_WW(strTAG,"CAN_Err",strCluster);
+	!@(Cooldown timer S1 is timing at the moment)
+	AssIEC_WW(strTAG,"CldTm_N",strCluster);
+	!@(Cooldown timer S2 is timing at the moment)
+	AssIEC_WW(strTAG,"CldTm_IR",strCluster);
+	!@(Delay Bypass)
+	AssIEC_WW(strTAG,"Delay_Bypass",strCluster);
+	!@(Inphase check for transfer direc- tion S1->S2)
+	AssIEC_WW(strTAG,"SynPrg_N_To_IR",strCluster);
+	!@(Inphase check for transfer direc- tion S2->S1)
+	AssIEC_WW(strTAG,"SynPrg_IR_To_N",strCluster);
+	!@(IR ACB Close)
+	AssIEC_WW(strTAG,"IR_Close",strCluster);
+	!@(IR ACB Open)
+	AssIEC_WW(strTAG,"IR_Open",strCluster);
+	!@(IR Control Power OK)
+	AssIEC_WW(strTAG,"IR_Pwr",strCluster);
+	!@(Load is powered by S1)
+	AssIEC_WW(strTAG,"LDPwr_N",strCluster);
+	!@(Load is powered by S2)
+	AssIEC_WW(strTAG,"LDPwr_IR",strCluster);
+	!@(N ACB Close)
+	AssIEC_WW(strTAG,"N_Close",strCluster);
+	!@(N ACB Open)
+	AssIEC_WW(strTAG,"N_Open",strCluster);
+	!@(Normal Control Power OK)
+	AssIEC_WW(strTAG,"N_Pwr",strCluster);
+	!@(Outage timer S1 is timing at the moment)
+	AssIEC_WW(strTAG,"OutTm_N",strCluster);
+	!@(Outage timer S2 is timing at the moment)
+	AssIEC_WW(strTAG,"OutTm_IR",strCluster);
+	!@(Phase angle between S1 and S2)
+	AssIEC_WW(strTAG,"DifAngClc",strCluster);
+	!@(Preferred Source Switch IR)
+	AssIEC_WW(strTAG,"PfrPos_IR",strCluster);
+	!@(Preferred Source Switch Normal)
+	AssIEC_WW(strTAG,"PfrPos_Normal",strCluster);
+	!@(S1 Outage timer is timing or expired)
+	AssIEC_WW(strTAG,"Out_TmExc_N",strCluster);
+	!@(S1 start fail delay counter timing or expired)
+	AssIEC_WW(strTAG,"Str_Fail_N",strCluster);
+	!@(S2 Outage timer is timing or expired)
+	AssIEC_WW(strTAG,"Out_TmExc_IR",strCluster);
+	!@(S2 start fail delay counter timing or expired)
+	AssIEC_WW(strTAG,"Str_Fail_IR",strCluster);
+	!@(Source 1 is available)
+	AssIEC_WW(strTAG,"N_Av",strCluster);
+	!@(Source 1 is Available and Stable)
+	AssIEC_WW(strTAG,"N_AvSta",strCluster);
+	!@(Source 1: Current Phase A)
+	AssIEC_WW(strTAG,"N_IA",strCluster);
+	!@(Source 1: Current Phase B)
+	AssIEC_WW(strTAG,"N_IB",strCluster);
+	!@(Source 1: Current Phase C)
+	AssIEC_WW(strTAG,"N_IC",strCluster);
+	!@(Source 1: Frequency)
+	AssIEC_WW(strTAG,"N_HZ",strCluster);
+	!@(Source 1: Positive active energy counter)
+	AssIEC_WW(strTAG,"N_DmdWh",strCluster);
+	!@(Source 1: Positive reactive energy counter)
+	AssIEC_WW(strTAG,"N_DmdVArh",strCluster);
+	!@(Source 1: Power Factor)
+	AssIEC_WW(strTAG,"N_PFTOT",strCluster);
+	!@(Source 1: Reactive power)
+	AssIEC_WW(strTAG,"N_VARTOT",strCluster);
+	!@(Source 1: Real power)
+	AssIEC_WW(strTAG,"N_WTOT",strCluster);
+	!@(Source 1: Voltage 12)
+	AssIEC_WW(strTAG,"N_VAB",strCluster);
+	!@(Source 1: Voltage 1-N)
+	AssIEC_WW(strTAG,"N_VAN",strCluster);
+	!@(Source 1: Voltage 23)
+	AssIEC_WW(strTAG,"N_VBC",strCluster);
+	!@(Source 1: Voltage 2-N)
+	AssIEC_WW(strTAG,"N_VBN",strCluster);
+	!@(Source 1: Voltage 31)
+	AssIEC_WW(strTAG,"N_VCA",strCluster);
+	!@(Source 1: Voltage 3-N)
+	AssIEC_WW(strTAG,"N_VCN",strCluster);
+	!@(Source 2 is available)
+	AssIEC_WW(strTAG,"IR_Av",strCluster);
+	!@(Source 2 is Available and Stable)
+	AssIEC_WW(strTAG,"IR_AvSta",strCluster);
+	!@(Source 2: Current Phase A)
+	AssIEC_WW(strTAG,"IR_IA",strCluster);
+	!@(Source 2: Current Phase B)
+	AssIEC_WW(strTAG,"IR_IB",strCluster);
+	!@(Source 2: Current Phase C)
+	AssIEC_WW(strTAG,"IR_IC",strCluster);
+	!@(Source 2: Frequency)
+	AssIEC_WW(strTAG,"IR_HZ",strCluster);
+	!@(Source 2: Positive active energy counter)
+	AssIEC_WW(strTAG,"IR_DmdWh",strCluster);
+	!@(Source 2: Positive reactive energy counter)
+	AssIEC_WW(strTAG,"IR_DmdVArh",strCluster);
+	!@(Source 2: Power Factor)
+	AssIEC_WW(strTAG,"IR_PFTOT",strCluster);
+	!@(Source 2: Reactive power)
+	AssIEC_WW(strTAG,"IR_VARTOT",strCluster);
+	!@(Source 2: Real power)
+	AssIEC_WW(strTAG,"IR_WTOT",strCluster);
+	!@(Source 2: Voltage 12)
+	AssIEC_WW(strTAG,"IR_VAB",strCluster);
+	!@(Source 2: Voltage 1-N)
+	AssIEC_WW(strTAG,"IR_VAN",strCluster);
+	!@(Source 2: Voltage 23)
+	AssIEC_WW(strTAG,"IR_VBC",strCluster);
+	!@(Source 2: Voltage 2-N)
+	AssIEC_WW(strTAG,"IR_VBN",strCluster);
+	!@(Source 2: Voltage 31)
+	AssIEC_WW(strTAG,"IR_VCA",strCluster);
+	!@(Source 2: Voltage 3-N)
+	AssIEC_WW(strTAG,"IR_VCN",strCluster);
+	!@(Source priority is S1)
+	AssIEC_WW(strTAG,"SrcPri_N",strCluster);
+	!@(Source priority is S2)
+	AssIEC_WW(strTAG,"SrcPri_IR",strCluster);
+	!@(Sources OK for inphase-transfer)
+	AssIEC_WW(strTAG,"Src_Stable",strCluster);
+	!@(Stable timer S1 is timing at the moment)
+	AssIEC_WW(strTAG,"StaTm_N",strCluster);
+	!@(Stable timer S2 is timing at the moment)
+	AssIEC_WW(strTAG,"StaTm_IR",strCluster);
+	!@(Switch is in NEUTRAL position)
+	AssIEC_WW(strTAG,"Pos_NEU",strCluster);
+	!@(Switch is in OVERLAP position)
+	AssIEC_WW(strTAG,"Pos_OVP",strCluster);
+	!@(Switch is in S1 position)
+	AssIEC_WW(strTAG,"Pos_N",strCluster);
+	!@(Switch is in S2 position)
+	AssIEC_WW(strTAG,"Pos_IR",strCluster);
+	!@(Synchronicity has been established)
+	AssIEC_WW(strTAG,"Rel",strCluster);
+	!@(Transfer Inhibit)
+	AssIEC_WW(strTAG,"Trs_Inh",strCluster);
+	!@(Transfer to S1 is inhibited)
+	AssIEC_WW(strTAG,"TrsInh_N",strCluster);
+	!@(Transfer to S2 is inhibited)
+	AssIEC_WW(strTAG,"TrsInh_IR",strCluster);
+
+END

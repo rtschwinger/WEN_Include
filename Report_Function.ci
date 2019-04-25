@@ -1,0 +1,91 @@
+
+INT Init;
+STRING sReportName[101];
+INT iReportID[101];
+INT iReportCount;
+
+FUNCTION ReportID_Init()
+	
+	sReportName[1] = "100 ms Report";							iReportID[1] = 2;
+	sReportName[2] = "EN50160:2000 Mains Signaling Report";		iReportID[2] = 3;
+	sReportName[3] = "EN50160:2000 Report";						iReportID[3] = 4;
+	sReportName[4] = "Energy Cost Report";						iReportID[4] = 5;
+	sReportName[5] = "Energy Period Over Period Report";		iReportID[5] = 6;
+	sReportName[6] = "Energy Usage by Shift Report";			iReportID[6] = 7;
+	sReportName[7] = "Event History Report";					iReportID[7] = 8;
+	sReportName[8] = "IEC61000-4-30 Report";					iReportID[8] = 9;
+	sReportName[9] = "Load Profile Report";						iReportID[9] = 10;
+	sReportName[10] = "Power Quality Report";					iReportID[10] = 11;
+	sReportName[11] = "System Configuration Report";			iReportID[11] = 12;
+	sReportName[12] = "Tabular Report";							iReportID[12] = 13;
+	sReportName[13] = "Trend Report";							iReportID[13] = 14;
+	sReportName[14] = "Data Export - Standard";					iReportID[14] = 15;
+	sReportName[15] = "Data Export - Extended";					iReportID[15] = 16;
+	sReportName[16] = "_General";								iReportID[16] = 17;
+	sReportName[17] = "_EnergyManagement";						iReportID[17] = 18;
+	sReportName[18] = "_UsageTrending";							iReportID[18] = 19;
+	sReportName[19] = "Billing Report";							iReportID[19] = 21;
+	sReportName[20] = "Multiple Billing Report";				iReportID[20] = 22;
+	sReportName[21] = "Multiple Billing Export Report";			iReportID[21] = 23;
+	sReportName[22] = "Billing Summary Report";					iReportID[22] = 24;
+	sReportName[23] = "_BillingandAllocation";					iReportID[23] = 25;
+	sReportName[24] = "Energy Usage Report";					iReportID[24] = 27;
+	sReportName[25] = "Consumption Ranking Report";				iReportID[25] = 28;
+	sReportName[26] = "Energy Usage by TOU Report";				iReportID[26] = 29;
+	sReportName[27] = "Duration Curve Report";					iReportID[27] = 31;
+	sReportName[28] = "Calendar Trend Week Report";				iReportID[28] = 32;
+	sReportName[29] = "Calendar Trend Month Report";			iReportID[29] = 33;
+	sReportName[30] = "_EnergyAwareness";						iReportID[30] = 34;
+	sReportName[31] = "_EnergyAnalysis";						iReportID[31] = 35;
+	sReportName[32] = "EN50160:2010 Mains Signaling Report";	iReportID[32] = 37;
+	sReportName[33] = "EN50160:2010 Report";					iReportID[33] = 38;
+	sReportName[34] = "Harmonic Compliance Report";				iReportID[34] = 40;
+	sReportName[35] = "_PowerQuality";							iReportID[35] = 41;
+	sReportName[36] = "Hourly Usage Report";					iReportID[36] = 43;
+	sReportName[37] = "Single Device Usage Report";				iReportID[37] = 44;
+	sReportName[38] = "Multi Device Usage Report";				iReportID[38] = 45;
+	sReportName[39] = "Multiple Trend Report";					iReportID[39] = 46;
+	sReportName[40] = "PUE Summary Report";						iReportID[40] = 48;
+	sReportName[41] = "_PowerEfficiency";						iReportID[41] = 49;
+	sReportName[42] = "Power Losses Report";					iReportID[42] = 51;
+	sReportName[43] = "Energy by IT Customer Report";			iReportID[43] = 53;
+	sReportName[44] = "Branch Circuit Power Report";			iReportID[44] = 55;
+	sReportName[45] = "_PowerCapacity";							iReportID[45] = 56;
+	sReportName[46] = "Generator Activity Report";				iReportID[46] = 58;
+	sReportName[47] = "Generator Battery Health Report";		iReportID[47] = 59;
+	sReportName[48] = "Generator Capacity Report";				iReportID[48] = 60;
+	sReportName[49] = "Generator Load Summary Report";			iReportID[49] = 61;
+	sReportName[50] = "Equipment Capacity Report";				iReportID[50] = 62;
+	sReportName[51] = "Generator Battery Health Export";		iReportID[51] = 63;
+	sReportName[52] = "_GeneratorPerformance";					iReportID[52] = 64;
+	sReportName[53] = "_EquipmentPerformance";					iReportID[53] = 65;
+	sReportName[54] = "EPSS Test Report";						iReportID[54] = 67;
+	sReportName[55] = "UPS Auto Test Report";					iReportID[55] = 69;
+	sReportName[56] = "UPS Battery Health Report";				iReportID[56] = 70;
+	sReportName[57] = "_UPSPerformance";						iReportID[57] = 71;
+	sReportName[58] = "UPS Power Report";						iReportID[58] = 73;
+	sReportName[59] = "Generator Power Report";					iReportID[59] = 75;
+	sReportName[60] = "Energy Regression Analysis Report";		iReportID[60] = 77;
+	sReportName[61] = "Energy Comparison Report";				iReportID[61] = 79;
+	sReportName[62] = "Circuit Breaker Aging Report";			iReportID[62] = 81;
+	sReportName[63] = "ION7650 Power Quality Report";			iReportID[63] = 82;
+
+	iReportCount = 63;
+	Init = 1;
+END
+
+INT
+FUNCTION ReportID_Get(STRING sReport)
+INT i;
+
+	IF NOT Init THEN
+		ReportID_Init();
+	END
+
+	FOR i = 1 TO iReportCount DO
+		IF sReport = sReportName[i] THEN
+			RETURN iReportID[i];
+		END
+	END
+	RETURN 0;
+END

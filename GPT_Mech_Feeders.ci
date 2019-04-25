@@ -1,0 +1,101 @@
+
+FUNCTION GetLbl(STRING sAreaName,INT iBrkrNum)
+	INT hDBFDevice;
+	INT iRecord;
+	INT iMsgCntr = 0;
+	STRING sPMDCLbl;
+	STRING sFeederLbl;
+	STRING sBrkrTypeLbl;
+	STRING sBrkrRateLbl;
+	STRING sSupToLbl;
+	STRING sDescLbl;
+	STRING sPMDCName = "PMDC_" + sAreaName;
+	
+	STRING sReqBrker = "Q1-" + IntToStr(iBrkrNum);
+	
+	STRING sPMDC = StrLeft(sPMDCName,11);                
+	STRING sPMDC_DBF = CharReplace("_","-", sPMDC);      
+	
+	   ErrSet(1);
+	   hDBFDevice = DevOpen("PMDCMechFeeders",16); //Open Device
+	   //ErrLog("MF DBF Handle: " + IntToStr(hDBFDevice))
+	   IF hDBFDevice <> -1 THEN
+	   	  iRecord = 1;
+	   	  DevSeek(hDBFDevice, iRecord);
+	   	  //ErrLog("DBF Device Open");
+		ELSE
+	   	  DspError("DBFDevice Device Error!!");
+	   	  //ErrLog("Unable to Open DBF Device ");
+	   	  Message("@(Database Access Error!)", "@(Does someone have the file open?)", 0);
+	   END
+	   
+	   WHILE NOT DevEOF(hDBFDevice) DO
+	   	       sPMDCLbl = DevGetField(hDBFDevice,"AREAP");
+	   	       sFeederLbl = DevGetField(hDBFDevice,"FEEDER");
+	   	       sBrkrTypeLbl = DevGetField(hDBFDevice,"BRKRTYP");
+	   	       sBrkrRateLbl = DevGetField(hDBFDevice,"RATING");
+	   	       sSupToLbl = DevGetField(hDBFDevice,"SUPPLYTO");
+	   	       sDescLbl = DevGetField(hDBFDevice,"DESC");
+	   	       //ErrLog("Requested Parameter:Req PMDC: " + sPMDC_DBF + " PMDC DBF: "+ sPMDCLbl + " ReqBrker: " + sReqBrker + " Breaker From the DB: " + sFeederLbl); 
+	   	       IF ((sPMDC_DBF = sPMDCLbl) AND (sReqBrker = sFeederLbl)) THEN
+	   	          //ErrLog("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+	   	          //ErrLog("Requested Parameter: " + sParam);
+	   	          //ErrLog("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+	   	          //ErrLog("Strings Returned: FeederLbl: " + sFeederLbl + " BrkrType: " + sBrkrTypeLbl +" BrkrRate: "+  sBrkrRateLbl + " SupTo: " + sSupToLbl + " Desc: " + sDescLbl);   
+	   	          
+	   	          PageSetStr(sPMDCName + "_Lbl" + IntToStr(iBrkrNum),sFeederLbl);
+	   	          PageSetStr(sPMDCName + "_Type" + IntToStr(iBrkrNum),sBrkrTypeLbl);
+	   	          PageSetStr(sPMDCName + "_Rate" + IntToStr(iBrkrNum),sBrkrRateLbl);
+	   	          PageSetStr(sPMDCName + "_SupTo" + IntToStr(iBrkrNum),sSupToLbl);
+	   	          PageSetStr(sPMDCName + "_Desc" + IntToStr(iBrkrNum),sDescLbl);
+	   				 END
+	           DevNext(hDBFDevice);
+	   END //WHILE NOT EOF
+     DevClose(hDBFDevice); //Close Device
+END
+
+STRING
+FUNCTION GetMecFdrLbl(STRING sPMDCName,STRING sBrkrName, STRING sParam)
+	INT hDBFDevice;
+	INT iRecord;
+	INT iMsgCntr = 0;
+	STRING sFeederLabel;
+	STRING sBreakerLabel;
+	STRING sPMDCLabel;
+	STRING sParameter;
+	STRING sReqParm;
+
+	ErrSet(1);
+	STRING sPMDC = StrLeft(sPMDCName,11); 
+	STRING sPMDC_DBF = CharReplace("_","-", sPMDC);
+	STRING sBRKR_DBF = CharReplace("_","-", sBrkrName); 
+	
+	hDBFDevice = DevOpen("PMDCMechFeeders",3); //Open Device
+	//TraceMsg("DBF Error: " + IntToStr(hDBFDevice))
+	IF hDBFDevice <> -1 THEN
+		  iRecord = 1;
+		  DevSeek(hDBFDevice, iRecord);
+		  //ErrLog("DBF Device Open");
+	ELSE
+		  DspError("DBFDevice Device Error!!");
+		  ErrLog("Unable to Open DBF Device ");
+		  Message("@(Database Access Error!)", "@(Does someone have the file open?)", 0);
+		  RETURN "Shit"; 
+	END
+	
+	WHILE NOT DevEOF(hDBFDevice) DO
+		       sPMDCLabel = DevGetField(hDBFDevice,"AREAP");
+		       sBreakerLabel = DevGetField(hDBFDevice,"FEEDER");
+		       sReqParm = DevGetField(hDBFDevice,sParam);
+		       IF ((sPMDC_DBF = sPMDCLabel) AND (sBRKR_DBF = sBreakerLabel)) THEN
+		          //ErrLog("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+		          //ErrLog("Requested Parameter: " + sParam);
+		          //ErrLog("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
+		          //ErrLog("String Returned: " + sReqParm);
+		          DevClose(hDBFDevice); //Close Device
+					    RETURN sReqParm;
+				END
+	         DevNext(hDBFDevice);
+	END //WHILE NOT EOF
+  DevClose(hDBFDevice); //Close Device
+END

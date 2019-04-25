@@ -1,0 +1,714 @@
+
+INT nPenColors[60] =	0x000000, 0xE61900, 0x07258B, 0x007D00, 0xFF3366, 0x0033DC, 0x007D6D, 0xFF33CC, 0x808080, 0x66CC00, 0xCCCC00, 0x3399CC, 0x3399FF, 0x33CC99, 0x0CC6E7,
+						0x0B582E, 0xAFC1DA, 0x0C5DE2, 0xEDE8B0, 0x13F3B4, 0x1FC3A2, 0x01E3F3, 0x03C5E4, 0xB714B2, 0xA552A9, 0x369F2C, 0x551C4A, 0x946406, 0x6E52DD, 0x6CA71C,
+						0x38635C, 0xC2DDF3, 0xA98BEC, 0x520B6F, 0x157124, 0xF734BF, 0x316A8A, 0x4457AC, 0x5C63D8, 0xABBC16, 0x611E47, 0xEA3BDC, 0xFD256D, 0x4B0390, 0x97D4C4,
+						0x45A789, 0xFE256E, 0xCBCF57, 0x1712CB, 0x4A21A6, 0xBFAD5D, 0x9A052E, 0x19E348, 0x760F70, 0xA7D387, 0xEF2782, 0x936924, 0x84E249, 0x5AF187, 0x8EF96C;
+STRING sPA_File[100];
+STRING sPA_Check[100];
+INT	   iPA_Check[100];
+
+!Vanpro CHYU 2016/04/15 New
+FUNCTION
+PLSEquipShowDetail_ShowTrend_ListOpen(STRING sEquip,INT iMode=0)
+	STRING  sCluster	= EquipGetCluster(sEquip);
+	
+	ErrSet(1);
+
+!************************************************************************
+!                     Cluster and Equip Name Check
+!************************************************************************
+
+	INT iPos = StrSearch(0,sEquip,".");
+
+	IF ClusterCheck(StrLeft(sEquip,iPos)) THEN
+		sEquip = StrRight(sEquip,StrLength(sEquip)-iPos-1);
+	END
+
+!************************************************************************
+!                           PA Menu
+!************************************************************************
+
+	INT iSelection;
+	INT iTrend=1;
+	INT iAlarm=0;
+	
+//	DspPopupMenu(0,"Trend");
+//	DspPopupMenu(0,"Alarm");
+//	DspPopupMenu(0,"," + "ALL");
+//	
+//	iSelection = DspPopupMenu();
+//	
+//	SELECT CASE iSelection
+//	CASE 1
+//		iTrend = 1;
+//		iAlarm = 0;
+//	CASE 2
+//		iTrend = 0;
+//		iAlarm = 1;
+//	CASE 3
+//		iTrend = 1;
+//		iAlarm = 1;
+//	CASE ELSE
+//		iTrend = 0;
+//		iAlarm = 0;
+//	END SELECT
+
+!************************************************************************
+!                           PA Check File
+!************************************************************************
+
+	STRING sPA_File;
+	STRING sPA_File1;
+	STRING sPA_File2;
+	
+	!Case1 General Status
+	sPA_File = PathToStr("[RUN]:" + "\Analyst Views\" + sEquip + ".pav");
+	IF FileExist(sPA_File) AND iMode = 0 THEN
+		ProcessAnalystLoadFile(sPA_File, 0, 0, "AN502");
+		RETURN;
+	END
+	
+	!Case2 Multi-Service Status
+	sPA_File1 = PathToStr("[RUN]:" + "\Analyst Views\" + sCluster + "." + sEquip + ".pav");
+	IF FileExist(sPA_File1) AND iMode = 0 THEN
+		ProcessAnalystLoadFile(sPA_File1, 0, 0, "AN502");
+		RETURN;
+	END
+	
+	!Case3 New Cluster Create Status Old File Open
+	sPA_File2 = PathToStr("[RUN]:" + "\Analyst Views\" + StrRight(sEquip,StrLength(sEquip)-StrLength(sCluster)-1) + ".pav");
+	IF FileExist(sPA_File2) AND iMode = 0 THEN
+		ProcessAnalystLoadFile(sPA_File2, 0, 0, "AN502");
+		RETURN;
+	END
+
+!************************************************************************
+!                           PA Tag Add
+!************************************************************************
+
+	IsError();
+
+	STRING	sTrendTag;
+	STRING	sAlarmTag;
+	STRING	sPen;
+	OBJECT	hNewPen;
+	OBJECT 	hAnalyst		= ObjectByName("AN502");
+	OBJECT 	hPanes			= _ObjectGetProperty(hAnalyst, "Panes");
+	OBJECT 	hPane;
+	INT TBResult,TBHandle;
+	
+	ProcessAnalystLoadFile("Temp", 0, 0, "AN502");
+
+	hPane = _ObjectCallMethod(hPanes , "get_ItemByName", sEquip);
+	IF IsError() <> 0 THEN
+		hPane = _ObjectCallMethod(hPanes , "Create", sEquip);
+	END
+		
+	_ObjectCallMethod(hAnalyst, "BlockUpdates");
+	OBJECT hPens = _ObjectGetProperty(hPane, "Pens");
+	
+	_ObjectCallMethod(hPens, "RemoveAll");
+
+	!------------------------------------------------------
+	!                   Trend Tags
+	!------------------------------------------------------
+	IF sEquip <> "" AND iTrend THEN
+		TBHandle = TrnBrowseOpen("Equipment=" + sEquip,"TAG,ITEM", sCluster);
+		IF TBHandle <> -1 THEN
+			TBResult = TrnBrowseFirst(TBHandle);
+			WHILE (TBResult = 0) DO
+				sTrendTag = TrnBrowseGetField(TBHandle , "TAG");
+				IF sCluster <> "" THEN
+					sTrendTag = sCluster + "." + sTrendTag;
+				END
+				ProcessAnalystSetPen(-1,sTrendTag,"AN502",0);
+				TBResult = TrnBrowseNext(TBHandle);
+			END
+			TBResult = TrnBrowseClose(TBHandle);
+		END
+	END
+	
+	!------------------------------------------------------
+	!                   Alarm Tags
+	!------------------------------------------------------
+	IF iAlarm THEN
+		TBHandle = AlmBrowseOpen("Equipment=" + sEquip,"TAG", sCluster);
+		IF TBHandle <> -1 THEN
+			TBResult = AlmBrowseFirst(TBHandle);
+			WHILE (TBResult = 0) DO
+				sAlarmTag = AlmBrowseGetField(TBHandle ,  "TAG");
+				IF sCluster <> "" THEN
+					sAlarmTag = sCluster + "." + sAlarmTag;
+				END
+				ProcessAnalystSetPen(-1,sAlarmTag,"AN502",0,2);
+				TBResult = AlmBrowseNext(TBHandle);
+			END
+			TBResult = AlmBrowseClose(TBHandle);
+		END
+	END	
+
+	!------------------------------------------------------
+	!                      Update
+	!------------------------------------------------------
+	_ObjectCallMethod(hAnalyst, "UnblockUpdates");
+	IsError();
+	ErrSet(0);
+END
+
+!Trend_Command
+FUNCTION PLSAnaly_AN502_CommandExecuted(OBJECT hPA, STRING commandId)
+
+//	SELECT CASE commandID
+//	CASE "Equip_SaveConfig"
+//		PA_Equip_Seve(hPA);
+//	CASE "PA_YScale"
+//		PA_YScale(hPA);
+//	CASE "PA_AutoScale"
+//		PA_AutoScale(hPA);
+//	CASE "Update_Color"
+//		PA_Update_Color(hPA);
+//	CASE "Update_Select_Color"
+//		PA_Update_SelectPen_Color(hPA);
+//	CASE "PA_Select"
+//		PA_Select(hPA);
+//	CASE "PA_Unselected"
+//		PA_Unselected(hPA);
+//	END SELECT
+
+	SELECT CASE commandID
+	CASE "Equip_SaveConfig"
+		PA_Function(hPA,"PA_Equip_Seve");
+	CASE "PA_YScale"
+		PA_Function(hPA,"PA_YScale");
+	CASE "PA_AutoScale"
+		PA_Function(hPA,"PA_AutoScale");
+	CASE "Update_Color"
+		PA_Function(hPA,"PA_Update_Color");
+	CASE "Update_Select_Color"
+		PA_Function(hPA,"PA_Update_SelectPen_Color");
+	CASE "PA_Select"
+		PA_Function(hPA,"PA_Select");
+	CASE "PA_Unselected"
+		PA_Function(hPA,"PA_Unselected");
+	END SELECT
+END
+
+!Trend_Windows_Command
+FUNCTION equipmen_EqPA_CommandExecuted(OBJECT hPA, STRING commandId)
+
+	SELECT CASE commandID
+	CASE "Equip_SaveConfig"
+		PA_Function(hPA,"PA_Equip_Seve");
+	CASE "PA_YScale"
+		PA_Function(hPA,"PA_YScale");
+	CASE "PA_AutoScale"
+		PA_Function(hPA,"PA_AutoScale");
+	CASE "Update_Color"
+		PA_Function(hPA,"PA_Update_Color");
+	CASE "Update_Select_Color"
+		PA_Function(hPA,"PA_Update_SelectPen_Color");
+	CASE "PA_Select"
+		PA_Function(hPA,"PA_Select");
+	CASE "PA_Unselected"
+		PA_Function(hPA,"PA_Unselected");
+	END SELECT
+END
+
+!Equip Name Seve
+FUNCTION PA_Equip_Seve(OBJECT hPA)
+	OBJECT 	hPanes		= _ObjectGetProperty(hPA, "Panes");
+	STRING  sEquip 		= _ObjectGetProperty(_ObjectCallMethod(hPanes, "get_Item",1),"Name") + ".pav";
+	_ObjectCallMethod(hPA,"SaveToFile",sEquip,0);
+END
+
+!Equip Pans Color Update
+FUNCTION PA_Update_Color(OBJECT hPA)
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;
+	INT nPen;
+	INT Index;
+	INT nPenColor;
+
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count"); 
+	FOR Index=1 TO nPen DO
+		hPen = _ObjectCallMethod(hPens, "get_Item", Index);
+		 nPenColor = nPenColors[(Index - 1) MOD 60];
+		_ObjectSetProperty(hPen, "LineColor", nPenColor);
+		_ObjectSetProperty(hPen, "LineWidth", 1);
+	END
+END
+
+!Equip Pans Select Color Update
+FUNCTION PA_Update_SelectPen_Color(OBJECT hPA)
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;
+	INT nPen;
+	INT Index;
+	INT nPenColor;
+	INT iPen;
+
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count"); 
+	FOR Index=1 TO nPen DO
+		hPen = _ObjectCallMethod(hPens, "get_Item", Index);
+		IF _ObjectGetProperty(hPen, "Visible") THEN
+			nPenColor = nPenColors[iPen MOD 60];
+			_ObjectSetProperty(hPen, "LineColor", nPenColor);
+			_ObjectSetProperty(hPen, "LineWidth", 1);
+			iPen = iPen + 1;
+		END
+	END
+END
+
+!Option Button Select All
+FUNCTION PA_Select(OBJECT hPA)
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;
+	INT nPen;
+	INT Index;
+
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+	hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count"); 
+	FOR Index=1 TO nPen DO
+		hPen = _ObjectCallMethod(hPens, "get_Item", Index);
+		_ObjectSetProperty(hPen, "Visible", "-1");
+	END
+END
+
+!Option Button Unselected All
+FUNCTION PA_Unselected(OBJECT hPA)
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPaneCount;
+	INT nPen;
+	INT Index;
+
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count"); 
+	FOR Index=1 TO nPen DO
+		hPen = _ObjectCallMethod(hPens, "get_Item", Index);
+		_ObjectSetProperty(hPen, "Visible", "0");
+	END
+END
+
+!Process Analyst Function
+FUNCTION PA_Function(OBJECT hPA,STRING sFunction="")
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPane;
+	INT nPen;
+	INT PaneIndex;
+	INT PenIndex;
+	INT nPenColor;
+	INT iPen;
+	INT iMax=1000;
+ 	INT iMin=0;
+ 	STRING sTmpMax;
+ 	STRING sTmpMin;
+
+	!Get Pane Parameter
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPane = _ObjectGetProperty(hPanes, "Count");
+    
+    !PA Save Function
+    !STRING  sEquip 		= _ObjectGetProperty(_ObjectCallMethod(hPanes, "get_Item",1),"Name") + ".pav";
+    IF sFunction = "PA_Equip_Seve" THEN
+    	!_ObjectCallMethod(hPA,"SaveToFile",sEquip,0);
+    	PA_Intelligent_Save(hPA);
+    	RETURN;
+    END
+    
+    !PA YScale Function
+    IF sFunction = "PA_YScale" THEN
+	    FormNew("Range Setting",40,7,10);
+		FormPrompt(0,0,"Please input the Limit:");
+		FormInput(2,2,"Max : ",sTmpMax,20);
+		FormInput(2,3,"Min : ",sTmpMin,20);
+		FormButton(5 ,5,"   OK   ", 0, 1);
+		FormButton(25,5," Cancel ", 0, 2);
+	
+		IF FormRead(0)=0 THEN
+			IF sTmpMax<>"" THEN
+				iMax=StrToInt(sTmpMax);
+			END
+			IF sTmpMin<>"" THEN
+				iMin=StrToInt(sTmpMin);
+			END
+		ELSE
+			RETURN;
+		END
+	END
+    
+	FOR PaneIndex=1 TO nPane DO
+		!Get Pane and Pen Parameter
+	    hPane = _ObjectCallMethod(hPanes, "get_Item", PaneIndex);
+	    hPens = _ObjectGetProperty(hPane, "Pens");
+		nPen = _ObjectGetProperty(hPens, "Count");
+		iPen = 0; 
+		FOR PenIndex=1 TO nPen DO
+			hPen = _ObjectCallMethod(hPens, "get_Item", PenIndex);
+			!Pens Function
+			SELECT CASE sFunction
+				CASE "PA_Update_Color"
+					nPenColor = nPenColors[(PenIndex - 1) MOD 60];
+					_ObjectSetProperty(hPen, "LineColor", nPenColor);
+					_ObjectSetProperty(hPen, "LineWidth", 1);
+				CASE "PA_Update_SelectPen_Color"
+					IF _ObjectGetProperty(hPen, "Visible") THEN
+						nPenColor = nPenColors[iPen MOD 60];
+						_ObjectSetProperty(hPen, "LineColor", nPenColor);
+						_ObjectSetProperty(hPen, "LineWidth", 1);
+						iPen = iPen + 1;
+					END
+				CASE "PA_Select"
+					_ObjectSetProperty(hPen, "Visible", "-1");
+				CASE "PA_Unselected"
+					_ObjectSetProperty(hPen, "Visible", "0");
+				CASE "PA_YScale"
+					_ObjectSetProperty(hPen, "VerticalAxisAutoScale", "0");
+					_ObjectCallMethod(hPen, "PutVerticalAxisSpan", iMin, iMax);
+				CASE "PA_AutoScale"
+					_ObjectSetProperty(hPen, "VerticalAxisAutoScale", "-1");
+			END SELECT
+		END
+	END
+END
+
+FUNCTION PA_Intelligent_Save(OBJECT hPA)
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPane;
+	INT nPen;
+	INT PaneIndex;
+	INT Index;
+	INT iLen;
+	INT iCheck;
+	STRING sCheck;
+	STRING sFile;
+	STRING sPane;
+	INT X;
+	INT iPos;
+	STRING sEquip;
+
+	ErrSet(1);
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    nPane = _ObjectGetProperty(hPanes, "Count");
+    
+    !Seve Mode Check
+    IF nPane = 1 THEN !AND _ObjectGetProperty(_ObjectCallMethod(hPanes, "get_Item",1),"Name") = "Trend" THEN
+    	PA_Intelligent_Save_Single(hPA);
+    	RETURN;
+    END
+    
+    !PA Pane Name
+    FOR Index = 0 TO nPane - 1 DO
+    	X = Index+1;
+		sPane = _ObjectGetProperty(_ObjectCallMethod(hPanes, "get_Item",X),"Name");
+		sPA_File[Index] = sPane;
+    	iPA_Check[Index] = 0;
+	END
+	
+	!Check Pane Name
+	FOR iLen = 1 TO 254 DO
+		Index = 0;
+		FOR Index = 0 TO nPane - 1 DO
+			sPA_Check[Index] = StrMid(sPA_File[Index],0,iLen);
+		END
+		Index = 0;
+		FOR Index = 0 TO nPane - 1 DO
+			IF sPA_Check[Index] <> sPA_Check[(Index+1) MOD nPane] THEN
+				iCheck = iLen;
+				iLen = 255;
+				index = nPane;
+			END
+		END
+	END
+	
+	!Check File Name
+	IF iCheck = 0 THEN
+		sFile = sPA_File[0];
+	ELSE
+		sFile = StrLeft(sPA_File[0],iCheck-1);
+		IF StrRight(sFile,1) = "." THEN
+			sFile = StrLeft(sFile,StrLength(sFile)-1);
+		ELSE
+			Index = 0;
+			FOR Index = 0 TO StrLength(sFile)-1 DO
+				sCheck = StrMid(sFile,Index,1)
+				IF sCheck = "." THEN
+					iPos = Index;
+				END
+			END
+			sFile = StrLeft(sFile,iPos);
+		END
+	END
+	
+	!Save Equip File
+	sEquip = sFile + ".pav";
+	_ObjectCallMethod(hPA,"SaveToFile",sEquip,0);
+END
+
+FUNCTION PA_Intelligent_Save_Single(OBJECT hPA)
+    OBJECT hPanes;
+    OBJECT hPane;
+    OBJECT hPens;
+    OBJECT hPen;
+    INT nPane;
+	INT nPen;
+	INT PaneIndex;
+	INT Index;
+	INT iLen;
+	INT iCheck;
+	STRING sCheck;
+	STRING sFile;
+	STRING sPane;
+	STRING sPen;
+	INT X;
+	INT iPos;
+	STRING sEquip;
+	
+	INT		hTrendBrowse	= -1;
+	INT		status			= 0;
+	STRING	sCluster		= "";
+
+	ErrSet(1);
+    hPanes = _ObjectGetProperty(hPA, "Panes");
+    hPane = _ObjectCallMethod(hPanes, "get_Item", 1);
+    hPens = _ObjectGetProperty(hPane, "Pens");
+	nPen = _ObjectGetProperty(hPens, "Count");
+    
+    !PA Pen Name
+    FOR Index = 0 TO nPen - 1 DO
+    	X = Index+1;
+		sPen = _ObjectGetProperty(_ObjectCallMethod(hPens, "get_Item",X),"Name");
+		sCluster = _ObjectCallMethod(_ObjectCallMethod(hPens, "get_Item",X),"GetInformation","Cluster");
+		hTrendBrowse = TrnBrowseOpen("NAME=" + sPen, "NAME, COMMENT ,Equipment", sCluster);
+		
+		IF hTrendBrowse <> -1 THEN	
+			status = TrnBrowseFirst(hTrendBrowse);
+			IF status = 0 THEN
+				sPen = TrnBrowseGetField(hTrendBrowse, "Equipment");
+			END
+		END
+		TrnBrowseClose(hTrendBrowse);
+
+		sPA_File[Index] = sPen;
+    	iPA_Check[Index] = 0;
+	END
+	
+	!Check Pen Name
+	FOR iLen = 1 TO 254 DO
+		Index = 0;
+		FOR Index = 0 TO nPen - 1 DO
+			sPA_Check[Index] = StrMid(sPA_File[Index],0,iLen);
+		END
+		Index = 0;
+		FOR Index = 0 TO nPen - 1 DO
+			IF sPA_Check[Index] <> sPA_Check[(Index+1) MOD nPen] THEN
+				iCheck = iLen;
+				iLen = 255;
+				index = nPen;
+			END
+		END
+	END
+	
+	!Check File Name
+	IF iCheck = 0 THEN
+		sFile = sPA_File[0];
+	ELSE
+		sFile = StrLeft(sPA_File[0],iCheck-1);
+		IF StrRight(sFile,1) = "." THEN
+			sFile = StrLeft(sFile,StrLength(sFile)-1);
+		ELSE
+			Index = 0;
+			FOR Index = 0 TO StrLength(sFile)-1 DO
+				sCheck = StrMid(sFile,Index,1)
+				IF sCheck = "." THEN
+					iPos = Index;
+				END
+			END
+			sFile = StrLeft(sFile,iPos);
+		END
+	END
+	
+	!Save Equip File
+	sEquip = sFile + ".pav";
+	_ObjectCallMethod(hPA,"SaveToFile",sEquip,0);
+END
+
+STRING FUNCTION TabTrendEqTree_GetCountDsp(STRING treeName, STRING equipName)
+	INT count = TabTrendEqTree_GetCount(treeName,equipName);
+
+	IF (count = 0) THEN
+		RETURN "";
+	ELSE IF (count > 0) THEN
+		RETURN "(" + IntToStr(count) + ")";
+	ELSE
+		RETURN ".";
+	END END
+END
+
+INT
+FUNCTION TabTrendEqTree_GetCount(STRING treeName, STRING equipName)
+	INT index;
+	STRING cluster;
+	INT status;
+	INT	hSession;
+	INT itemCount;
+	INT totalCount = 0;
+	INT iCheck = PageGetInt(treeName + "_" + equipName + "_Load");
+	
+	IF iCheck THEN
+		itemCount = PageGetInt(treeName + "_" + equipName + "_Count");
+		RETURN itemCount;
+	END
+
+	hSession = TrnBrowseOpen("Equipment=" + equipName, "Name", cluster);
+	IF (-1 <> hSession) THEN
+		itemCount = TrnBrowseNumRecords(hSession)
+		TrnBrowseClose(hSession);
+	END
+	
+	PageSetInt(treeName + "_" + equipName + "_Load","1");
+	PageSetInt(treeName + "_" + equipName + "_Count",IntToStr(itemCount));
+	
+	RETURN itemCount;
+END
+
+FUNCTION
+VanproColumnsEquip(OBJECT hAnalyst,STRING sEquip,STRING sTAG)
+
+	ErrSet(1);
+	IsError();
+
+	OBJECT 	hObjectView;
+	OBJECT 	hObjectViewPaneItems;
+	OBJECT 	hObjectViewPenItems;
+	OBJECT 	hObjectViewItem;
+	OBJECT 	hObjectViewPaneColumns;
+	OBJECT 	hObjectViewPaneColumn;
+
+	OBJECT 	hPanes;
+	OBJECT 	hPane;
+	INT		nPaneCount;	
+	INT		nPaneIter;
+
+	OBJECT 	hPens;
+	OBJECT 	hPen;
+	INT		nPenCount;	
+	INT		nPenIter;
+	
+	OBJECT	hCursors;
+	OBJECT	hDiffCursor1;
+	OBJECT	hDiffCursor2;
+
+	INT		bLocalTime = -1;
+	REAL	rTimeValue;
+	INT		nMillisecondValue;
+	STRING	sDiffCursor1Val;
+	STRING	sDiffCursor2Val;
+	REAL	rDiffCursor1Val;
+	REAL	rDiffCursor2Val;
+	STRING	sCursorDifference;
+		
+	// Retrieve the Object View
+	hObjectView = _ObjectGetProperty(hAnalyst, "ObjectView");
+	hObjectViewPaneItems = _ObjectGetProperty(hObjectView , "Items");
+	hObjectViewPaneColumns = _ObjectGetProperty(hObjectView , "Columns");
+	
+	// Retrieve the panes
+	hPanes		= _ObjectGetProperty(hAnalyst, "Panes");
+	nPaneCount	= _ObjectGetProperty(hPanes, "Count");
+	
+	// Get the difference cursors
+	hCursors	 = _ObjectGetProperty(hAnalyst, "Cursors");
+	hObjectViewPaneColumn     = _ObjectCallMethod(hObjectViewPaneColumns, "get_ItemByName", "Equipment");
+	IF IsError() <> 0 THEN
+		hObjectViewPaneColumn = _ObjectCallMethod(hObjectViewPaneColumns, "Add", "Equipment","Equipment","128");
+	END
+!!	hDiffCursor1 = _ObjectCallMethod(hCursors, "get_ItemByName", msDiffCursor1Name );
+!!	hDiffCursor2 = _ObjectCallMethod(hCursors, "get_ItemByName", msDiffCursor2Name );
+	
+	// Cannot continue without the OV, panes or cursors
+//	IF IsError() <> 0 THEN
+//		RETURN;
+//	END
+	
+	FOR nPaneIter = 1 TO nPaneCount DO
+	
+		// Get object view Item and sub Items collection corresponing to this Pane
+		hObjectViewItem		= _ObjectCallMethod(hObjectViewPaneItems, "get_Item", nPaneIter);
+		hObjectViewPenItems	= _ObjectGetProperty(hObjectViewItem, "Items");
+		
+		// Get the Pens collection (and count)  corresponding to this pane
+		hPane 				= _ObjectCallMethod(hPanes, "get_Item", nPaneIter);
+		hPens				= _ObjectGetProperty(hPane , "Pens");
+		nPenCount			= _ObjectGetProperty(hPens , "Count");
+		
+		FOR nPenIter = 1 TO nPenCount DO
+		
+			// Get the matching Pen Item and ListView sub-item pair
+			hPen 			= _ObjectCallMethod(hPens, "get_Item", nPenIter );
+			hObjectViewItem	= _ObjectCallMethod(hObjectViewPenItems, "get_Item", nPenIter );
+			
+			IF IsError() = 0 THEN
+			
+				// Get diff cursor values for this pen
+//				_ObjectCallMethod(hDiffCursor1, "GetValue", hPen, bLocalTime, rTimeValue, nMillisecondValue, sDiffCursor1Val);
+//				_ObjectCallMethod(hDiffCursor2, "GetValue", hPen, bLocalTime, rTimeValue, nMillisecondValue, sDiffCursor2Val);
+				
+				IF IsError() = 0 THEN
+					
+					// Calculate difference and update the List View item
+//					rDiffCursor1Val = StrToReal(sDiffCursor1Val);
+//					rDiffCursor2Val = StrToReal(sDiffCursor2Val);
+//					sCursorDifference = RealToStr(rDiffCursor2Val - rDiffCursor1Val, 15, 5)
+//
+//					_ObjectCallMethod(hObjectViewItem, "PutField", msDiffColumnName, sCursorDifference);
+
+					IF _ObjectGetProperty(hPen,"Name") = sTAG THEN
+						_ObjectCallMethod(hObjectViewItem, "PutField","Equipment", sEquip);
+					END
+				END
+			END
+		END
+	END			
+
+	IsError();
+	ErrSet(0);
+END
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,88 @@
+FUNCTION GotoAlmPage(STRING strTag)
+	
+	/*iRec=AlarmFirstTagRec(strTag, "", "") ;*/
+	/*strDesc=AlarmGetFieldRec(iRec, "NAME");*/
+	
+	INT record;
+	STRING sName;	
+	
+	// Close Alarm and Event Screen
+	WinFree();
+	WinGoto(0);
+	
+	// Made screen name, which is defined in alarm tag the custom 1 within
+	record = AlarmFirstTagRec(strTag, "", "");
+	IF record <> -1 THEN
+		sName = AlarmGetFieldRec(record,"custom1");
+		IF sName="" THEN	
+			Message("Error",strTag +" 之 'Custom 1'未定義跳頁名稱!",48);	
+		ELSE
+			PageDisplay(sName);
+		END		
+	END
+	
+END
+
+FUNCTION TestFunc()
+    INT TBResult = TagBrowseOpen("", "TAG,TYPE,ADDR,CUSTOM1", "");
+    //ErrLog("Open Session ID: " + IntToStr(TBResult) + ", Error = " + IntToStr(IsError()));
+
+    INT TBHandle = TBResult;
+
+    // first
+    INT count = 1;
+    TBResult = TagBrowseFirst(TBHandle);
+    //ErrLog("First: " + IntToStr(TBResult) + ", Error = " + IntToStr(IsError()));
+
+   WHILE (TBResult <> -1) DO
+      //ErrLog("Entry " + IntToStr(count) + ": " + "Tag: " + TagBrowseGetField(TBHandle , "TAG") + ", " + "Type: " + TagBrowseGetField(TBHandle , "TYPE") + ", " + "Addr: " + TagBrowseGetField(TBHandle , "ADDR") + ", " + "CUSTOM1: " + TagBrowseGetField(TBHandle , "CUSTOM1") + ", " + "Error = " + IntToStr(IsError()));
+
+      TBResult = TagBrowseNext(TBHandle);
+      //ErrLog("Next: " + IntToStr(TBResult) + ", Error = " + IntToStr(IsError()));
+      count = count + 1;
+    END
+END
+
+INT FUNCTION TestFunc2()
+
+	INT	intSession;
+	INT	intCount;
+	INT	intNumber;
+	INT	intCounter;
+	INT	intReturn;
+	STRING	strTag;
+	STRING	strType;
+	STRING	strAddr;
+	STRING	strCustom1;
+	STRING	strMessage;
+
+	intSession	= TagBrowseOpen("", "TAG,TYPE,ADDR,CUSTOM1", "");
+
+	IF intSession = -1 THEN
+		ErrLog("Open Session ID: " + IntToStr(intSession) + ", Error = " + IntToStr(IsError()));
+	ELSE
+				intCount	= 1;	// first
+				intReturn	= TagBrowseFirst(intSession);
+				//ErrLog("First: " + IntToStr(intReturn) + ", Error = " + IntToStr(IsError()));
+
+				intNumber	= TagBrowseNumRecords(intSession);
+				IF intNumber > 0 THEN
+					FOR intCounter = 1 TO intNumber DO
+					strTag	= TagBrowseGetField(intSession, "TAG");
+					strType	= TagBrowseGetField(intSession, "TYPE");
+					strAddr	= TagBrowseGetField(intSession, "ADDR");
+					strCustom1	= TagBrowseGetField(intSession, "CUSTOM1");
+					strMessage	= "Entry " + IntToStr(intCount) + ": " + "Tag: " + strTag + ", " + "Type: " + strType + ", " + "Addr: " + strAddr + ", " + "CUSTOM1: " + strCustom1 + ", " + "Error = " + IntToStr(IsError());
+					//ErrLog(strMessage);
+					IF intCounter < intNumber THEN
+						intReturn	= TagBrowseNext(intSession);
+						intCount	= intCount+ 1;
+					END
+					SleepMS(0);
+				END
+	END
+	
+	TagBrowseClose(intSession);
+	END
+	RETURN 0;
+END

@@ -1,0 +1,92 @@
+// *************** Count Alarm number in each Category
+INT FUNCTION CatAlarmCount(STRING strCAT,INT AlarmArea)
+	INT nRec;
+	INT AlarmNum;
+	STRING strTagName;
+	
+	
+	//Reset AlarmNum//
+	AlarmNum=0;
+	
+	//READ THE FIRST RECORD IN THE CATEGORY//
+	nRec = AlarmFirstCatRec(strCAT, 0, AlarmArea);
+	IF nRec<>-1 THEN
+		AlarmNum=AlarmNum+1;
+		strTagName=AlarmGetFieldRec(nRec,"NAME");
+		//Check the next record//
+		nRec = AlarmNextCatRec(nRec,strCAT, 0, AlarmArea);
+		WHILE nRec<>-1 DO
+			AlarmNum=AlarmNum+1;
+			strTagName=AlarmGetFieldRec(nRec,"NAME");
+			nRec = AlarmNextCatRec(nRec,strCAT, 0, AlarmArea);
+		END
+	END
+	
+	RETURN AlarmNum;	
+	
+END 
+
+// *************** Check Alarm status of certain Category
+//You can use the FUNCTION AlarmFirstCatRec() TO find alarms in any area. 
+//This FUNCTION can only be called on the alarm server, so IF you want 
+//the result on a Citect Client send the output TO a Disk PLC. 
+
+FUNCTION CheckAlarms(STRING sTag,INT iCat,INT iArea)
+   INT nRec;
+   STRING sValue;
+  
+   WHILE TRUE DO 
+      nRec = AlarmFirstCatRec(iCat, 1);//, iArea);
+			 //AlarmFirstCatRec(Category, Type, Area) 
+			 //Type=0 : 0 - All active alarms, i.e. Types 1 AND 2.
+			 //         1 - All unacknowledged alarms, ON AND OFF.
+			 //         2 - All acknowledged ON alarms.
+      IF nRec = -1 THEN 
+         TagWrite(sTag,"0"); 
+      ELSE
+         TagWrite(sTag,"1");      
+      END 
+      Sleep(1);
+      //ReRead(0);
+   END 
+END 
+
+
+
+FUNCTION CheckAckedAlarms(STRING sTag,INT iCat,INT iArea)
+   INT nRec;
+   STRING sValue;
+  
+   WHILE TRUE DO 
+      nRec = AlarmFirstCatRec(iCat, 2);//, iArea);
+			 //AlarmFirstCatRec(Category, Type, Area) 
+			 //Type=0 : 0 - All active alarms, i.e. Types 1 AND 2.
+			 //         1 - All unacknowledged alarms, ON AND OFF.
+			 //         2 - All acknowledged ON alarms.
+      IF nRec = -1 THEN 
+         TagWrite(sTag,"0"); 
+      ELSE
+         TagWrite(sTag,"1");      
+      END 
+      Sleep(1);
+     // ReRead(0);
+   END 
+END   
+
+STRING FUNCTION CatAlarm(STRING strCAT , STRING strCluster)
+	INT nRec;	
+	
+	//READ THE FIRST RECORD IN THE CATEGORY//
+	nRec = AlarmFirstCatRec(strCAT, 0, -1, strCluster);
+	IF nRec<>-1 THEN
+		RETURN "1";
+	ELSE
+		RETURN "0";		
+	END	
+   
+END 
+
+
+
+
+

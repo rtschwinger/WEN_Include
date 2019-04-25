@@ -1,0 +1,940 @@
+
+FUNCTION DspAlm_RClick(STRING tempTag,STRING tempCluster)
+
+	INT iSelection;
+	
+	AlmTag=tempTag;
+	AlmTagDisable=0;
+	AlmCluster=tempCluster;	
+	
+		//DspPopupMenu(0, "電壓值,電流值,功率/用電量,諧波,需量,使用手冊,控制電路");
+		//DspPopupMenu(0, "Voltage value, current value, power / power consumption, harmonics, demand, manual, control circuit");
+		
+		DSPPOPUPMENU(0,"Copy Tag Name,,Alarm Ack,,Alarm Disable,,Alarm Enable,,Goto Page,,Change Setting");
+				
+		iSelection = DspPopupMenu();
+		
+		
+		SELECT CASE iSelection
+		CASE 1
+			DspAlmCopy();  				
+		CASE 2	
+			AckAlarm();  				
+		CASE 3
+			DisableAlarm();  				
+		CASE 4
+			EnableAlarm();				
+		CASE 5
+			ErrLog("GotoPage();");	
+		CASE 6
+			ChangeThreshold();							
+		END SELECT
+			
+END
+
+FUNCTION DspAlmPopUP(STRING tempTag,STRING tempCluster)
+	AlmTag=tempTag;
+	AlmTagDisable=0;
+	AlmCluster=tempCluster;
+	PagePopUp("PopUp_Alarm");
+END
+
+! Alarm Setting,including Enable and Disable control
+FUNCTION SetAlarmThreshold(STRING strTAG,INT DisableAlarm)
+	STRING strTag1;
+	INT iLength;
+	
+	/* Extract Alarm Tagname */
+	iLength=StrLength(strTAG);
+	strTag1=StrMid(strTAG,0,iLength-3);	!.On
+	
+	SETW_SetAlarmFunction_V7(strTag1);
+		   
+END
+
+! Change Setting from Real Time Alarm */
+FUNCTION ChangeThreshold()
+
+	//IF (GetPriv(5, 0) OR GetPriv(6, 0)) THEN
+			strCluster=AlmCluster;
+			SETW_SetAlarmFunction_V7(AlmTag);
+	//END
+
+END
+
+/* Display Alarm Tag name */
+STRING 
+FUNCTION DspAlmTag()
+	RETURN AlmTag;
+END
+
+INT
+FUNCTION AlarmStatus()
+	RETURN AlmTagDisable;
+END
+ 
+!Copy Tag name to Clipboard
+FUNCTION DspAlmCopy()
+	ClipCopy(AlmTag);	
+END
+
+/* Disable Alarm Tag */
+FUNCTION DisableAlarm()
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	STRING temp2;
+	STRING sTagDesc;
+	STRING sTagData;	
+	INT iResult;
+
+	IF (GetPriv(2, 0) OR GetPriv(3, 0) OR  GetPriv(4, 0)) THEN       // 權限需為2以上		
+	
+			hClient=MsgOpen("Alarm",0,0,AlmCluster);	
+			IF hClient<>-1 THEN	
+				temp=AlmTag + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + AlmCluster;
+				iRecNo1=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);		
+			ELSE
+				Message("Error","Can not read AlarmTag, Please try later",48);
+				iRecNo1 = -1		
+			END	
+			IF iRecNo1<>-1 THEN
+				temp1=IntToStr(iRecNo1) + "," + AlmCluster;
+				/* Disable alarm */		
+				MsgRPC(hClient,"AlarmDisableRec",temp1,0);	
+				/* Read the Description of alarm tag */
+				!temp2=temp1 + "," + "^"" + "Desc" + "^"";
+				temp2=IntToStr(iRecNo1) + "," + "^"" + "Desc" + "^"" + ",0," + "^"" + AlmCluster + "^"";
+				sTagDesc=MsgRPC(hClient,"AlarmGetFieldRec",temp2,0);  
+				sTagData=AlmTag + " (" + sTagDesc + ") ";				
+				//Data_Log("抑制(Disabled)警報 : " + sTagData);
+				!Device_Operate(AlmTag ,8);
+				
+				iRecNo1=-1;		
+			END
+			
+	END
+
+END
+
+/* Enable Alarm Tag */
+FUNCTION EnableAlarm()
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	STRING temp2;
+	STRING sTagDesc;
+	STRING sTagData;	
+	INT iResult;
+	
+	IF (GetPriv(2, 0) OR GetPriv(3, 0) OR  GetPriv(4, 0)) THEN       // 權限需為2以上	Privilage is Greater than 2
+	
+			hClient=MsgOpen("Alarm",0,0,AlmCluster);	
+			IF hClient<>-1 THEN	
+				temp=AlmTag + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + AlmCluster;
+				iRecNo1=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);		
+			ELSE
+				Message("Error","Can not read AlarmTag, Please try later",48);
+				iRecNo1 = -1		
+			END	
+			IF iRecNo1<>-1 THEN
+				temp1=IntToStr(iRecNo1) + "," + AlmCluster;
+				/* Enable alarm */
+				MsgRPC(hClient,"AlarmEnableRec",temp1,0);
+				/* Read the Description of alarm tag */
+				!temp2=temp1 + "," + "^"" + "Desc" + "^"";
+				temp2=IntToStr(iRecNo1) + "," + "^"" + "Desc" + "^"" + ",0," + "^"" + AlmCluster + "^"";
+				sTagDesc=MsgRPC(hClient,"AlarmGetFieldRec",temp2,0);  
+				sTagData=AlmTag + " (" + sTagDesc + ") ";				
+				//Data_Log("致能(Enabled)警報 : " + sTagData);
+				!Device_Operate(AlmTag ,9);
+				iRecNo1=-1;			
+			END
+	END
+END
+
+// Alarm All Acknowledge
+FUNCTION 
+AckAllAlarms()
+
+	//IF (GetPriv(2, 0) OR GetPriv(3, 0) OR  GetPriv(4, 0)) THEN
+		AlarmAck(1,-1);
+		//Data_Log("Ack All Alarm");
+	//END
+END
+
+/* Ack Alarm */
+FUNCTION AckAlarm()
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	STRING temp2;
+	STRING sTagDesc;
+	STRING sTagData;
+	INT iResult;
+	
+	
+//	IF (GetPriv(2, 0) OR GetPriv(3, 0) OR  GetPriv(4, 0)) THEN       // 權限需為2以上	
+	
+			hClient=MsgOpen("Alarm",0,0,AlmCluster);	
+			IF hClient<>-1 THEN	
+				temp=AlmTag + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + AlmCluster;
+				iRecNo1=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);		
+			ELSE
+				Message("Error","Can not read AlarmTag, Please try later",48);
+				iRecNo1 = -1		
+			END	
+			IF iRecNo1<>-1 THEN
+					temp1=IntToStr(iRecNo1) + "," + AlmCluster;
+					/* ack alarm */
+					MsgRPC(hClient,"AlarmAckRec",temp1,0);  
+					/* Read the Description of alarm tag */
+					!temp2=temp1 + "," + "^"" + "Desc" + "^"";
+					temp2=IntToStr(iRecNo1) + "," + "^"" + "Desc" + "^"" + ",0," + "^"" + AlmCluster + "^"";
+					sTagDesc=MsgRPC(hClient,"AlarmGetFieldRec",temp2,0);
+					sTagData=AlmTag + " (" + sTagDesc + ") ";
+					//Data_Log("單點警報確認 : " + sTagData);
+					iRecNo1=-1;		
+			END
+			
+			MsgClose("Alarm",hClient);
+END
+
+/* 選取Clear Alarm功能 */
+FUNCTION ClearAlarm()
+	//jason 081007
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	INT iResult;
+	
+	
+	hClient=MsgOpen("Alarm",0,0,AlmCluster);	
+	IF hClient<>-1 THEN	
+		temp=AlmTag + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + AlmCluster;
+		iRecNo1=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);		
+	ELSE
+		Message("Error","Can not read AlarmTag, Please try later",48);
+		iRecNo1 = -1		
+	END	
+	IF iRecNo1<>-1 THEN
+
+			temp1=IntToStr(iRecNo1) + "," + AlmCluster;
+			MsgRPC(hClient,"AlarmClearRec",temp1,0);
+			//Data_Log("警報清除 : " + AlmTag);
+			!Device_Operate(AlmTag ,6);
+			iRecNo1=-1;		
+	
+	END
+END
+
+/* Authority to be more than 2 
+FUNCTION GotoPage()
+
+	INT record;
+	STRING sName,sName1;
+	STRING sPage;	
+	INT hClient;
+	STRING temp;
+	STRING temp1;
+	INT iResult;
+
+	hClient=MsgOpen("Alarm",0,0,AlmCluster);	
+	IF hClient<>-1 THEN	
+		temp=AlmTag + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + AlmCluster;
+		record=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);		
+	ELSE
+		Message("Error","Can not read AlarmTag, Please try later",48);
+		record = -1		
+	END
+
+	IF record <> -1 THEN
+		temp1=IntToStr(record) + "," + "^"" + "Equipment" + "^"" + ",0," + "^"" + AlmCluster + "^"";
+		sName = MsgRPC(hClient,"AlarmGetFieldRec",temp1,0);
+		IF sName="" THEN	
+			Message("Error", AlmTag + "未定義跳頁視窗!",48);	
+		ELSE
+			CloseAllWindow();	
+//			PageDisplay(sName,AlmCluster);
+			!For PLS
+			sPage = EquipGetProperty(sName,"Page",0,AlmCluster)
+			Page_Display_1(sPage,AlmCluster);
+		END		
+	END
+END
+*/
+
+!temp1=IntToStr(record) + "," + "^"" + "Equipment" + "^"" + ",0," + "^"" + AlmCluster + "^"";
+
+// Vijeo Citect V7.4 Form PSE8.0
+// Vanpro CHYU
+FUNCTION SETW_SetAlarmFunction_V74(STRING AlmTagName,STRING AlmCluster)
+     IF iDebug_On THEN
+     			ErrLog("SETW_SetAlarmFunction_V74:: Alarm Tag Name: " + AlmTagName + " Alarm Cluster: " + AlmCluster );
+     END
+	strCluster = AlmCluster;
+	SETW_SetAlarmFunction_V7(AlmTagName);
+END
+
+// Vijeo Citect V7.5
+// Function is called include Alarm Enable,Disable status and Action Logging //
+FUNCTION SETW_SetAlarmFunction_V7(STRING AlmTagName)
+  
+	INT  hAn;
+	STRING AlmTagDesc;
+
+	STRING sTag,sName,sEnab,sDisab;
+	STRING strLog,strPreLog;
+	STRING strName;	
+		
+	REAL rHighHigh,rHigh,;  /*ASSPOPUP Windows Dim*/
+	REAL rLow,rLowLow;
+	REAL rDeadBand,rDeviation,rRate;
+	REAL iHHDelay,iHDelay,iLDelay,iLLDelay,iDevDelay,iDelay;	
+	STRING tempTag;
+	
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	INT iResult;
+	INT iType;
+	
+	INT Error;
+	
+	IF iDebug_On THEN
+     	ErrLog("Call to SETW_SetAlarmFunction_V7:: with Alarm Tag:  " + AlmTagName);
+  END
+	
+	//
+	
+	temp=AlmTagName + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + strCluster;
+	
+	hClient=MsgOpen("Alarm",0,0,strCluster);	
+	IF hClient<>-1 THEN	
+		
+		//ErrSet(1); !TEST
+		iRecNo1=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);
+		//Error=IsError(); !TEST		
+		
+	ELSE
+		Message("Error","Can not read AlarmTag, Please try later",48);
+		iRecNo1 = -1		
+	END	
+
+	IF iRecNo1 <> -1 THEN
+		iType = AlmTagsOpen("TAG=" + AlmTagName,"",strCluster);
+		AlmTagsFirst(iType);
+		IF StrSearch(0, AlmTagsGetField(iType, "ALARMTYPE"), "Analog") > -1 THEN
+			!Analog Alarm Setting
+			temp1=IntToStr(iRecNo1) + "," + "^"" + "Name" + "^"" + "," + strCluster;
+			strName	=MsgRPC(hClient,"AlarmGetFieldRec",temp1,0);
+			
+			/* Setting Read Meter */
+			strPreLog="Read_" + strName + "(" + almTagName + ")"		
+			
+			/* Read Alarm Tag Name */
+			tempTag=strCluster + "." + AlmTagName + ".Name";
+			AlmTagDesc=TagRead(tempTag,0);
+			!2014/12/2 Vanpro CHYU Form Multi-lingual
+			IF StrLeft(AlmTagDesc,1) = "@" THEN
+				AlmTagDesc = StrToLocalText("@" + "(" + StrRight(AlmTagDesc,StrLength(AlmTagDesc)-1) + ")");
+			END
+			
+			/* Read Setting Value */
+			/* HighHigh */
+			tempTag=strCluster + "." + AlmTagName + ".HighHigh";	
+			rHighHigh=TagRead(tempTag,0);
+			
+			IF rHighHigh > (3.0e+38) THEN
+				sHighHigh1="";
+			ELSE
+				sHighHigh1= StrTrim( RealToStr(rHighHigh,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " HiHi 苛alue : " + sHighHigh1;
+				//Data_Log(strLog);
+			END
+			
+			/* High */
+			tempTag=strCluster + "." + AlmTagName + ".High";		
+			rHigh=TagRead(tempTag,0);
+			IF rHigh > (3.0e+38) THEN
+				sHigh1="";
+			ELSE		
+				sHigh1= StrTrim( RealToStr(rHigh,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " Hi Value : " + sHigh1;
+				///Data_Log(strLog);			
+			END
+			
+			/* Low */
+			tempTag=strCluster + "." + AlmTagName + ".Low";		
+			rLow=TagRead(tempTag,0);
+			IF rLow < (-3.0e+38) THEN
+				sLow1="";
+			ELSE				
+				sLow1= StrTrim( RealToStr(rLow,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " Low Value : " + sLow1;
+				//Data_Log(strLog);			
+			END
+			
+			/* LowLow */
+			tempTag=strCluster + "." + AlmTagName + ".LowLow";		
+			rLowLow=TagRead(tempTag,0);
+			IF rLowLow < (-3.0e+38) THEN
+				sLowLow1="";
+			ELSE		
+				sLowLow1= StrTrim( RealToStr(rLowLow,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " LowLow 苛alue : " + sLowLow1;
+				//Data_Log(strLog);			
+			END
+			
+			/* Deadband */
+			tempTag=strCluster + "." + AlmTagName + ".DeadBand";	
+			rDeadBand=TagRead(tempTag,0);
+			IF rDeadBand = 0 THEN
+				sDeadBand1="";
+			ELSE						
+				sDeadBand1= StrTrim( RealToStr(rDeadBand,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " DeadBand 苛alue : " + sDeadBand1;
+				//Data_Log(strLog);			
+			END
+			
+			/* Deviation */
+			tempTag=strCluster + "." + AlmTagName + ".Deviation";	
+			rDeviation=TagRead(tempTag,0);		
+			IF rDeviation = 0 THEN
+				sDeviation1="";
+			ELSE				
+				sDeviation1= StrTrim( RealToStr(rDeviation,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " Deviation 苛alue : " + sDeviation1;
+				//Data_Log(strLog);			
+			END
+			
+			/* Rate */
+			tempTag=strCluster + "." + AlmTagName + ".Rate";		
+			rRate=TagRead(tempTag,0);		
+			IF rRate = 0 THEN
+				sRate1="";
+			ELSE		
+				sRate1= StrTrim( RealToStr(rRate,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " Rate 苛alue : " + sRate1;
+				//Data_Log(strLog);
+									
+			END
+
+			/* HighHighDelay */
+			tempTag=strCluster + "." + AlmTagName + ".HHDelay";	
+			iHHDelay=TagRead(tempTag,0);
+			
+			IF iHHDelay = 0 THEN
+				sHHDelay="";
+			ELSE
+				sHHDelay= StrTrim( RealToStr(iHHDelay,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " HiHiDelay value : " + sHHDelay;
+				//Data_Log(strLog);
+			END
+			
+			/* HighDelay */
+			tempTag=strCluster + "." + AlmTagName + ".HDelay";	
+			iHDelay=TagRead(tempTag,0);
+			
+			IF iHDelay = 0 THEN
+				sHDelay="";
+			ELSE
+				sHDelay= StrTrim( RealToStr(iHDelay,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " HiDelay value : " + sHDelay;
+				//Data_Log(strLog);
+			END
+			
+			/* LowDelay */
+			tempTag=strCluster + "." + AlmTagName + ".LDelay";	
+			iLDelay=TagRead(tempTag,0);
+			
+			IF iLDelay = 0 THEN
+				sLDelay="";
+			ELSE
+				sLDelay= StrTrim( RealToStr(iLDelay,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " LowDelay value : " + sLDelay;
+				//Data_Log(strLog);
+			END
+			
+			/* LowLowDelay */
+			tempTag=strCluster + "." + AlmTagName + ".LLDelay";	
+			iLLDelay=TagRead(tempTag,0);
+			
+			IF iLLDelay = 0 THEN
+				sLLDelay="";
+			ELSE
+				sLLDelay= StrTrim( RealToStr(iLLDelay,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " LowLowDelay value : " + sLLDelay;
+				//Data_Log(strLog);
+			END
+			
+			/* Deviation Delay */
+			tempTag=strCluster + "." + AlmTagName + ".DevDelay";	
+			iDevDelay=TagRead(tempTag,0);
+			
+			IF iDevDelay = 0 THEN
+				sDevDelay="";
+			ELSE
+				sDevDelay= StrTrim( RealToStr(iDevDelay,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " Deviation Delay value : " + sDevDelay;
+				//Data_Log(strLog);
+			END
+			
+			/* Create Form */
+			FormNew("Alarm Tune",80,11,8);
+			
+			FormPrompt(0,0,"TAG  : ");
+			FormPrompt(7,0,AlmTagName);
+			
+			FormPrompt(0,1,"DESC : ");
+			FormPrompt(7,1,AlmTagDesc);		
+			
+			tempTag=strCluster + "." +AlmTagName + ".Disabled";
+			IF TagRead(tempTag,0)="1" THEN
+				sDisab=1;
+				sEnab=0;
+				!Save Setting Value Log
+				strLog=strPreLog + " Alarm status : Disabled";
+				//Data_Log(strLog);						
+			ELSE
+				sDisab=0;		
+				sEnab=1;
+				!Save Setting Value Log
+				strLog=strPreLog + " Alarm status : Enabled";
+				//Data_Log(strLog);			
+			END
+			
+			FormRadioButton(0,2,"Enable",sEnab);
+			FormRadioButton(18,2,"Disable",sDisab);
+	
+			FormInput(0,3,"High High     ",sHighHigh1,20);
+			FormInput(0,4,"High          ",sHigh1,20);
+			FormInput(0,5,"Low           ",sLow1,20);
+			FormInput(0,6,"Low Low       ",sLowLow1,20);
+			FormInput(0,7,"Deviation     ",sDeviation1,20);
+			FormInput(0,8,"Rate of Change",sRate1,20);
+			
+			FormInput(40,3,"High High Delay ",sHHDelay,20);
+			FormInput(40,4,"High Delay      ",sHDelay,20);
+			FormInput(40,5,"Low Delay       ",sLDelay,20);
+			FormInput(40,6,"Low Low Delay   ",sLLDelay,20);
+			FormInput(40,7,"Deviation Delay ",sDevDelay,20);
+			FormInput(40,8,"DeadBand        ",sDeadBand1,20);
+			
+			!IF GetPriv(3, 0) THEN       /* Security 2 */
+			IF PLSSecGetPriv(PL_Sec_AlmConfig) THEN
+				FormButton(25 ,10,"   OK   ", 0, 1);
+			END
+			
+			FormButton(45,10," Cancel ", 0, 2);
+	
+			IF FormRead(0)=0 THEN
+			
+				/* Save Data */	
+				strPreLog="Modify_" + strName + "(" + almTagName + ")" 
+	
+				IF sHighHigh1<>"" THEN
+					temp1=IntToStr(iRecNo1) + "," + "0" + "," + sHighHigh1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " HiHi 苛alue : " + sHighHigh1;
+					//Data_Log(strLog);				
+				END
+				IF sHigh1<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "1" + "," + sHigh1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " Hi 苛alue : " + sHigh1;
+					//Data_Log(strLog);								
+				END
+				IF sLow1<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "2" + "," + sLow1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " Low 苛alue : " + sLow1;
+					//Data_Log(strLog);								
+				END
+				IF sLowLow1<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "3" + "," + sLowLow1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " LowLow 苛alue : " + sLowLow1;
+					//Data_Log(strLog);								
+				END
+				IF sDeadBand1<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "4" + "," + sDeadBand1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " DeadBand 苛alue : " + sDeadBand1;
+					//Data_Log(strLog);								
+				END
+				IF sDeviation1<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "5" + "," + sDeviation1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " Deviation 苛alue : " + sDeviation1;
+					//Data_Log(strLog);								
+				END
+				IF sRate1<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "6" + "," + sRate1 + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetThresholdRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " Rate 苛alue : " + sRate1;
+					//Data_Log(strLog);								
+				END
+				
+				IF sHHDelay<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "1" + "," + sHHDelay + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetDelayRec",temp1,0);
+					
+					!Write Setting Value
+					strLog=strPreLog + " HiHiDelay value : " + sHHDelay;
+					//Data_Log(strLog);								
+				END
+				
+				IF sHDelay<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "2" + "," + sHDelay + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetDelayRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " HiDelay value : " + sHDelay;
+					//Data_Log(strLog);								
+				END
+				
+				IF sLDelay<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "3" + "," + sLDelay + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetDelayRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " LowLowDelay value : " + sLDelay;
+					//Data_Log(strLog);								
+				END
+				
+				IF sLLDelay<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "4" + "," + sLLDelay + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetDelayRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " LowLowDelay value : " + sLLDelay;
+					//Data_Log(strLog);								
+				END
+				
+				IF sDevDelay<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "5" + "," + sDevDelay + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetDelayRec",temp1,0);
+					!Write Setting Value
+					strLog=strPreLog + " Deviation Delay value : " + sDevDelay;
+					//Data_Log(strLog);								
+				END
+					
+				IF sDisab="1" THEN
+						temp1=IntToStr(iRecNo1) + "," + strCluster;
+						MsgRPC(hClient,"AlarmDisableRec",temp1,0);
+						!Write Setting Value
+						strLog=strPreLog + " Alarm status : Disabled";
+						//Data_Log(strLog);						
+				END
+				IF sEnab="1" THEN
+						temp1=IntToStr(iRecNo1) + "," + strCluster;
+						MsgRPC(hClient,"AlarmEnableRec",temp1,0);
+						!Write Setting Value
+						strLog=strPreLog + " Alarm status : Enabled";
+						//Data_Log(strLog);					
+				END
+	
+				MsgClose("Alarm",hClient);
+			
+			END
+		
+		ELSE
+			temp1=IntToStr(iRecNo1) + "," + "^"" + "Name" + "^"" + "," + strCluster;
+			strName	=MsgRPC(hClient,"AlarmGetFieldRec",temp1,0);
+			
+			/* Setting Read Meter */
+			strPreLog="Read_" + strName + "(" + almTagName + ")"		
+			
+			/* Read Alarm Tag Name */
+			tempTag=strCluster + "." + AlmTagName + ".Name";
+			AlmTagDesc=TagRead(tempTag,0);
+			!2014/12/2 Vanpro CHYU Form Multi-lingual
+			IF StrLeft(AlmTagDesc,1) = "@" THEN
+				AlmTagDesc = StrToLocalText("@" + "(" + StrRight(AlmTagDesc,StrLength(AlmTagDesc)-1) + ")");
+			END
+			
+			/* Read Setting Value */
+			/* Delay */
+			tempTag=strCluster + "." + AlmTagName + ".Delay";	
+			iDelay=TagRead(tempTag,0);
+			
+			IF iDelay = 0 THEN
+				sDelay="";
+			ELSE
+				sDelay= StrTrim( RealToStr(iDelay,10,2));
+				!Save Setting Value Log
+				strLog=strPreLog + " Delay value : " + sDelay;
+				//Data_Log(strLog);
+			END
+			
+			/* Create Form */
+			FormNew("Alarm Tune",80,6,8);
+			
+			FormPrompt(0,0,"TAG  : ");
+			FormPrompt(7,0,AlmTagName);
+			
+			FormPrompt(0,1,"DESC : ");
+			FormPrompt(7,1,AlmTagDesc);		
+			
+			tempTag=strCluster + "." +AlmTagName + ".Disabled";
+			IF TagRead(tempTag,0)="1" THEN
+				sDisab=1;
+				sEnab=0;
+				!Save Setting Value Log
+				strLog=strPreLog + " Alarm status : Disabled";
+				//Data_Log(strLog);						
+			ELSE
+				sDisab=0;		
+				sEnab=1;
+				!Save Setting Value Log
+				strLog=strPreLog + " Alarm status : Enabled";
+				//Data_Log(strLog);			
+			END
+			
+			FormRadioButton(0,2,"Enable",sEnab);
+			FormRadioButton(18,2,"Disable",sDisab);
+	
+			FormInput(0,3,"Delay         ",sDelay,20);
+			
+			!IF GetPriv(3, 0) THEN       /* Security 2 */
+			IF PLSSecGetPriv(PL_Sec_AlmConfig) THEN
+				FormButton(25 ,5,"   OK   ", 0, 1);
+			END
+			
+			FormButton(45,5," Cancel ", 0, 2);
+	
+			IF FormRead(0)=0 THEN
+			
+				/* Save Setting Data */	
+				strPreLog="Modify_" + strName + "(" + almTagName + ")" 
+				
+				IF sDelay<>"" THEN			
+					temp1=IntToStr(iRecNo1) + "," + "0" + "," + sDelay + "," + strCluster;
+					MsgRPC(hClient,"AlarmSetDelayRec",temp1,0);
+					!Save Setting Value
+					strLog=strPreLog + " Delay value : " + sDelay;
+					//Data_Log(strLog);								
+				END
+				
+				IF sDisab="1" THEN
+						temp1=IntToStr(iRecNo1) + "," + strCluster;
+						MsgRPC(hClient,"AlarmDisableRec",temp1,0);
+						!Write Setting Value
+						strLog=strPreLog + " Alarm status : Disabled";
+						//Data_Log(strLog);						
+				END
+				IF sEnab="1" THEN
+						temp1=IntToStr(iRecNo1) + "," + strCluster;
+						MsgRPC(hClient,"AlarmEnableRec",temp1,0);
+						!Write Setting Value
+						strLog=strPreLog + " Alarm status : Enabled";
+						//Data_Log(strLog);					
+				END
+				
+				MsgClose("Alarm",hClient);
+			END
+		END
+		AlmTagsClose(iType);
+	END
+END
+
+
+FUNCTION HUB_AlarmSetting(STRING AlmTagName,STRING AlmActTagName,STRING sCluster)
+
+	INT  hAn;
+	STRING AlmTagDesc;
+
+	STRING sTag,sName,sEnab,sDisab;
+	STRING strLog,strPreLog;
+	STRING strName;
+	STRING sUp = "1";
+	STRING sDown = "0";!"2";
+	STRING sActVal,sDisVal;
+		
+	REAL rHighHigh,rHigh,;  /*ASSPOPUP視窗使用之警報點變數*/
+	REAL rLow,rLowLow;
+	REAL rDeadBand,rDeviation,rRate;	
+	STRING tempTag;
+	
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp;
+	STRING temp1;
+	INT iResult;
+	
+	INT Error;
+	
+	strCluster = sCluster;
+	
+	temp=AlmTagName + "," + "^"" + "^"" + "," + "^"" + "^"" + "," + strCluster;
+	
+	hClient=MsgOpen("Alarm",0,0,strCluster);	
+	IF hClient<>-1 THEN	
+		
+		//ErrSet(1); !TEST
+		iRecNo1=MsgRPC(hClient,"AlarmFirstTagRec",temp,0);
+		//Error=IsError(); !TEST		
+		
+	ELSE
+		Message("Error","Can not read AlarmTag, Please try later",48);
+		iRecNo1 = -1		
+	END	
+
+	IF iRecNo1 <> -1 THEN
+		temp1=IntToStr(iRecNo1) + "," + "^"" + "Name" + "^"" + "," + strCluster;
+		strName	=MsgRPC(hClient,"AlarmGetFieldRec",temp1,0);
+		
+		/* 設定存取表頭 */
+		strPreLog="讀取" + strName + "(" + almTagName + ")"		
+		
+		/* 讀取說明 */
+		tempTag=strCluster + "." + AlmTagName + ".Name";
+		AlmTagDesc=TagRead(tempTag,0);
+		!2014/12/2 Vanpro CHYU Form Multi-lingual
+		IF StrLeft(AlmTagDesc,1) = "@" THEN
+			AlmTagDesc = StrToLocalText("@" + "(" + StrRight(AlmTagDesc,StrLength(AlmTagDesc)-1) + ")");
+		END
+		
+		/* 產生表單 */
+		FormNew("Alarm Tune",40,8,8);
+		
+		FormPrompt(0,0,"TAG  : ");
+		FormPrompt(7,0,AlmTagName);
+		
+		FormPrompt(0,1,"DESC : ");
+		FormPrompt(7,1,AlmTagDesc);		
+		
+		tempTag=strCluster + "." +AlmTagName + ".Disabled";
+		IF TagRead(tempTag,0)="1" THEN
+			sDisab=1;
+			sEnab=0;
+			!記錄讀取值
+			strLog=strPreLog + " 警報狀態 : Disabled";
+			//Data_Log(strLog);						
+		ELSE
+			sDisab=0;		
+			sEnab=1;
+			!記錄讀取值
+			strLog=strPreLog + " 警報狀態 : Enabled";
+			//Data_Log(strLog);			
+		END
+		
+		tempTag=strCluster + "." +AlmActTagName;
+		IF TagRead(tempTag,0)=sUp THEN
+			sActVal = 1;
+			sDisVal = 0;
+		END
+		
+		IF TagRead(tempTag,0)=sDown THEN
+			sActVal = 0;
+			sDisVal = 1;
+		END
+		
+		FormGroupBox(0,2,35,3,"Alarm Enable / Disable")
+		FormRadioButton(2,3,"Enable",sEnab);
+		FormRadioButton(18,3,"Disable",sDisab);
+		FormGroupBox(0,4,35,3,"Alarm Action Datum")
+		FormRadioButton(2,5,"Up Action     ",sActVal);
+		FormRadioButton(18,5,"Down Action   ",sDisVal);
+		
+		// Check if Privilege is greater than 2
+		IF GetPriv(1, 0) THEN 
+			FormButton(5 ,7,"   OK   ", 0, 1);
+		END
+		
+		FormButton(25,7," Cancel ", 0, 2);
+
+		IF FormRead(0)=0 THEN
+		
+			/* Record Information */	
+			strPreLog="修改" + strName + "(" + almTagName + ")" 
+				
+			IF sDisab="1" THEN
+					temp1=IntToStr(iRecNo1) + "," + strCluster;
+					MsgRPC(hClient,"AlarmDisableRec",temp1,0);
+					! Write the Set Value
+					strLog=strPreLog + " Alert Status : Disabled";
+					//Data_Log(strLog);						
+			END
+			IF sEnab="1" THEN
+					temp1=IntToStr(iRecNo1) + "," + strCluster;
+					MsgRPC(hClient,"AlarmEnableRec",temp1,0);
+					! Write the Set Value
+					strLog=strPreLog + " Alert Status : Enabled";
+					//Data_Log(strLog);					
+			END
+
+			IF sActVal="1" THEN
+					TagWrite(strCluster + "." +AlmActTagName,sUp);						
+			END
+			IF sDisVal="1" THEN
+					TagWrite(strCluster + "." +AlmActTagName,sDown);						
+			END
+
+			MsgClose("Alarm",hClient);
+   				
+		END
+	END
+
+END
+
+STRING
+FUNCTION HUB_AlarmDesc(STRING AlmActTagName,STRING sCluster="")
+
+	INT  hAn;
+	STRING AlmTagDesc;
+
+	STRING sTag,sName,sEnab,sDisab;
+	STRING strLog,strPreLog;
+	STRING strName;
+	STRING sUp = "1";
+	STRING sDown = "0";!"2";
+	STRING sActVal,sDisVal;
+	
+	STRING sReturn;
+	
+//	IF sCluster <> "" THEN
+//		sCluster = sCluster + "."
+//	END
+//
+//	sTag = sCluster + AlmActTagName;
+
+	IF StrTrim(AlmActTagName) = sUp THEN
+		sReturn = sConnect;
+	END
+
+	IF StrTrim(AlmActTagName) = sDown THEN
+		sReturn = sDisconnect;
+	END
+
+	RETURN sReturn;
+END
+

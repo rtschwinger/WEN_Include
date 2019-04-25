@@ -1,0 +1,1436 @@
+INT 
+FUNCTION LineLevel(REAL Volts,INT Level1=1,INT Level2=1,INT Level3=1,INT Level4=1,INT Level5=1)
+	IF Volts <= 0.0 THEN
+		RETURN 0;
+	END
+	
+	RETURN Level1 AND Level2 AND Level3 AND Level4 AND Level5;
+END
+
+INT
+FUNCTION LineLevelColor(REAL Volts,INT Level1=1,INT Level2=1,INT Level3=1,INT Level4=1,INT Level5=1,STRING BUSType = "HV",STRING sStatusLabel="")
+	INT iGrey = 7;
+	INT iBlue = 201;
+	INT iPink = ES_AssignBusColor_Custom(143);
+	INT iGreen = 58;
+	INT iTeal = ES_AssignBusColor_Custom(32);
+	INT iRed = 12;
+	INT iYellow = 14;
+	INT iOrange = 200;
+	INT iPurple = 189;
+	INT iCyan = MakeCitectColour(0,255,255);
+	INT iAlarm = 42;
+	INT iWarning = 118;
+	INT iBlack = 16;
+	INT iWhite = 255;
+	INT iHide = 128;
+	INT LineOn,LineOff;
+
+    TraceMsg("BUS Type is now: " + BUSType);
+
+	SELECT CASE BUSType
+		CASE "HV"
+		LineOn = iRed;
+		LineOff = iGreen;
+		CASE "MV"
+		LineOn = iRed;
+		LineOff = iGreen;
+		CASE "LV"
+		LineOn = iRed;
+		LineOff = iGreen;
+		CASE "Alarm"
+		LineOn = iAlarm;
+		LineOff = 0;
+		CASE "Warning"
+		LineOn = iPurple;
+		LineOff = iGrey;
+		CASE "Trip"
+		LineOn = iWarning;
+		LineOff = iWarning;
+		CASE "None"
+		LineOn = iGrey;
+		LineOff = iGrey;
+		CASE "Hide"
+		LineOn = iHide;
+		LineOff = iHide;
+		//IR Bus
+		CASE "A_BUS","S_A"
+		LineOn = iOrange;
+		LineOff = iGreen;
+		//MDC B1
+		CASE "B_BUS","S_B"
+		LineOn = iRed;
+		LineOff = iGreen;
+		//MDC B2
+		CASE "C_BUS","S_C"
+		LineOn = iBlue;
+		LineOff = iGreen;
+		//MDC B3
+		CASE "D_BUS","S_D"
+		LineOn = iTeal;
+		LineOff = iGreen;
+		//Powered By Genset
+		CASE "G_BUS","Gen"
+		LineOn = iPurple;
+		LineOff = iGreen;
+		CASE "IR_BUS","S_IR"
+		LineOn = iOrange;
+		LineOff = iGreen;
+		CASE "IRB","S_IR"
+		LineOn = iOrange;
+		LineOff = iGreen;
+		CASE "IRD","S_IR"
+		LineOn = iOrange;
+		LineOff = iGreen;
+		CASE "IRE","S_IR"
+		LineOn = iCyan;
+		LineOff = iGreen;
+		CASE "IRF","S_IR"
+		LineOn = iCyan;
+		LineOff = iGreen;
+	CASE ELSE
+		LineOn = iRed;
+		LineOff = iGreen;
+	END SELECT
+
+	IF sStatusLabel<>"" THEN
+		PageSetStr(sStatusLabel,BUSType);
+	END
+	IF LineLevel(Volts,Level1,Level2,Level3,Level4,Level5) THEN
+		IF sStatusLabel<>"" THEN
+			PageSetInt(sStatusLabel,"1");
+		END
+		RETURN LineOn;
+	ELSE
+		IF sStatusLabel<>"" THEN
+			PageSetInt(sStatusLabel,"0");
+		END
+		RETURN LineOff;
+	END
+END
+
+//****************************************************************
+//                           ALL BUS
+//****************************************************************
+FUNCTION WEN2_BUS_ALL()
+	WEN2_BUS_SDC();
+	
+	//Zone 1,2,3, and 4 Critical PMDCs
+	WEN2_PMDC_BUS_Coloring("B1_1_a");
+	WEN2_PMDC_BUS_Coloring("B1_1_b");
+	WEN2_PMDC_BUS_Coloring("B1_1_c");
+	WEN2_PMDC_BUS_Coloring("B1_1_d");
+	WEN2_PMDC_BUS_Coloring("B1_1_e");
+	WEN2_PMDC_BUS_Coloring("B1_1_f");
+	WEN2_PMDC_BUS_Coloring("B1_1_g");
+	WEN2_PMDC_BUS_Coloring("B1_1_h");
+	WEN2_PMDC_BUS_Coloring("B1_1_j");
+	WEN2_PMDC_BUS_Coloring("B1_1_k");
+	WEN2_PMDC_BUS_Coloring("B1_1_m");
+	WEN2_PMDC_BUS_Coloring("B1_1_n");
+	WEN2_PMDC_BUS_Coloring("B1_1_o");
+	WEN2_PMDC_BUS_Coloring("B1_1_p");
+	//Zone 5,6, and 7 Critical PMDCs
+	WEN2_PMDC_BUS_Coloring("B3_1_a");
+	WEN2_PMDC_BUS_Coloring("B3_1_b");
+	WEN2_PMDC_BUS_Coloring("B3_1_c");
+	WEN2_PMDC_BUS_Coloring("B3_1_d");
+	WEN2_PMDC_BUS_Coloring("B3_1_e");
+	WEN2_PMDC_BUS_Coloring("B3_1_f");
+	WEN2_PMDC_BUS_Coloring("B3_1_g");
+	WEN2_PMDC_BUS_Coloring("B3_1_h");
+	WEN2_PMDC_BUS_Coloring("B3_1_j");
+	WEN2_PMDC_BUS_Coloring("B3_1_k");
+	WEN2_PMDC_BUS_Coloring("B3_1_m");
+	//Mechanical PMDCs
+	WEN2_PMDC_BUS_Coloring("B1_1_q");
+	WEN2_PMDC_BUS_Coloring("B1_1_r");
+	WEN2_PMDC_BUS_Coloring("B1_1_s");
+	WEN2_PMDC_BUS_Coloring("B3_1_q");
+	WEN2_PMDC_BUS_Coloring("B3_1_r");
+	
+	//IR PMDC Levels 2 and 3
+	WEN2_BUS_PMDC_B1_1_i();
+	WEN2_BUS_PMDC_B3_1_i();
+	
+	//Zone 1,2,3, and 4 Critical PMDCs
+	WEN2_PMDC_BUS_Coloring("B1_2_a");
+	WEN2_PMDC_BUS_Coloring("B1_2_b");
+	WEN2_PMDC_BUS_Coloring("B1_2_c");
+	WEN2_PMDC_BUS_Coloring("B1_2_d");
+	WEN2_PMDC_BUS_Coloring("B1_2_e");
+	WEN2_PMDC_BUS_Coloring("B1_2_f");
+	WEN2_PMDC_BUS_Coloring("B1_2_g");
+	WEN2_PMDC_BUS_Coloring("B1_2_h");
+	WEN2_PMDC_BUS_Coloring("B1_2_j");
+	WEN2_PMDC_BUS_Coloring("B1_2_k");
+	WEN2_PMDC_BUS_Coloring("B1_2_m");
+	WEN2_PMDC_BUS_Coloring("B1_2_n");
+	WEN2_PMDC_BUS_Coloring("B1_2_o");
+	WEN2_PMDC_BUS_Coloring("B1_2_p");
+
+	//Zone 5,6, and 7 Critical PMDCs
+	WEN2_PMDC_BUS_Coloring("B3_2_a");
+	WEN2_PMDC_BUS_Coloring("B3_2_b");
+	WEN2_PMDC_BUS_Coloring("B3_2_c");
+	WEN2_PMDC_BUS_Coloring("B3_2_d");
+	WEN2_PMDC_BUS_Coloring("B3_2_e");
+	WEN2_PMDC_BUS_Coloring("B3_2_f");
+	WEN2_PMDC_BUS_Coloring("B3_2_g");
+	WEN2_PMDC_BUS_Coloring("B3_2_h");
+	WEN2_PMDC_BUS_Coloring("B3_2_j");
+	WEN2_PMDC_BUS_Coloring("B3_2_k");
+
+	//Mechanical PMDCs
+	WEN2_PMDC_BUS_Coloring("B1_2_q");
+	WEN2_PMDC_BUS_Coloring("B1_2_r");
+	WEN2_PMDC_BUS_Coloring("B1_2_s");
+	//Mechanical PMDCs
+	WEN2_PMDC_BUS_Coloring("B3_2_q");
+	WEN2_PMDC_BUS_Coloring("B3_2_r");
+	WEN2_PMDC_BUS_Coloring("B3_2_s");
+
+	//IR PMDC Levels 4 and 5
+	WEN2_BUS_PMDC_B1_2_i();
+	//IR PMDC Level 4
+	WEN2_BUS_PMDC_B3_2_i();
+
+	//Zone 2,3, and 4 Critical ATPs
+	WEN2_BUS_ATP_Coloring("B1_1_a");
+	WEN2_BUS_ATP_Coloring("B1_1_b");
+	WEN2_BUS_ATP_Coloring("B1_1_c");
+	WEN2_BUS_ATP_Coloring("B1_1_d");
+	WEN2_BUS_ATP_Coloring("B1_1_e");
+	WEN2_BUS_ATP_Coloring("B1_1_f");
+	WEN2_BUS_ATP_Coloring("B1_1_g");
+	WEN2_BUS_ATP_Coloring("B1_1_h");
+	WEN2_BUS_ATP_Coloring("B1_1_j");
+	WEN2_BUS_ATP_Coloring("B1_1_k");
+	WEN2_BUS_ATP_Coloring("B1_1_m");
+	WEN2_BUS_ATP_Coloring("B1_1_n");
+	WEN2_BUS_ATP_Coloring("B1_1_o");
+	WEN2_BUS_ATP_Coloring("B1_1_p");
+	
+	//Zone 2,3, and 4 Critical ATPs
+	WEN2_BUS_ATP_Coloring("B1_2_a");
+	WEN2_BUS_ATP_Coloring("B1_2_b");
+	WEN2_BUS_ATP_Coloring("B1_2_c");
+	WEN2_BUS_ATP_Coloring("B1_2_d");
+	WEN2_BUS_ATP_Coloring("B1_2_e");
+	WEN2_BUS_ATP_Coloring("B1_2_f");
+	WEN2_BUS_ATP_Coloring("B1_2_g");
+	WEN2_BUS_ATP_Coloring("B1_2_h");
+	WEN2_BUS_ATP_Coloring("B1_2_j");
+	WEN2_BUS_ATP_Coloring("B1_2_k");
+	WEN2_BUS_ATP_Coloring("B1_2_m");
+	WEN2_BUS_ATP_Coloring("B1_2_n");
+	WEN2_BUS_ATP_Coloring("B1_2_o");  
+	WEN2_BUS_ATP_Coloring("B1_2_p");
+	
+	//Zone 5,6 and 7 Critical ATPs
+	WEN2_BUS_ATP_Coloring("B3_1_a");
+	WEN2_BUS_ATP_Coloring("B3_1_b");
+	WEN2_BUS_ATP_Coloring("B3_1_c");
+	WEN2_BUS_ATP_Coloring("B3_1_d");
+	WEN2_BUS_ATP_Coloring("B3_1_e");
+	WEN2_BUS_ATP_Coloring("B3_1_f");
+	WEN2_BUS_ATP_Coloring("B3_1_g");
+	WEN2_BUS_ATP_Coloring("B3_1_h");
+	WEN2_BUS_ATP_Coloring("B3_1_j");
+	WEN2_BUS_ATP_Coloring("B3_1_k");
+	WEN2_BUS_ATP_Coloring("B3_1_m");
+	
+	//Zone 5,6 and 7 Critical ATPs
+	WEN2_BUS_ATP_Coloring("B3_2_a");
+	WEN2_BUS_ATP_Coloring("B3_2_b");
+	WEN2_BUS_ATP_Coloring("B3_2_c");
+	WEN2_BUS_ATP_Coloring("B3_2_d");
+	WEN2_BUS_ATP_Coloring("B3_2_e");
+	WEN2_BUS_ATP_Coloring("B3_2_f");
+	WEN2_BUS_ATP_Coloring("B3_2_g");
+	WEN2_BUS_ATP_Coloring("B3_2_h");
+	WEN2_BUS_ATP_Coloring("B3_2_j");
+	WEN2_BUS_ATP_Coloring("B3_2_k");
+	
+END
+
+//****************************************************************
+//                           SDC BUS
+//****************************************************************
+
+//WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\phsAB
+//WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On
+//|
+//|
+//|---WEN2_SDC_B1_1_BUSHOT_B1
+//|
+//|
+//WEN2.SDC_B1_1_TIE_REF620
+//|
+//|---WEN2_SDC_B1_2_BUSHOT_B1_2T1_UNTIED
+//|
+//WEN2.SDC_B1_2_TIE1_REF620
+//|
+//|
+//|---WEN2_SDC_B1_2_BUSHOT_B1_2T1_TIED
+//|
+//|
+//WEN2.SDC_B1_2_TIE2_REF620
+//|
+//|---WEN2_SDC_B2_1_BUSHOT_B2_1T2_UNTIED
+//|
+//WEN2.SDC_B2_1_TIE2_REF620
+//|
+//|---WEN2_SDC_B2_1_BUSHOT_B2_1
+//|
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB
+//WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On
+//|
+//|---WEN2_SDC_B2_1_BUSHOT_B2_1
+//|
+//WEN2.SDC_B2_1_TIE3_REF620
+//|
+//|---WEN2_SDC_B2_1_BUSHOT_B2_1T3_UNTIED
+//|
+//|
+//WEN2.SDC_B3_2_TIE2_REF620
+//|
+//|
+//|---WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED
+//|
+//|
+//WEN2.SDC_B3_2_TIE1_REF620
+//|
+//|---WEN2_SDC_B3_2_BUSHOT_B3_2T1_UNTIED
+//|
+//WEN2.SDC_B3_1_TIE_REF620
+//|
+//|
+//|---WEN2_SDC_B3_1_BUSHOT_B1
+//|
+//|
+//WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On
+//WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\phsAB
+
+//Tower 1
+//Determines if B1 Bus is Energized
+INT
+FUNCTION WEN2_SDC_B1_1_BUSHOT_B1()
+  INT iBus_B1_1;
+  IF ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On) OR
+	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+		RETURN iBus_B1_1 = 0;
+  END
+  RETURN iBus_B1_1 = 1;
+END
+
+//Tower 2
+//Determines if B3 Bus is Energized
+INT
+FUNCTION WEN2_SDC_B3_1_BUSHOT_B3()
+  INT iBus_B3_1;
+  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On) OR
+	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+      RETURN iBus_B3_1 = 0;
+  END
+  RETURN iBus_B3_1 = 1;
+END
+
+//Tower 1
+//Determines if B1-1 to B1-2 Bus is Energized
+//WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\phsAB
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB
+INT
+FUNCTION WEN2_SDC_B1_2_BUSHOT_B1_2T1_UNTIED()
+  INT iBus_B1_2_UT;
+  IF ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On AND 
+  WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND
+  WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND
+  WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
+    RETURN iBus_B1_2_UT = 0;
+  END
+  RETURN iBus_B1_2_UT = 1;
+END
+
+//Tower 2
+//Determines if B3-1 to B3-2 Bus is Energized
+//WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\phsAB
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB
+INT
+FUNCTION WEN2_SDC_B3_2_BUSHOT_B3_2T1_UNTIED()
+  INT iBus_B3_2_UT;
+  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND
+	WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
+		RETURN iBus_B3_2_UT = 0;
+  END
+  RETURN iBus_B3_2_UT = 1;
+END
+
+//Tower 1
+//Determines if B1_2 Bus is Energized
+//WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\phsAB
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB
+INT
+FUNCTION WEN2_SDC_B1_2_BUSHOT_B1_2T1_TIED()
+  INT iBus_B1_2_T;
+  IF ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On AND 
+	WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On) OR
+	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND  WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
+    RETURN iBus_B1_2_T = 0;
+  END
+  RETURN iBus_B1_2_T = 1;
+END
+
+//Tower 2
+//Determines if B3_2 Bus is Energized
+//WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\phsAB
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB
+INT
+FUNCTION WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED()
+  INT iBus_B3_2_T;
+  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND 
+	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On) OR
+	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND  WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
+    RETURN iBus_B3_2_T = 0;
+  END
+  RETURN iBus_B3_2_T = 1;
+END
+
+//Tower 1
+//Determines if B1_2 to B2_1 Bus is Energized
+//WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\phsAB AND
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB 
+INT
+FUNCTION WEN2_SDC_B2_1_BUSHOT_B2_1T2_UNTIED()
+  INT iBus_B2_1_UT;
+  IF ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND 
+	WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND 
+	WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On) THEN
+    RETURN iBus_B2_1_UT = 0;
+  END
+  RETURN iBus_B2_1_UT = 1;
+END
+
+//Tower 2
+//Determines if B3_2 to B2_1 Bus is Energized
+//WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\phsAB AND
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB 
+INT
+FUNCTION WEN2_SDC_B2_1_BUSHOT_B2_1T3_UNTIED()
+  INT iBus_B2_1_UT;
+  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+	WEN2.SDC_B2_1_TIE3_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND 
+	WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND 
+	WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On) THEN
+    RETURN iBus_B2_1_UT = 0;
+  END
+  RETURN iBus_B2_1_UT = 1;
+END
+
+//Tower 1
+//Determines if B2-1 Bus is Energized
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB 
+//WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\phsAB
+INT
+FUNCTION WEN2_SDC_B2_1_BUSHOT_B2_1()
+  INT iBus_B2_1;
+  IF ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On) OR
+	 ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On AND
+	 WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND 
+	 WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+    RETURN iBus_B2_1 = 0;
+  END
+  RETURN iBus_B2_1 = 1;
+END
+
+//Tower 2
+//Determines if B2-1 Bus is Energized
+//WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB 
+//WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\phsAB
+INT
+FUNCTION WEN2_SDC_B2_1_BUSHOT_B2_1_B3()
+  INT iBus_B2_1;
+  IF ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On) OR
+	 ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND
+	 WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND 
+	 WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+		RETURN iBus_B2_1 = 0;
+  END
+  RETURN iBus_B2_1 = 1;
+END
+
+//Tower 1 & 2
+FUNCTION WEN2_BUS_SDC()
+	//Tower 1
+	INT iBus_B1_1 = 0;
+	INT iBus_B1_2 = 0;
+	INT iBus_B2_1 = 0;
+	INT iTIE_B1_1_B1_2 = 0;
+	INT iTIE_B1_2_B2_1 = 0;
+	INT iTIE_B2_1 = 0;
+	INT B1_1_B1_2_Tie_OC = 0;
+	INT B1_2_B2_1_Tie_OC = 0;
+	//Tower 2
+	INT iBus_B3_1 = 0;
+	INT iBus_B3_2 = 0;
+	INT iTIE_B3_1_B3_2 = 0;
+	INT iTIE_B3_2_B2_1 = 0;
+	INT B3_1_B3_2_Tie_OC = 0;
+	INT B3_2_B2_1_Tie_OC = 0;
+
+	//Tower 1
+	//Making one Variable for both tie breakers closed Between B1_1 and B1_2
+	B1_1_B1_2_Tie_OC = (WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On);
+
+	//Making one Variable for both tie breakers closed Between B1_2 and B2_1
+	B1_2_B2_1_Tie_OC = (WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On);
+	
+	//Tower 2
+	//Making one Variable for both tie breakers closed Between B3_1 and B3_2
+	B3_1_B3_2_Tie_OC = (WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On);
+
+	//Making one Variable for both tie breakers closed Between B3_2 and B2_1
+	B3_2_B2_1_Tie_OC = (WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On);
+  
+  
+	//Check to see what is open and what is closed, then set iBus variables and iTIE accordingly, 
+	//Case one is MDC_A, Case two is MDC_B.
+	//If there is voltage on the main B1-1 SDC bus and the SDC B1-1 Main Breaker is closed set iBus_B1_1 to one
+	//Tower 1
+	IF (WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On THEN
+		iBus_B1_1 = 1;
+	END
+	
+	//If there is voltage on the main B2-1 SDC bus and the SDC B2-1 Main Breaker is closed set iBus_B2_1 to two
+	IF (WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On THEN
+		iBus_B2_1 = 2;
+	END
+	
+	//Tower 2
+	IF (WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On THEN
+		iBus_B3_1 = 3;
+	END
+	
+	
+	//If iBus_B1_1 is true and the B1-1 TIE Breaker is closed set iTIE_B1_1_B1_2 to iBus_B1_1
+	//Tower 1
+	IF (iBus_B1_1 > 0) AND WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On THEN
+		iTIE_B1_1_B1_2 = iBus_B1_1;
+	END
+	
+	//If iBus_B2_1 is true and the B2-1 TIE2 is closed set iTIE_B1_2_B2_1 to iBus_B2_1
+	IF (iBus_B2_1 > 0) AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On THEN
+		iTIE_B1_2_B2_1 = iBus_B2_1;
+	END
+	
+	//If iBus_B3_1 is true and the B3-1 TIE Breaker is closed set iTIE_B3_1_B3_2 to iBus_B3_1
+	//Tower 2
+	IF (iBus_B3_1 > 0) AND WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On THEN
+		iTIE_B3_1_B3_2 = iBus_B3_1;
+	END
+	
+	//If voltage on the tie between B1_1 and B1_2 tie breaker to B1_2 set iBus_B1_2 to iTIE_B1_1_B1_2
+	//Tower 1
+	IF (iTIE_B1_1_B1_2 > 0) AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On THEN
+		iBus_B1_2 = iTIE_B1_1_B1_2;
+	END
+
+	//If voltage on the tie between B3_1 and B3_2 tie breaker to B3_2 set iBus_B3_2 to iTIE_B3_1_B3_2
+	//Tower 2
+	IF (iTIE_B3_1_B3_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On THEN
+		iBus_B3_2 = iTIE_B3_1_B3_2;
+	END
+	
+	//If voltage on the tie between B1_2 and B2_1 tie breaker to B1_2 set iBus_B1_2 to iTIE_B1_2_B2_1
+	//Tower 1
+	IF (iTIE_B1_2_B2_1 > 0) AND WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On THEN
+		iBus_B1_2 = iTIE_B1_2_B2_1;
+	END
+	
+	//If voltage on the tie between B3_2 and B2_1 tie breaker to B3_2 set iBus_B3_2 to iTIE_B3_2_B2_1
+	//Tower 2
+	IF (iTIE_B3_2_B2_1 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On THEN
+		iBus_B3_2 = iTIE_B3_2_B2_1;
+	END
+	
+	//If no power on Bus 1_1 and there is power on Bus 1_2 and its tiebreaker to B1_1 is closed set iTIE_B1_1_B1_2 to iBUS_B1_2
+	//Tower 1
+	IF ((iBus_B1_1 = 0) AND (iBUS_B1_2 > 0) AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On) THEN
+		iTIE_B1_1_B1_2 = iBUS_B1_2;
+	END
+	
+	//If no power on Bus 3_1 and there is power on Bus 3_2 and its tiebreaker to B3_1 is closed set iTIE_B3_1_B3_2 to iBUS_B3_2
+	//Tower 2
+	IF ((iBus_B3_1 = 0) AND (iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On) THEN
+		iTIE_B3_1_B3_2 = iBUS_B3_2;
+	END
+	
+	//If power on Bus 1_1 and its tiebreaker to B1_2 is closed set iTIE_B1_1_B1_2 to iBUS_B1_1
+	//Tower 1
+	IF ((iBus_B1_1 > 0) AND WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On) THEN
+		iTIE_B1_1_B1_2 = iBUS_B1_1;
+	END
+	
+	//If power on Bus 3_1 and its tiebreaker to B3_2 is closed set iTIE_B3_1_B3_2 to iBUS_B3_1
+	//Tower 2
+	IF ((iBus_B3_1 > 0) AND WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On) THEN
+		iTIE_B3_1_B3_2 = iBUS_B3_1;
+	END
+	
+	//If power on Bus 1_2 and its tiebreaker to B1_1 is closed set iTIE_B1_1_B1_2 to iBUS_B1_2
+	//Tower 1
+	IF ((iBUS_B1_2 > 0) AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On) THEN
+		iTIE_B1_1_B1_2 = iBUS_B1_2;
+	END
+
+	//If power on Bus 3_2 and its tiebreaker to B3_1 is closed set iTIE_B3_1_B3_2 to iBUS_B3_2
+	//Tower 2
+	IF ((iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On) THEN
+		iTIE_B3_1_B3_2 = iBUS_B3_2;
+	END
+	
+	//If no power on Bus 2_1 and there is power on Bus 1_2 and its tiebreaker to B2_1 is closed set iTIE_B1_2_B2_1 to iBUS_B1_2
+	//Tower 1
+	IF ((iBus_B2_1 = 0) AND (iBUS_B1_2 > 0) AND WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On) THEN
+		iTIE_B1_2_B2_1 = iBUS_B1_2;
+	END
+	
+	//If no power on Bus 2_1 and there is power on Bus 3_2 and its tiebreaker to B2_1 is closed set iTIE_B3_2_B2_1 to iBUS_B3_2
+	//Tower 2
+	IF ((iBus_B2_1 = 0) AND (iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On) THEN
+		iTIE_B3_2_B2_1 = iBUS_B3_2;
+	END
+	
+	//If power on Bus 2_1 and its tiebreaker to B1_2 is closed set iTIE_B1_2_B2_1 to Bus 2_1
+	//Tower 1
+	IF ((iBus_B2_1 > 0) AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+		iTIE_B1_2_B2_1 = iBUS_B2_1;
+	END
+	
+	//If power on Bus 2_1 and its tiebreaker to B1_2 is closed set iTIE_B1_2_B2_1 to Bus 2_1
+	//Tower 2
+	IF ((iBus_B2_1 > 0) AND WEN2.SDC_B2_1_TIE3_REF620\XCBR1\Pos_On) THEN
+		iTIE_B3_2_B2_1 = iBUS_B2_1;
+	END
+	
+	//If power on Bus 1_2 and its tiebreaker to B2_1 is closed set iTIE_B1_2_B2_1 to Bus 1_2
+	//Tower 1
+	IF ((iBUS_B1_2 > 0) AND WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On) THEN
+		iTIE_B1_2_B2_1 = iBUS_B1_2;
+	END
+	
+	//If power on Bus 3_2 and its tiebreaker to B2_1 is closed set iTIE_B3_2_B2_1 to Bus 3_2
+	//Tower 2
+	IF ((iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On) THEN
+		iTIE_B3_2_B2_1 = iBUS_B3_2;
+	END
+	
+	//If no power on Bus 1_1 and there is power on Bus 1_2 and Both tiebreakers are closed between them set iBus_B1_1 to iBus_B2_1
+	//Tower 1
+	IF (iBus_B1_1 = 0) AND (iBUS_B1_2 > 0) AND B1_1_B1_2_Tie_OC THEN
+		iBus_B1_1 = iBUS_B1_2;
+	END
+	
+	//If no power on Bus 3_1 and there is power on Bus 3_2 and Both tiebreakers are closed between them set iBus_B3_1 to iBus_B2_1
+	//Tower 2
+	IF (iBus_B3_1 = 0) AND (iBUS_B3_2 > 0) AND B3_1_B3_2_Tie_OC THEN
+		iBus_B3_1 = iBUS_B3_2;
+	END
+	
+	//If no power on Bus 2_1 and there is power on Bus 1_2 and Both tiebreakers are closed between them set iBus_B2_1 to iBus_B1_2
+	//Tower 1
+	IF (iBus_B2_1 = 0) AND (iBUS_B1_2 > 0) AND B1_1_B1_2_Tie_OC THEN
+		iBus_B2_1 = iBUS_B1_2;  
+	END
+	
+	//If no power on Bus 2_1 and there is power on Bus 3_2 and Both tiebreakers are closed between them set iBus_B2_1 to iBus_B3_2
+	//Tower 2
+	IF (iBus_B2_1 = 0) AND (iBUS_B3_2 > 0) AND B3_1_B3_2_Tie_OC THEN
+		iBus_B2_1 = iBUS_B3_2;  
+	END
+	
+	//Set Tie B2_1 on right side of MDC for Future to iBUS_B2_1    
+	iTIE_B2_1 = iBus_B2_1;
+	
+	//Tower 1
+	PageSetInt("SDC_BUS_B1_1",IntToStr(iBus_B1_1));
+	PageSetInt("SDC_BUS_B1_2",IntToStr(iBus_B1_2));
+	//Tower 2
+	PageSetInt("SDC_BUS_B3_1",IntToStr(iBus_B3_1));
+	PageSetInt("SDC_BUS_B3_2",IntToStr(iBus_B3_2));
+	//Tower 1 & 2
+	PageSetInt("SDC_BUS_B2_1",IntToStr(iBus_B2_1));
+	//Tower 1
+	PageSetInt("SDC_BUS_TIE_B1_1_B1_2",IntToStr(iTIE_B1_1_B1_2));
+	PageSetInt("SDC_BUS_TIE_B1_2_B2_1",IntToStr(iTIE_B1_2_B2_1));
+	//Tower 2
+	PageSetInt("SDC_BUS_TIE_B3_1_B3_2",IntToStr(iTIE_B3_1_B3_2));
+	PageSetInt("SDC_BUS_TIE_B3_2_B2_1",IntToStr(iTIE_B3_2_B2_1));
+	//Tower 1 & 2
+	PageSetInt("SDC_BUS_TIE_B2_1",IntToStr(iTIE_B2_1));
+	
+	//Tower 1
+	SELECT CASE iBus_B1_1
+	CASE 1
+		PageSetStr("SDC_BUS_B1_1","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_B1_1","S_C");
+	CASE ELSE
+		PageSetStr("SDC_BUS_B1_1","");
+	END SELECT
+	
+	//Tower 2
+	SELECT CASE iBus_B3_1
+	CASE 1
+		PageSetStr("SDC_BUS_B3_1","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_B3_1","S_C");
+	CASE 3
+		PageSetStr("SDC_BUS_B3_1","S_D");	
+	CASE ELSE
+		PageSetStr("SDC_BUS_B3_1","");
+	END SELECT
+	
+	//Tower 1
+	SELECT CASE iBus_B1_2
+	CASE 1
+		PageSetStr("SDC_BUS_B1_2","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_B1_2","S_C");
+	CASE ELSE
+		PageSetStr("SDC_BUS_B1_2","");
+	END SELECT
+	
+	//Tower 2
+	SELECT CASE iBus_B3_2
+	CASE 1
+		PageSetStr("SDC_BUS_B3_2","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_B3_2","S_C");
+	CASE 3
+		PageSetStr("SDC_BUS_B3_2","S_D");
+	CASE ELSE
+		PageSetStr("SDC_BUS_B3_2","");
+	END SELECT
+	
+	//Tower 1 & 2
+	SELECT CASE iBus_B2_1
+	CASE 1
+		PageSetStr("SDC_BUS_B2_1","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_B2_1","S_C");
+	CASE 3
+		PageSetStr("SDC_BUS_B2_1","S_D");	
+	CASE ELSE
+		PageSetStr("SDC_BUS_B2_1","");
+	END SELECT
+	
+	//Tower 1
+	SELECT CASE iTIE_B1_1_B1_2
+	CASE 1
+		PageSetStr("SDC_BUS_TIE_B1_1_B1_2","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_TIE_B1_1_B1_2","S_C");
+	CASE ELSE
+		PageSetStr("SDC_BUS_TIE_B1_1_B1_2","");
+	END SELECT
+	
+	//Tower 2
+	SELECT CASE iTIE_B3_1_B3_2
+	CASE 1
+		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_C");
+	CASE 3
+		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_D");
+	CASE ELSE
+		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","");
+	END SELECT
+	
+	//Tower 1
+	SELECT CASE iTIE_B1_2_B2_1
+	CASE 1
+		PageSetStr("SDC_BUS_TIE_B1_2_B2_1","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_TIE_B1_2_B2_1","S_C");
+	CASE ELSE
+		PageSetStr("SDC_BUS_TIE_B1_2_B2_1","");
+	END SELECT
+	
+	//Tower 2
+	SELECT CASE iTIE_B3_2_B2_1
+	CASE 1
+		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_C");
+	CASE 3
+		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_D");
+	CASE ELSE
+		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","");
+	END SELECT
+	
+	//Tower 1 & 2
+	SELECT CASE iTIE_B2_1
+	CASE 1
+		PageSetStr("SDC_BUS_TIE_B2_1","S_B");
+	CASE 2
+		PageSetStr("SDC_BUS_TIE_B2_1","S_C");
+	CASE 3
+		PageSetStr("SDC_BUS_TIE_B2_1","S_D");	
+	CASE ELSE
+		PageSetStr("SDC_BUS_TIE_B2_1","");
+	END SELECT
+
+END
+
+////****************************************************************
+////                           PMDC BUS
+////****************************************************************
+FUNCTION WEN2_PMDC_BUS_Coloring(STRING sGearLabel)
+	ErrSet(1);
+	STRING sPMDC = sGearLabel;
+
+	//ErrLog("sPMDC="+sPMDC);
+	STRING sSDC = StrLeft(sGearLabel,4)
+	//ErrLog("sSDC="+sSDC);
+	INT iBus = PageGetInt("SDC_BUS_" + sSDC);
+	//ErrLog("IBus="+IntToStr(iBus));
+	STRING sBus = PageGetStr("SDC_BUS_" + sSDC);
+	//ErrLog("sBus="+IntToStr(sBus));
+	INT iBus_G;
+	INT iGBrkrState;
+	STRING sBus_G = "Gen";
+	
+	//ErrLog("iGBrkrStateBefore="+IntToStr(iGBrkrState));
+
+	//iGBrkrState = TagRead("WEN2.PMDC_" + sGearLabel + "_52G\XCBR1\Pos_On");
+	
+	//TraceMsg("G Breaker State :"  + IntToStr(iGBrkrState));  
+	
+	SELECT CASE SGearLabel
+	CASE "B1_1_a"
+			 iGBrkrState= WEN2.PMDC_B1_1_a_52G\XCBR1\Pos_On;
+	CASE "B1_1_b"
+			 iGBrkrState= WEN2.PMDC_B1_1_b_52G\XCBR1\Pos_On;
+	CASE "B1_1_c"
+			 iGBrkrState= WEN2.PMDC_B1_1_c_52G\XCBR1\Pos_On;
+	CASE "B1_1_d"
+			 iGBrkrState= WEN2.PMDC_B1_1_d_52G\XCBR1\Pos_On;
+	CASE "B1_1_e"
+			 iGBrkrState= WEN2.PMDC_B1_1_e_52G\XCBR1\Pos_On;
+	CASE "B1_1_f"
+			 iGBrkrState= WEN2.PMDC_B1_1_f_52G\XCBR1\Pos_On;
+	CASE "B1_1_g"
+			 iGBrkrState= WEN2.PMDC_B1_1_g_52G\XCBR1\Pos_On;
+	CASE "B1_1_h"
+			 iGBrkrState= WEN2.PMDC_B1_1_h_52G\XCBR1\Pos_On;
+	CASE "B1_1_j"
+			 iGBrkrState= WEN2.PMDC_B1_1_j_52G\XCBR1\Pos_On;
+	CASE "B1_1_k"
+			 iGBrkrState= WEN2.PMDC_B1_1_k_52G\XCBR1\Pos_On;
+	CASE "B1_1_m"
+			 iGBrkrState= WEN2.PMDC_B1_1_m_52G\XCBR1\Pos_On;
+	CASE "B1_1_n"
+			 iGBrkrState= WEN2.PMDC_B1_1_n_52G\XCBR1\Pos_On;
+	CASE "B1_1_o"
+			 iGBrkrState= WEN2.PMDC_B1_1_o_52G\XCBR1\Pos_On;
+	CASE "B1_1_p"
+			 iGBrkrState= WEN2.PMDC_B1_1_p_52G\XCBR1\Pos_On;
+	CASE "B1_1_q"
+			 iGBrkrState= WEN2.PMDC_B1_1_q_52G\XCBR1\Pos_On;
+	CASE "B1_1_r"
+			 iGBrkrState= WEN2.PMDC_B1_1_r_52G\XCBR1\Pos_On;
+	CASE "B1_1_s"
+			 iGBrkrState= WEN2.PMDC_B1_1_s_52G\XCBR1\Pos_On;   
+	CASE "B1_2_a"
+			 iGBrkrState= WEN2.PMDC_B1_2_a_52G\XCBR1\Pos_On;
+	CASE "B1_2_b"
+			 iGBrkrState= WEN2.PMDC_B1_2_b_52G\XCBR1\Pos_On;	   
+	CASE "B1_2_c"
+			 iGBrkrState= WEN2.PMDC_B1_2_c_52G\XCBR1\Pos_On;	   
+	CASE "B1_2_d"
+			 iGBrkrState= WEN2.PMDC_B1_2_d_52G\XCBR1\Pos_On;
+	CASE "B1_2_e"
+			 iGBrkrState= WEN2.PMDC_B1_2_e_52G\XCBR1\Pos_On;
+	CASE "B1_2_f"
+			 iGBrkrState= WEN2.PMDC_B1_2_f_52G\XCBR1\Pos_On;
+	CASE "B1_2_g"
+			 iGBrkrState= WEN2.PMDC_B1_2_g_52G\XCBR1\Pos_On;
+	CASE "B1_2_h"
+			 iGBrkrState= WEN2.PMDC_B1_2_h_52G\XCBR1\Pos_On;
+	CASE "B1_2_j"
+			 iGBrkrState= WEN2.PMDC_B1_2_j_52G\XCBR1\Pos_On;
+	CASE "B1_2_k"
+			 iGBrkrState= WEN2.PMDC_B1_2_k_52G\XCBR1\Pos_On;
+	CASE "B1_2_m"
+			 iGBrkrState= WEN2.PMDC_B1_2_m_52G\XCBR1\Pos_On;
+	CASE "B1_2_n"
+			 iGBrkrState= WEN2.PMDC_B1_2_n_52G\XCBR1\Pos_On;
+	CASE "B1_2_o"
+			 iGBrkrState= WEN2.PMDC_B1_2_o_52G\XCBR1\Pos_On;
+	CASE "B1_2_p"
+			 iGBrkrState= WEN2.PMDC_B1_2_p_52G\XCBR1\Pos_On;
+	CASE "B1_2_q"
+			 iGBrkrState= WEN2.PMDC_B1_2_q_52G\XCBR1\Pos_On;
+	CASE "B1_2_r"
+			 iGBrkrState= WEN2.PMDC_B1_2_r_52G\XCBR1\Pos_On;
+	CASE "B1_2_s"
+			 iGBrkrState= WEN2.PMDC_B1_2_s_52G\XCBR1\Pos_On; 
+	CASE "B3_1_a"
+			 iGBrkrState= WEN2.PMDC_B3_1_a_52G\XCBR1\Pos_On;
+	CASE "B3_1_b"
+			 iGBrkrState= WEN2.PMDC_B3_1_b_52G\XCBR1\Pos_On;
+	CASE "B3_1_c"
+			 iGBrkrState= WEN2.PMDC_B3_1_c_52G\XCBR1\Pos_On;
+	CASE "B3_1_d"
+			 iGBrkrState= WEN2.PMDC_B3_1_d_52G\XCBR1\Pos_On;
+	CASE "B3_1_e"
+			 iGBrkrState= WEN2.PMDC_B3_1_e_52G\XCBR1\Pos_On;
+	CASE "B3_1_f"
+			 iGBrkrState= WEN2.PMDC_B3_1_f_52G\XCBR1\Pos_On;
+	CASE "B3_1_g"
+			 iGBrkrState= WEN2.PMDC_B3_1_g_52G\XCBR1\Pos_On;
+	CASE "B3_1_h"
+			 iGBrkrState= WEN2.PMDC_B3_1_h_52G\XCBR1\Pos_On;
+	CASE "B3_1_j"
+			 iGBrkrState= WEN2.PMDC_B3_1_j_52G\XCBR1\Pos_On;
+	CASE "B3_1_k"
+			 iGBrkrState= WEN2.PMDC_B3_1_k_52G\XCBR1\Pos_On;
+	CASE "B3_1_m"
+			 iGBrkrState= WEN2.PMDC_B3_1_m_52G\XCBR1\Pos_On;
+	CASE "B3_1_q"
+			 iGBrkrState= WEN2.PMDC_B3_1_q_52G\XCBR1\Pos_On;
+	CASE "B3_1_r"
+			 iGBrkrState= WEN2.PMDC_B3_1_r_52G\XCBR1\Pos_On;
+	CASE "B3_2_a"
+			 iGBrkrState= WEN2.PMDC_B3_2_a_52G\XCBR1\Pos_On;
+	CASE "B3_2_b"
+			 iGBrkrState= WEN2.PMDC_B3_2_b_52G\XCBR1\Pos_On;	   
+	CASE "B3_2_c"
+			 iGBrkrState= WEN2.PMDC_B3_2_c_52G\XCBR1\Pos_On;	   
+	CASE "B3_2_d"
+			 iGBrkrState= WEN2.PMDC_B3_2_d_52G\XCBR1\Pos_On;
+	CASE "B3_2_e"
+			 iGBrkrState= WEN2.PMDC_B3_2_e_52G\XCBR1\Pos_On;
+	CASE "B3_2_f"
+			 iGBrkrState= WEN2.PMDC_B3_2_f_52G\XCBR1\Pos_On;
+	CASE "B3_2_g"
+			 iGBrkrState= WEN2.PMDC_B3_2_g_52G\XCBR1\Pos_On;
+	CASE "B3_2_h"
+			 iGBrkrState= WEN2.PMDC_B3_2_h_52G\XCBR1\Pos_On;
+	CASE "B3_2_j"
+			 iGBrkrState= WEN2.PMDC_B3_2_j_52G\XCBR1\Pos_On;
+	CASE "B3_2_k"
+			 iGBrkrState= WEN2.PMDC_B3_2_k_52G\XCBR1\Pos_On;
+	CASE "B3_2_q"
+			 iGBrkrState= WEN2.PMDC_B3_2_q_52G\XCBR1\Pos_On;
+	CASE "B3_2_r"
+			 iGBrkrState= WEN2.PMDC_B3_2_r_52G\XCBR1\Pos_On;
+	CASE "B3_2_s"
+			 iGBrkrState= WEN2.PMDC_B3_2_s_52G\XCBR1\Pos_On;		 	 
+	CASE ELSE
+			 iGBrkrState= 0;
+	END SELECT
+	
+	//ErrLog("iGBrkrStateAfter="+IntToStr(iGBrkrState));
+	
+	PageSetStr("PMDC_S_" + sPMDC,sBus);
+	IF iGBrkrState THEN
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus_G);
+	ELSE
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus);
+	END
+	ErrSet(0);
+END
+
+FUNCTION WEN2_BUS_PMDC_B1_1_i()
+STRING sPMDC = "B1_1_i"
+STRING sSDC = "B1_1"
+INT iBus = PageGetInt("SDC_BUS_" + sSDC);
+STRING sBus = PageGetStr("SDC_BUS_" + sSDC);
+INT iBus_G;
+STRING sBus_G = "Gen";
+STRING sIR = "S_IR";
+	
+	PageSetStr("PMDC_S_" + sPMDC,sBus);
+
+	IF WEN2.PMDC_B1_1_i_52G\XCBR1\Pos_On THEN
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus_G);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	ELSE
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	END
+	//Bus Status
+	IF WEN2.PMDC_B1_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_1_i_Q1_1\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_1_i_Q1_1\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","0");
+	END
+	IF WEN2.PMDC_B1_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_1_i_Q1_2\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_1_i_Q1_2\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","0");
+	END
+	IF WEN2.PMDC_B1_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_1_i_Q1_3\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_1_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","0");
+	END
+	IF WEN2.PMDC_B1_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_1_i_Q1_4\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_1_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","0");
+	END
+END
+
+FUNCTION WEN2_BUS_PMDC_B1_2_i()
+STRING sPMDC = "B1_2_i"
+STRING sSDC = "B1_2"
+INT iBus = PageGetInt("SDC_BUS_" + sSDC);
+STRING sBus = PageGetStr("SDC_BUS_" + sSDC);
+INT iBus_G;
+STRING sBus_G = "Gen";
+STRING sIR = "S_IR";
+	
+	PageSetStr("PMDC_S_" + sPMDC,sBus);
+
+	IF WEN2.PMDC_B1_2_i_52G\XCBR1\Pos_On THEN
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus_G);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	ELSE
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	END
+	//Bus Status IR For Zone 4
+	IF WEN2.PMDC_B1_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_2_i_Q1_1\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_2_i_Q1_1\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","0");
+	END
+	//Bus Status IR For Zone 3
+	IF WEN2.PMDC_B1_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_2_i_Q1_2\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_2_i_Q1_2\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","0");
+	END
+	IF WEN2.PMDC_B1_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_2_i_Q1_3\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_2_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","0");
+	END
+	IF WEN2.PMDC_B1_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B1_2_i_Q1_4\XCBR1\Pos_On AND
+		WEN2.PMDC_B1_2_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","0");
+	END
+END
+
+FUNCTION WEN2_BUS_PMDC_B3_1_i()
+STRING sPMDC = "B3_1_i"
+STRING sSDC = "B3_1"
+INT iBus = PageGetInt("SDC_BUS_" + sSDC);
+STRING sBus = PageGetStr("SDC_BUS_" + sSDC);
+INT iBus_G;
+STRING sBus_G = "Gen";
+STRING sIR = "S_IR";
+	
+	PageSetStr("PMDC_S_" + sPMDC,sBus);
+
+	IF WEN2.PMDC_B3_1_i_52G\XCBR1\Pos_On THEN
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus_G);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRD",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	ELSE
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRD",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	END
+	//Bus Status
+	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_1_i_Q1_1\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_1_i_Q1_1\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","0");
+	END
+	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_1_i_Q1_2\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_1_i_Q1_2\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","0");
+	END
+	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_1_i_Q1_3\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_1_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","0");
+	END
+	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_1_i_Q1_4\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_1_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","0");
+	END
+END
+
+FUNCTION WEN2_BUS_PMDC_B3_2_i()
+STRING sPMDC = "B3_2_i"
+STRING sSDC = "B3_2"
+INT iBus = PageGetInt("SDC_BUS_" + sSDC);
+STRING sBus = PageGetStr("SDC_BUS_" + sSDC);
+INT iBus_G;
+STRING sBus_G = "Gen";
+STRING sIR = "S_IR";
+	
+	PageSetStr("PMDC_S_" + sPMDC,sBus);
+
+	IF WEN2.PMDC_B3_2_i_52G\XCBR1\Pos_On THEN
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus_G);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	ELSE
+		PageSetStr("PMDC_BUS_" + sPMDC,sBus);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
+	END
+	//Bus Status IR For Zone 7
+	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_2_i_Q1_1\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_2_i_Q1_1\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","0");
+	END
+	//Bus Status IR For Zone 7
+	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_2_i_Q1_2\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_2_i_Q1_2\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","0");
+	END
+	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_2_i_Q1_3\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_2_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","0");
+	END
+	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_2_i_Q1_4\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_2_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","0");
+	END
+END
+
+////****************************************************************
+////                           ATP BUS
+////****************************************************************
+FUNCTION WEN2_BUS_ATP_Coloring(STRING sGearLabel)   
+		STRING sATP = sGearLabel    
+		STRING sPMDC = sGearLabel 
+		INT iBus = PageGetInt("PMDC_BUS_" + sPMDC);   
+		STRING sBus = PageGetStr("PMDC_BUS_" + sPMDC);    
+		INT iBus_IR;
+		INT ATP1_ALT_BKR_POS,ATP2_ALT_BKR_POS,ATP3_ALT_BKR_POS;
+		STRING sBus_IR = PageGetStr("PMDC_BUS_B1_2_i_IRB"); 
+
+		SELECT CASE SGearLabel
+			CASE "B1_1_a"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_a_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_a_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_a_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_b"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_b_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_b_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_b_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_c"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_c_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_c_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_c_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_d"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_d_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_d_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B1_1_e"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_e_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_e_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_e_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_f"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_f_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_f_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_f_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_g"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_g_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_g_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_g_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_h"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_h_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_h_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_h_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_j"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_j_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_j_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_j_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_k"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_k_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_k_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_k_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_m"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_m_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_m_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B1_1_n"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_n_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_n_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_n_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_o"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_o_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_o_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_o_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_1_p"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_1_p_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_1_p_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_1_p_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_a"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_a_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_a_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_a_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_b"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_b_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_b_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_b_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_c"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_c_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_c_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_c_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_d"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_d_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_d_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_d_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_e"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_e_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_e_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_e_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_f"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_f_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_f_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_f_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_g"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_g_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_g_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B1_2_h"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_h_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_h_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_h_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_j"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_j_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_j_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_j_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_k"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_k_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_k_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_k_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_m"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_m_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_m_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_m_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_n"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_n_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_n_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_n_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_o"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_o_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_o_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B1_2_o_3_Q2_A\XCBR1\Pos_On;
+			CASE "B1_2_p"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B1_2_p_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B1_2_p_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B3_1_a"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_a_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_a_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_a_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_b"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_b_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_b_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_b_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_c"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_c_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_c_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_c_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_d"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_d_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_d_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B3_1_e"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_e_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_e_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_e_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_f"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_f_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_f_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_f_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_g"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_g_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_g_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_g_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_h"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_h_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_h_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_h_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_j"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_j_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_j_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_j_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_k"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_k_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_k_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_1_k_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_1_m"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_1_m_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_1_m_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B3_2_a"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_a_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_a_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_a_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_b"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_b_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_b_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_b_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_c"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_c_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_c_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_c_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_d"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_d_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_d_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_d_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_e"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_e_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_e_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_e_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_f"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_f_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_f_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_f_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_g"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_g_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_g_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = 0;
+			CASE "B3_2_h"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_h_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_h_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_h_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_j"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_j_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_j_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_j_3_Q2_A\XCBR1\Pos_On;
+			CASE "B3_2_k"
+				ATP1_ALT_BKR_POS = WEN2.ATP_B3_2_k_1_Q2_A\XCBR1\Pos_On;
+				ATP2_ALT_BKR_POS = WEN2.ATP_B3_2_k_2_Q2_A\XCBR1\Pos_On;
+				ATP3_ALT_BKR_POS = WEN2.ATP_B3_2_k_3_Q2_A\XCBR1\Pos_On;
+			CASE ELSE
+				ATP1_ALT_BKR_POS = 0;
+				ATP2_ALT_BKR_POS = 0;
+				ATP3_ALT_BKR_POS = 0;
+			END SELECT
+
+	//ATS-1  
+	IF ATP1_ALT_BKR_POS THEN  
+		PageSetStr("ATP_BUS_" + sATP + "_1",sBus_IR);
+	ELSE  
+		PageSetStr("ATP_BUS_" + sATP + "_1",sBus);
+	END 
+	//ATS-2  
+	IF ATP2_ALT_BKR_POS THEN  
+		PageSetStr("ATP_BUS_" + sATP + "_2",sBus_IR);
+	ELSE  
+		PageSetStr("ATP_BUS_" + sATP + "_2",sBus);
+	END 
+	//ATS-3  
+	IF ATP3_ALT_BKR_POS THEN  
+		PageSetStr("ATP_BUS_" + sATP + "_3",sBus_IR);
+	ELSE  
+		PageSetStr("ATP_BUS_" + sATP + "_3",sBus);
+	END
+END
+
+INT FUNCTION GetTagValue(STRING sTAG)
+		INT iCurrValTAG
+		iCurrValTAG =TagRead(sTAG);
+		RETURN iCurrValTAG;
+END
+
+FUNCTION UPSB3_SWBD()
+
+INT UPSB3UA1_Q13,UPSB3UA1_Q14;
+INT UPSB3UB1_Q13,UPSB3UB1_Q14;
+
+IF PMDC_B3_1_r_Q1_2\MMXU1\PPV\phsAB > 200 AND UPS_B3_1_r_2_UA1_MeterQ1_4_3\GGIO1\Ind1
+THEN 
+PageSetInt("UPSB3UA1_Q13",1)
+ELSE
+PageSetInt("UPSB3UA1_Q13",0)
+END
+
+IF PMDC_B3_1_r_Q1_2\MMXU1\PPV\phsAB > 200 AND UPS_B3_1_r_2_UA1_MeterQ1_4_4\GGIO1\Ind1
+THEN 
+PageSetInt("UPSB3UA1_Q14",1)
+ELSE
+PageSetInt("UPSB3UA1_Q14",0)
+END
+
+IF PMDC_B3_2_r_Q1_2\MMXU1\PPV\phsAB > 200 AND UPS_B3_2_r_2_UB1_MeterQ1_4_3\GGIO1\Ind1
+THEN 
+PageSetInt("UPSB3UB1_Q13",1)
+ELSE
+PageSetInt("UPSB3UB1_Q13",0)
+END
+
+IF PMDC_B3_2_r_Q1_2\MMXU1\PPV\phsAB > 200 AND UPS_B3_2_r_2_UB1_MeterQ1_4_4\GGIO1\Ind1
+THEN 
+PageSetInt("UPSB3UB1_Q14",1)
+ELSE
+PageSetInt("UPSB3UB1_Q14",0)
+END
+
+END
+

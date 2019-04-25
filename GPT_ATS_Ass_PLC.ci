@@ -1,0 +1,193 @@
+INT PLCSG_hWin = -2; //For the next new window or page displayed.
+
+FUNCTION ATS_Ass_PLC(STRING strTAG,STRING sCluster)
+	!Dim
+	STRING sType,sEquip;
+	
+	!Init
+	strDevice=strTAG;								/* strTAG is the Device Name */
+	strCluster=sCluster;
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+	sType = "ATS";									/* Type */
+	sEquip = strTAG;								/* Equip */
+	//strSE=strCluster;		 						/* CLUSTER ASSIGN */
+	//strAA=strCluster + strALM;						/* CLUSTER ASSIGN TO Alarm Tag */
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	!strTAG = EquipGetProperty(sEquip,"IODevice",0,sCluster)
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strTAG + "'",0);
+	ASS_IODevice_To_EquipName(strTAG,sCluster);
+	!------------------------------------------------------
+	!        Variable and Alarm and Trend Tags Ass
+	!------------------------------------------------------
+	Equip_ASS_ATS_PLC(strTAG,strCluster);
+END
+
+! GPT RTS 2016/11/13 
+FUNCTION ATS_PLC_EquipPopup(STRING strTAG,STRING sCluster)
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	ATS_Ass_PLC(strTAG,sCluster);
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+	IF strTAG = "ATP_B1_1_d" THEN	
+		EquipAssMetadataWin("!ATP_GPLC_2Col_Status");	
+	ELSE
+		EquipAssMetadataWin("!ATP_GPLC_3Col_Status");	
+	END  //END IF
+END // END FUNCTION ATS_PLC_EquipPopup
+
+! GPT RTS 2016/11/13 
+FUNCTION Equip_ASS_ATS_PLC(STRING strTAG,STRING sCluster)
+	STRING sRack,sSlot,sItem,sItemG;
+	STRING sArea = StrRight(strTAG,6);	!Area Name
+	INT iAddrG1,iAddrG2,iAddrG3;		!Gen Address
+	STRING sType="DDI";
+	STRING sDevice="Global_LO_PLC";
+	STRING sDevice1,sDevice2;			!M340 Device
+	INT iBit1,iBit2;					!M340 Address
+	INT i,j,k;
+   	//DebugMsg("Page Name is:  " + DspPageInfo(0));
+	!Address
+	SELECT CASE sArea
+		CASE "B1_1_a"
+			sRack = 2;
+			sSlot = 3;
+			iAddrG1	= 2;//GGIO?
+			iAddrG2 = 8;//SLOT?
+			iAddrG3 = 0;//REGISTER-BIT?
+			sDevice1 = "PMDC_B1_1_a_M340";
+			sDevice2 = "PMDC_B1_1_a_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_1_a Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_2_a"
+			sRack = 2;
+			sSlot = 6;
+			iAddrG1	= 2;
+			iAddrG2 = 8;
+			iAddrG3 = 4;
+			sDevice1 = "PMDC_B1_2_a_M340";
+			sDevice2 = "PMDC_B1_2_a_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_2_a Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_1_b"
+			sRack = 2;
+			sSlot = 5;
+			iAddrG1	= 2;
+			iAddrG2 = 8;
+			iAddrG3 = 1;
+			sDevice1 = "PMDC_B1_1_b_M340";
+			sDevice2 = "PMDC_B1_1_b_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_1_b Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_2_b"
+			sRack = 2;
+			sSlot = 6;
+			iAddrG1	= 2;
+			iAddrG2 = 8;
+			iAddrG3 = 5;			
+			sDevice1 = "PMDC_B1_2_b_M340";
+			sDevice2 = "PMDC_B1_2_b_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_2_b Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_1_c"
+			sRack = 3;
+			sSlot = 3;
+			iAddrG1	= 2;
+			iAddrG2 = 8;
+			iAddrG3 = 2;
+			sDevice1 = "PMDC_B1_1_c_M340";
+			sDevice2 = "PMDC_B1_1_c_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_1_c Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_2_c"
+			sRack = 3;
+			sSlot = 4;
+			iAddrG1	= 2;
+			iAddrG2 = 8;
+			iAddrG3 = 6;
+			sDevice1 = "PMDC_B1_2_c_M340";
+			sDevice2 = "PMDC_B1_2_c_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_2_c Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));
+		CASE "B1_1_d"
+			sRack = 3;
+			sSlot = 4;
+			iAddrG1	= 2;
+			iAddrG2 = 8;
+			iAddrG3 = 3;
+			sDevice1 = "PMDC_B1_1_d_M340";
+			sDevice2 = "PMDC_B1_1_d_M340";
+			iBit1 = 20;
+			iBit2 = 23;
+			////DebugMsg("B1_1_d Equip_ASS_ATS_PLC Rack :" + sRack + "the Slot:" + sSlot + "iAddrG1:" + IntToStr(iAddrG1) + "iAddrG2:" + IntToStr(iAddrG2) + "iAddrG3:" + IntToStr(iAddrG3) + "iBit1: " + IntToStr(iBit1) + "iBit2: " + IntToStr(iBit2));	
+	END SELECT
+
+	!DDI
+	FOR i = 0 TO 31 DO
+		sItem = sCluster + sDevice + "\GGIO" + sRack + "\SLOT" + sSlot + "\" + sType + "[" + IntToStr(i) + "]";
+		SELECT CASE i
+			!ATS-1
+			CASE 0 TO 7
+				Ass(-2,IntToStr(i+101),sItem,0);
+			!ATS-2
+			CASE 8 TO 15
+				Ass(-2,IntToStr(i+201-8),sItem,0);
+			!ATS-3
+			CASE 16 TO 23
+				Ass(-2,IntToStr(i+301-16),sItem,0);
+		END SELECT
+		////DebugMsg("Equip_ASS_ATS_PLC Rack DDI Loop:" + sItem);
+	END
+
+	!MW for HMI S-ATS Status Tag
+	FOR j = 0 TO 15 DO
+		!ATS-1
+		sItem = sCluster + sDevice + "\LPHD\HMI\ATP_" + sArea + "_1\Status" + "[" + IntToStr(j) + "]";
+		Ass(-2,IntToStr(j+100),sItem,0);
+		!ATS-2
+		sItem = sCluster + sDevice + "\LPHD\HMI\ATP_" + sArea + "_2\Status" + "[" + IntToStr(j) + "]";
+		Ass(-2,IntToStr(j+200),sItem,0);
+		!ATS-3
+		sItem = sCluster + sDevice + "\LPHD\HMI\ATP_" + sArea + "_3\Status" + "[" + IntToStr(j) + "]";
+		Ass(-2,IntToStr(j+300),sItem,0);
+	END
+	
+	!GEN
+	sItemG = sCluster + sDevice + "\GGIO" + IntToStr(iAddrG1) + "\SLOT" + IntToStr(iAddrG2) + "\" + sType + "[" + IntToStr(iAddrG3) + "]";
+	Ass(-2,"141",sItemG,0);
+	Ass(-2,"241",sItemG,0);
+	Ass(-2,"341",sItemG,0);
+	
+	!SPD 300KA West for M340 IO Address
+	STRING sBit1_0 = IntToStr(iBit1);
+	STRING sBit1_1 = IntToStr(iBit1+1);
+	STRING sBit1_2 = IntToStr(iBit1+2);
+	STRING sBit2 = IntToStr(iBit2);
+	
+	Ass(PLCSG_hWin,"142",sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_0 + "]",0);
+	Ass(PLCSG_hWin,"242",sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_1 + "]",0);
+	Ass(PLCSG_hWin,"342",sCluster + sDevice1 + "\GGIO1\SLOT3\" + sType + "[" + sBit1_2 + "]",0);
+	
+	!SPD 150KA East for M340 IO Address
+	Ass(-2,"143",sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + IntToStr(iBit2) + "]",0);
+	Ass(-2,"243",sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + IntToStr(iBit2+1) + "]",0);
+	Ass(-2,"343",sCluster + sDevice2 + "\GGIO1\SLOT3\" + sType + "[" + IntToStr(iBit2+2) + "]",0);
+	
+	!System
+	Ass(-2,"51",sCluster + sDevice + "\LPHD\HotStandby\CpuA\Status[8]",0);
+	Ass(-2,"52",sCluster + sDevice + "\LPHD\HotStandby\CpuB\Status[8]",0);
+	Ass(-2,"53",sCluster + sDevice + "\LPHD\HotStandby\CpuA\Status[9]",0);
+	//Ass(-2,"54",sCluster + sDevice + "\LPHD\HotStandby\CpuB\Status[9]",0);
+END

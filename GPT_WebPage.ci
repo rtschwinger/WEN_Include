@@ -1,0 +1,76 @@
+// <comments>
+// <summary>
+// Contains related functions to displaying a webpage
+// </summary>
+// </comments>  
+
+// <comments>
+// <summary>
+// Displays a web page
+// </summary>
+// <remarks>
+// Uses PLSPageDisplay to display the correct resolution
+// </remarks>
+// <param name="sPage">URL of the web page to display</param>
+// <param name="sTitle">Title to display.  Defaults to Web Page</param>
+// <param name="nSilent">WebViewer (IE) Silent property</param>
+// <param name="sNavBackMethod">Navigate back method</param>
+// <param name="sNavBack">Navigate back link</param>
+// </comments>
+FUNCTION GPT_WebDsp(STRING sPage, STRING sTitle = "", INT nSilent = 1, STRING sNavBackMethod = "PLS_WebDsp", STRING sNavBack = "")
+	OBJECT objViewer;
+		
+	IF ("" = sTitle) THEN sTitle = "Web Page"; END
+	IF ("" = sNavBack) THEN
+		sNavBack = "^"" + sPage + "^",^"" + sTitle+ "^"," + IntToStr(nSilent);
+	END
+	
+	PLSPageDisplay("WEN_WebPage_HD1080");
+	WinTitle(sTitle);
+
+	objViewer = ObjectByName("WebViewer");
+	_OBJECTSetProperty(objViewer, "Silent", nSilent);
+	_OBJECTCallMethod(objViewer, "Navigate2", sPage, "", "", "", "");    
+    
+	PLSNavSetPageLastCommand(sNavBackMethod, sNavBack, sTitle);
+END
+
+// <comments>
+// <summary>
+// Opens a web browser pop-up page at the given url(opens a child window)
+// </summary>
+// <param name="sPage">URL of the web page to display</param>
+// <param name="sTitle">Title to display.  Defaults to Web Page</param>
+// <param name="nSilent">WebViewer (IE) Silent property</param>
+// </comments>
+FUNCTION GPT_WebPopup(STRING sPage, STRING sTitle = "", INT nSilent = 1)
+	INT iWin;
+	IF ("" = sPage) THEN RETURN; END
+	IF ("" = sTitle) THEN sTitle = "Web Page"; END
+	iWin = PLSDspWinNewAt("!WebPage", 20, 20, 2+64+256+4096);
+	
+	IF (iWin <> -1) THEN
+		WinTitle(sTitle);
+		_OBJECTCallMethod(ObjectByName("WebViewer"), "Silent", nSilent);
+		_OBJECTCallMethod(ObjectByName("WebViewer"), "Navigate2", sPage);
+	END
+END
+
+// <comments>
+// <summary>
+// Shows the specified report in Web Reporter window. If the iReportID is less than or equal to 0 or is a
+// non-existent report, then the list of reports is shown instead.
+// </summary>
+// <param name="iReportID">Report Id</param>
+// <param name="sTitle">Title of the page</param>
+// </comments>
+FUNCTION GPT_ShowWebReportDsp(INT iReportID, STRING sTitle = "")
+	IF ("" = sTitle) THEN sTitle = "Reporting"; END
+	
+	STRING sUrl = _PLS_Apps_BuildWebReporterUrl(iReportID);		
+	
+	IF ("" <> sUrl ) THEN
+		GPT_WebDsp(sUrl, sTitle, 1, "PLS_ShowWebReportDsp", 
+			IntToStr(iReportID) + ",^"" + sTitle + "^"");
+	END
+END

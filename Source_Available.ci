@@ -1,0 +1,115 @@
+
+FUNCTION PMDC_Source_available()
+   INT iSDC_Av_B1_1 = WEN2_SDC_B1_1_BUSHOT_B1();
+   INT iSDC_Av_B1_2 = WEN2_SDC_B1_2_BUSHOT_B1_2T1_TIED();
+   INT iSDC_Av_B2_1 = WEN2_SDC_B2_1_BUSHOT_B2_1();
+   ErrSet(1);
+   
+    //Av_G
+    SUMMARY_DSK\PMDC_B1_1_a\Av_G\stVal = GEN_B1_1_a_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_b\Av_G\stVal = GEN_B1_1_b_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_c\Av_G\stVal = GEN_B1_1_c_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_d\Av_G\stVal = GEN_B1_1_d_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_e\Av_G\stVal = GEN_B1_1_e_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_f\Av_G\stVal = GEN_B1_1_f_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_g\Av_G\stVal = GEN_B1_1_g_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_h\Av_G\stVal = GEN_B1_1_h_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_j\Av_G\stVal = GEN_B1_1_j_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_k\Av_G\stVal = GEN_B1_1_k_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_m\Av_G\stVal = GEN_B1_1_m_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_n\Av_G\stVal = GEN_B1_1_n_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_o\Av_G\stVal = GEN_B1_1_o_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_p\Av_G\stVal = GEN_B1_1_p_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_i\Av_G\stVal = GEN_B1_1_i_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_q\Av_G\stVal = GEN_B1_1_q_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_r\Av_G\stVal = GEN_B1_1_r_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_1_s\Av_G\stVal = GEN_B1_1_s_Genset\GGIO\NFPA110\Gen\Running;
+    
+    SUMMARY_DSK\PMDC_B1_2_a\Av_G\stVal = GEN_B1_2_a_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_b\Av_G\stVal = GEN_B1_2_b_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_c\Av_G\stVal = GEN_B1_2_c_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_d\Av_G\stVal = GEN_B1_2_d_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_e\Av_G\stVal = GEN_B1_2_e_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_f\Av_G\stVal = GEN_B1_2_f_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_g\Av_G\stVal = GEN_B1_2_g_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_h\Av_G\stVal = GEN_B1_2_h_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_j\Av_G\stVal = GEN_B1_2_j_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_k\Av_G\stVal = GEN_B1_2_k_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_m\Av_G\stVal = GEN_B1_2_m_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_n\Av_G\stVal = GEN_B1_2_n_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_o\Av_G\stVal = GEN_B1_2_o_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_p\Av_G\stVal = GEN_B1_2_p_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_i\Av_G\stVal = GEN_B1_2_i_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_q\Av_G\stVal = GEN_B1_2_q_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_r\Av_G\stVal = GEN_B1_2_r_Genset\GGIO\NFPA110\Gen\Running;
+    SUMMARY_DSK\PMDC_B1_2_s\Av_G\stVal = GEN_B1_2_s_Genset\GGIO\NFPA110\Gen\Running;
+	
+    //AV_U
+	//WEN2 22.8kV 50%=11400.0
+	
+	IF IsError() THEN
+		RETURN;
+	END
+    
+	//iSDC_Av_B1_1 = WEN2_SDC_B1_1_BUSHOT_B1();
+	//iSDC_Av_B1_2 = WEN2_SDC_B1_2_BUSHOT_B1_2T1_TIED();
+
+    SUMMARY_DSK\PMDC_B1_1_a\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_a_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_b\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_b_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_c\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_c_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_d\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_d_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_e\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_e_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_f\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_f_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_g\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_g_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_h\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_h_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_j\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_j_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_k\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_k_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_m\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_m_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_n\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_n_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_o\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_o_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_p\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_p_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_i\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_i_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_q\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_q_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_r\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_r_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_1_s\Av_U\stVal = iSDC_Av_B1_1 AND SDC_B1_1_s_REF620\XCBR1\Pos_On;
+    
+    SUMMARY_DSK\PMDC_B1_2_a\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_a_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_b\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_b_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_c\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_c_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_d\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_d_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_e\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_e_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_f\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_f_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_g\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_g_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_h\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_h_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_j\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_j_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_k\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_k_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_m\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_m_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_n\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_n_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_o\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_o_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_p\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_p_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_i\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_i_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_q\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_q_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_r\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_r_REF620\XCBR1\Pos_On;
+    SUMMARY_DSK\PMDC_B1_2_s\Av_U\stVal = iSDC_Av_B1_2 AND SDC_B1_2_s_REF620\XCBR1\Pos_On;
+  	
+END
+
+
+FUNCTION MDC_Source_available()
+INT iMDC_Av_B1;
+INT iMDC_Av_B2;
+
+ErrSet(1);
+	!MDC 22.8kV 50%=11400.0
+	IF MDC_B1_ION7650\MMXU1\PPV\zavg > 11400.0 AND MDC_B1_VCB\XCBR1\Pos_On THEN
+		iMDC_Av_B1 = 1
+	END
+	IF MDC_B2_ION7650\MMXU1\PPV\zavg > 11400.0 AND MDC_B2_VCB\XCBR1\Pos_On THEN
+		iMDC_Av_B2 = 1
+	END
+	
+	!MDC Breaker Available
+	MDC_B1\GGIO\Av\stVal = iMDC_Av_B1;
+	MDC_B2\GGIO\Av\stVal = iMDC_Av_B2;
+END
+

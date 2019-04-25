@@ -1,0 +1,34 @@
+
+FUNCTION ShowLogo_WEN()
+
+	INT AN;
+	STRING sLogo;
+	INT pgScan = PageInfo(7);
+	STRING pgName = PageInfo(0);
+	//Message("Error",pgName,48);
+	//IF ((pgScan MOD 5) = 0) THEN
+		AN = DspGetAnCur();
+		!Logo must be in a 150x60 canvas.
+	    !sLogo = ParameterGet("Graphics", "Logo", "pls_icons.default_logo");
+	    
+		SELECT CASE StrLeft(pgName,4)
+			CASE "WEN1"
+				sLogo = "wen_logo." + "wen1";
+			CASE "WEN2"
+				sLogo = "wen_logo." + "wen2";
+				!Message("Error",AN,48);
+			CASE "WEN3"
+				sLogo = "wen_logo." + "wen3";
+			CASE "WEN4"
+				sLogo = "wen_logo." + "wen4";
+			CASE ELSE
+				sLogo = "wen_logo." + "wen";
+		END SELECT
+		!Message("Error",sLogo,48);
+		DspSym(AN, sLogo, 1);
+	//END
+	RETURN;
+END
+
+FUNCTION ShowLogo_CHG()
+END

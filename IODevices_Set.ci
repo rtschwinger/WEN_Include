@@ -1,0 +1,118 @@
+
+FUNCTION StartLoadBank()
+INT LoadBankState;
+
+LoadBankState = IODeviceControl(36, 0, 0 );
+TraceMsg("LOAD BANK :" + IntToStr(LoadBankState)); 
+
+END
+
+! Vijeo Citect V7.40
+// Function is called include I/O Device Enable,Disable status and Action Logging //
+FUNCTION SETW_IODeviceFunction_V7(STRING IODevice,STRING sCluster="")
+
+	INT  hAn;
+	STRING AlmTagDesc;
+
+	STRING sTag,sName,sEnab,sDisab;
+	STRING strLog,strPreLog;
+	STRING strName;	
+	STRING sPortName,sComment
+
+	STRING tempTag;
+	
+	INT hClient;
+	STRING sNodeName;
+	STRING sServerName;
+	STRING temp,temp1;
+	INT iResult;
+
+	IF sCluster = "" THEN sCluster = strCluster END
+
+	strName	= IODevice;
+	
+	/* 設定存取表頭 */
+	strPreLog="Read_" + strName + "(" + "IODevice" + ")"		
+	
+	/* 讀取說明 */
+	sComment = IODeviceInfo(IODevice, 15 ,sCluster);
+	
+	/* 讀取Port Name */
+	sPortName = IODeviceInfo(IODevice, 13 ,sCluster);
+	
+	/* 讀取設定值 */
+	
+	/* 產生表單 */
+	FormNew("I/O Device Setting",40,6,8);
+	
+	FormPrompt(0,0,"Pont  : ");
+	FormPrompt(8,0,sPortName);
+	
+	FormPrompt(0,1,"Device  : ");
+	FormPrompt(8,1,IODevice);
+	
+	FormPrompt(0,2,"DESC : ");
+	FormPrompt(8,2,sComment);		
+	
+	tempTag=IODeviceInfo(IODevice, 10 ,sCluster);
+	IF tempTag="32" THEN
+		sDisab=1;
+		sEnab=0;
+		!記錄讀取值
+		strLog=strPreLog + " I/O Device : Disabled";
+		////Data_Log(strLog);						
+	ELSE
+		sDisab=0;		
+		sEnab=1;
+		!記錄讀取值
+		strLog=strPreLog + " I/O Device : Enabled";
+		//Data_Log(strLog);			
+	END
+	
+	FormRadioButton(0,3,"Enable",sEnab);
+	FormRadioButton(18,3,"Disable",sDisab);
+	
+	IF GetPriv(1, 0) THEN       /* 權限需為2以上 */
+		FormButton(5 ,5,"   OK   ", 0, 1);
+	END
+	
+	FormButton(25,5," Cancel ", 0, 2);
+
+	IF FormRead(0)=0 THEN
+	
+		/* 記錄資料 */	
+		strPreLog="Modify_" + strName + "(" + "IODevice" + ")" 
+		
+		IF sDisab="1" THEN
+				IODeviceControl(IODevice,1,1,sCluster);
+				!寫入設定值
+				strLog=strPreLog + " I/O Device : Disabled";
+				//Data_Log(strLog);						
+		END
+		IF sEnab="1" THEN
+				IODeviceControl(IODevice,1,0,sCluster);
+				!寫入設定值
+				strLog=strPreLog + " I/O Device : Enabled";
+				//Data_Log(strLog);					
+		END		
+	END
+END
+
+INT
+FUNCTION AdvAlarm_Dcon(INT iMaster,INT iSlave,INT iGood=1)
+	ErrSet(1);
+	!Msster Device Disconnected
+	IF iMaster THEN 
+		RETURN 1;
+	END
+	!Slave Tag Not Good
+	IF NOT iGood THEN
+		RETURN 0;
+	END
+	!Slave Device Disconnected
+	IF iSlave = 1 THEN
+		RETURN 1;
+	END
+	!Normal
+	RETURN 0;
+END

@@ -1,0 +1,191 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	 Copyright (C) 2002 Citect Pty Limited 
+//
+// 	FILE:	CSV_MultiMonitors.ci
+//
+//	DESCRIPTION:
+//
+//		Contains functions to support a multiple-monitor environment.
+//
+//	PUBLIC FUNCTIONS:
+//
+//				CSV_MM_ConfigInit()
+//				CSV_MM_PageDisplay()
+//				CSV_MM_WinNewAt()
+//				CSV_MM_WinPopup()
+//				CSV_MM_StoreLastPage()
+//				CSV_MM_PageLast()
+//				CSV_MM_ListLastPages()
+//				CSV_MM_PageNext()
+//				CSV_MM_PagePrev()
+//				CSV_MM_MonitorGoto()
+//				CSV_MM_GetMonitor()
+//				CSV_MM_GetOffset()
+//				CSV_MM_GetScreenWidth()
+//				CSV_MM_GetMonitors()
+//				CSV_MM_WinDrag()
+//				CSV_MM_WinDragEnd()
+//				CSV_MM_WinFree()
+//				CSV_MM_WinTitle()
+//				CSV_MM_MonitorFromPoint()
+//				CSV_MM_MonitorFromWindow()
+//				CSV_MM_GetMouseX()
+//				CSV_MM_GetMouseY()
+//				CSV_MM_BackEmpty()
+//				CSV_MM_FwdEmpty()
+//				CSV_MM_NextEmpty()
+//				CSV_MM_PreviousEmpty()
+//					
+//				CSV_MM_WinNew()
+//				CSV_MM_PageAlarm()
+//				CSV_MM_PageSummary()
+//				CSV_MM_PageHardware()
+//				CSV_MM_PageDisabled()
+//				CSV_MM_PageFile()
+//				CSV_MM_PageGoto()
+//				CSV_MM_PageSelect()	
+//				CSV_MM_PagePeekLast()
+//				CSV_MM_PagePopLast()
+//				CSV_MM_PagePushLast()
+//
+//
+//	NOTES:
+//		 
+//		The following functions can be used to replace original cicode functions 
+//		where multi-monitor support is required:
+//
+//			Multi-Monitor Function:					Original Function:
+//
+//			CSV_MM_PageDisplay						PageDisplay
+//			CSV_MM_WinNewAt							WinNewAt
+//			CSV_MM_PageLast							PageLast
+//			CSV_MM_PageNext							PageNext
+//			CSV_MM_PagePrev							PagePrev
+//			CSV_MM_WinFree							WinFree
+//			CSV_MM_GetMouseX, CSV_MM_GetMouseY		DspGetMouse
+//
+//			CSV_MM_WinNew							WinNew
+//			CSV_MM_PageAlarm						PageAlarm
+//			CSV_MM_PageSummary						PageSummary
+//			CSV_MM_PageHardware						PageHardware
+//			CSV_MM_PageDisabled						PageDisabled
+//			CSV_MM_PageFile							PageFile
+//			CSV_MM_PageGoto							PageGoto
+//			CSV_MM_PageSelect						PageSelect
+//			CSV_MM_PagePeekLast						PagePeekLast
+//			CSV_MM_PagePopLast						PagePopLast
+//			CSV_MM_PagePushLast						PagePushLast	
+//			
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	GLOBAL VARIABLES
+//GLOBAL INT	gbDelayPageRepaint = 0;	! Wait for animation points to be updated before repainting new page
+
+//	MODULE CONSTANTS
+
+INT		miMonitors = 1;			! Number of Monitors
+INT		miScreenWidth = 1024;	! Width of monitor (pixels)
+//STRING	msStartupPageDflt = "CSV_Start";	! Default name of startup page for each monitor
+//INT		miLastPageStackSize = 10;		! Number of pages on "last page" stack
+//INT		miLastPageStackSizeMax = 10;	! Maximum number of pages on "last page" stack 
+//
+//STRING	msAlarmPage       = "Alarm";	! file for AlarmPage
+//STRING	msSummaryPage     = "Summary";	! file for SummaryPage 
+//STRING	msHardwarePage    = "Hardware";	! file for HardwarePage
+//STRING	msDisabledPage    = "Disabled";	! file for DisabledPage
+//INT 	mbMenuDisable	  = 0;	! Disable menu bar for all pages
+//INT		miLogoutDisplayStartup = 0;	! All monitors display startup page after user logs out
+
+
+//	MODULE VARIABLES
+
+//INT		miParentWindowNo[6];	! Window no. of main window for each monitor
+//INT		miParentWindowXPos[6];	! X position of main window for each monitor
+//STRING	msParentWindowPage[6];	! Name of main page displayed on each monitor
+//STRING	msParentWindowStartupPage[6];	! Name of startup page displayed on each monitor
+//
+//STRING	msLastPageQue[6][10][2];! "Last page" stack for each monitor
+//STRING	msLastPageQue_[6][10][2];! Used when msLastPageQue > 127 characters
+//INT		miLastPageQuePtr[6];
+//STRING	msRecentAction[6];
+//STRING	msRecentAction_[6]; ! Used when msRecentAction > 127 characters
+//
+//INT		mbMonitorsInit;			! Multi-Monitor parameters have been initialised
+//INT		mbMonitorPagesInit;		! Multi-Monitor pages have been initialised
+//INT		miWinDrag;				! Dragging window in progress
+//
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//		FUNCTION NAME	
+//						CSV_MM_GetMonitor()
+//
+//		REV	DATE		WHO			DESCRIPTION
+//		0	21/03/02	J.Venz		Original
+//
+//     	GENERAL DESCRIPTION
+//
+//			Gets the number of the currently active monitor.
+//			The 'active' monitor is the monitor that contains the largest part of the area of the 
+//			currently active window.
+//
+//     	ARGUMENTS:
+//
+//     	RETURNED VALUE: 
+//
+//			Number of currently active monitor.
+//
+//		PSEUDO CODE:
+//
+//			Get the x-offset and width of the currently active window
+//			Determine the number of the monitor containing the left side of the window
+//			Get the x-offset of the righthand side of that monitor 
+//			Compare ((x-offset of righthand side of window) - (x-offset of righthand side of monitor))
+//				with ((x-offset of righthand side of monitor) - (x-offset of lefthand side of window))
+//				to determine which monitor contains the largest area of the window.
+//
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+INT
+FUNCTION
+CSV_MM_GetMonitor()
+
+	INT 	iMonitorNo;
+	INT		iLeft, iRight;
+	INT		iWidth;
+	INT		iMonitorOffset;
+	
+	iLeft = PageInfo(14);		! x-offset of current window
+	iWidth = PageInfo(12);		! width of current window
+	
+	IF iLeft < 0 THEN
+		iMonitorNo = 0;			
+		RETURN iMonitorNo;
+	END
+	
+	iMonitorNo = iLeft/miScreenWidth;	! monitor containing left side of window
+	
+	iMonitorOffset = (iMonitorNo + 1) * miScreenWidth;	! x-offset of right side of monitor
+	
+	! Determine which monitor contains largest area of active window
+	IF (iLeft + iWidth - iMonitorOffset) > (iMonitorOffset - iLeft) THEN
+	
+		! window overlaps 2 monitors 
+		! greater area of window in monitor to the right 
+		iMonitorNo = iMonitorNo + 1;
+		
+	END
+	
+	IF iMonitorNo > miMonitors - 1 THEN
+	
+		! Window only partially displayed on right-most monitor,
+		! most of window would be offscreen to the right
+		! Set the monitor number to the number of rightmost monitor
+		iMonitorNo = miMonitors - 1;
+		
+	END
+	
+	RETURN iMonitorNo;
+
+END

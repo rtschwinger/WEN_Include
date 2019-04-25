@@ -1,0 +1,151 @@
+//********************** PLC M580 DIO **********************
+MODULE INT WINDOW_OPEN_FAILED = -1;   	//WinNew or WinNewAt failed
+MODULE INT DEFAULT_WINDOW_MODE = 773;	//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+MODULE INT XPOS_WINDOW = 14;
+MODULE INT YPOS_WINDOW = 15;
+
+//GPT RTSchwinger 2016/08/14 New
+FUNCTION M580_ASS_DIO(STRING sTAGPFX,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING sRev1="353",STRING sRev2="00")
+	//Dim
+	STRING sEquip,sTitle = "Global LO PLC I/O Popup";
+	STRING sType1,sType2,sType3;
+	INT iMouseX,iMouseY,hWin;
+	
+	//ErrLog("Params Passed to Popup: *****************************");
+	//ErrLog("Param TAG: " + strTAG);
+	//ErrLog("Param Cluster: " + sCluster);
+	//ErrLog("Param Rack: " + sRack);
+	//ErrLog("Param Slot: " + sSlot);
+	//ErrLog("Param Type: " + sType);
+	//ErrLog("Param Rev1: " + sRev1);
+	//ErrLog("Param Rev2: " + sRev2);
+	//ErrLog("Params Passed to Popup: *****************************");
+	//Get mouse position (Where popup will be displayed)
+	DspGetMouse(iMouseX , iMouseY);
+	//Init
+	strDevice=sTAGPFX;								//* strTAG is the Device Name */
+	strCluster=sCluster;
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+
+	sEquip = sTAGPFX;								//* Equip */
+	//------------------------------------------------------
+	//                   Equip Ass
+	//------------------------------------------------------
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + sTAGPFX + "'",0);
+	Ass(-2,"Title","'" + "Rack " + sRack + ",Slot " + sSlot + "'",0);
+	
+	//------------------------------------------------------
+	//                   Type Ass
+	//------------------------------------------------------
+	Ass(-2,"Type1","'" + "140" + "'",0);
+	Ass(-2,"Type2","'" + sType + " " + sRev1 + " " + sRev2 + "'",0);
+	
+	IF sType = "DDI" THEN Ass(-2,"Type3","'" + "DIGITAL INPUT MODULE" + "'",0); END
+	IF sType = "DDO" THEN Ass(-2,"Type3","'" + "DIGITAL OUTPUT MODULE" + "'",0); END
+	
+	//------------------------------------------------------
+	//             Variable and Msg Ass
+	//------------------------------------------------------
+	M580_ASS_TAG(sTAGPFX,strCluster,sRack,sSlot,sType,sRev1,sRev2);
+	M580_ASS_MSG(sTAGPFX,strCluster,sRack,sSlot,sType,sRev1,sRev2);
+	
+	//------------------------------------------------------
+	//                  Digital IO Equip PopUp
+	//------------------------------------------------------
+	hWin = WinNewAt("!PLC_DIO_Popup", iMouseX + StrToInt(PageInfo(XPOS_WINDOW)) , iMouseY + StrToInt(PageInfo(YPOS_WINDOW)) , DEFAULT_WINDOW_MODE);
+	
+		//Ensure popup window opened
+		IF (hWin <> WINDOW_OPEN_FAILED) THEN
+				//Set window title
+				WinTitle(sTitle);
+		END
+END
+
+
+//********************** PLC M580 Tag **********************
+FUNCTION M580_ASS_TAG(STRING sTAGPFX,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING Rev1="353",STRING Rev2="00")
+	INT i;
+	STRING sItem;
+	
+	FOR i = 0 TO 31 DO
+		sItem = sCluster + sTAGPFX + "\GGIO" + sRack + "\SLOT" + sSlot + "\" + sType + "[" + IntToStr(i) + "]";
+		ErrLog("GPLCTag: " + sItem);
+		Ass(-2,"Tag" + IntToStr(i),sItem,0);
+	END
+END
+
+//********************** PLC M580 Msg **********************
+FUNCTION M580_ASS_MSG(STRING sTAGPFX,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING Rev1="",STRING Rev2="")
+	STRING sFunction,sArgs;
+
+	SELECT CASE sTAGPFX
+		CASE "Global_LO_PLC3"
+			sFunction = "M580_ASS_POPUP_MSG";
+			sTAGPFX = StrLeft(sTAGPFX,14);
+			sArgs = sTAGPFX + "," + sRack + "," + sSlot + "," + sType;
+			ErrLog("Function is : " + sFunction + " Arguments : " + sArgs);
+	END SELECT
+			
+	IF iDebug_On THEN
+		ErrLog("M580 Taskcall Function: " + sFunction + " M580 Taskcall Args: " + sArgs);
+	END
+
+	TaskCall(sFunction, sArgs);
+END
+
+
+
+//********************** PLC M580 Tag M580_ASS_POPUP_MSG **********************
+INT
+FUNCTION M580_ASS_POPUP_MSG(STRING sGearName,	STRING sRACKNUM, STRING sSLOTNUM, STRING	sCOLNAME)
+	INT	hDBFDevice;
+	INT	iMsgCntr = 0;
+	STRING sM580_IO_Descr;
+	STRING sSLOTLBL = "SLOT" + sSLOTNUM;
+	STRING sRACKLBL = "RACK" + sRACKNUM;
+	STRING sM580_IO_Rack;
+	STRING sM580_IO_Slot;
+	STRING sM580_IO_Area;
+	STRING sM580_IO_ADDR;
+	STRING sGear,sGear_DBF;
+
+	ErrSet(1);
+	sGear_DBF = sGearName;
+	ErrLog("Gear: " +  sGear_DBF);
+
+	hDBFDevice = DevOpen("PMDCM580Map",3); //Open	Device
+	TraceMsg("DBF	Error: " + IntToStr(hDBFDevice))
+	IF hDBFDevice	=	-1 THEN
+		DspError("DBFDevice	Device Error!!");
+		TraceMsg("Unable to	Open DBF Device	");
+		Message("Database	Access Error!", "Does someone have the file open?",	0);
+		RETURN FALSE;
+	ELSE
+		WHILE	NOT	DevEOF(hDBFDevice) DO
+			sM580_IO_Area = DevGetField(hDBFDevice,"AREAP");
+			sM580_IO_Rack = DevGetField(hDBFDevice,"RACK");
+			sM580_IO_Slot = DevGetField(hDBFDevice,"SLOT");
+			sM580_IO_ADDR = DevGetField(hDBFDevice,"ADDR");
+			sM580_IO_Descr = DevGetField(hDBFDevice,"DESCR");
+			IF ((sGear_DBF = sM580_IO_Area) AND (sRACKLBL = sM580_IO_Rack) AND (sSLOTLBL = sM580_IO_Slot) ) THEN
+		        //ErrLog("------------------------------------------------");
+		        //ErrLog("String Returned: " + sM580_IO_Area);
+		        //ErrLog("String Returned: " + sM580_IO_Rack);
+		        //ErrLog("String Returned: " + sM580_IO_Slot);
+		        //ErrLog("String Returned: " + sM580_IO_Descr);
+		        //ErrLog("------------------------------------------------");
+		        //ErrLog("Substitution Lable: " + "Msg" + IntToStr(iMsgCntr));
+		        //ErrLog("Tag Assignment: " + sM580_IO_Descr + "  [" + sM580_IO_ADDR + "]");
+				Ass(-2,"Msg" + IntToStr(iMsgCntr),"'" + sM580_IO_Descr + "'",0);
+				iMsgCntr = iMsgCntr	+ 1;
+			END
+	    	DevNext(hDBFDevice);			
+		END	//WHILE	DO
+		DevClose(hDBFDevice); //Close Device
+	END
+	DevClose(hDBFDevice);	//Close	Device
+END
+
+

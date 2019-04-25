@@ -1,0 +1,2518 @@
+!********************** ION7650 Power Meter **********************
+! GPT RTS 2016/08/17 New
+FUNCTION Meter_ION7650_Zone_EquipPopup_R(STRING sTAGPFX,STRING sCluster,STRING sZone,INT iMeterConfig)
+
+	ErrLog("R Tag Prefix: " + sTAGPFX + " Cluster: " + sCluster + " Zone: " + sZone + " Meter COnfiguration: " + IntToStr(iMeterConfig));
+
+	STRING sType = "ION7650";
+	STRING sPage,sSrchResult;
+	STRING sEquipName = "";
+	INT iSelection, iType;
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Meter_ZONE_ASS_ION7650(sTAGPFX,sCluster,sZone,iMeterConfig);
+	//ION7650_ZONE_ASS_MSG(sTAGPFX,sCluster,sZone,iMeterConfig);
+	!------------------------------------------------------
+	!                   Equip Menu
+	!------------------------------------------------------
+	DspPopupMenu(0, StrToLocalText("@(Current)"));
+	DspPopupMenu(0, StrToLocalText("@(Power)"));
+	DspPopupMenu(0, StrToLocalText("@(Power Factor)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(User Manual)"));
+	DspPopupMenu(0, StrToLocalText("@(Circuit diagram)"));
+	DspPopupMenu(0, "," + StrToLocalText("@(Alarm List)"));
+	DspPopupMenu(0, StrToLocalText("@(I/O Status)"));
+	DspPopupMenu(0, StrToLocalText("@(Waveform Viewer)"));
+	DspPopupMenu(0, StrToLocalText("@(PME Diagram)"));
+	iSelection = DspPopupMenu(-1,"");
+	!------------------------------------------------------
+	!                   Equip PopUp
+	!------------------------------------------------------
+
+	sEquipName = ASS_IODevice_To_EquipName(sTAGPFX, sCluster);
+	SELECT CASE iSelection
+		CASE 1
+			sPage = "Current";
+		CASE 2
+			sPage = "Power";
+		CASE 3
+			sPage = "PF";
+		CASE 4
+			Get_UserManual("Meter_ION7650");
+		CASE 5
+			Get_Drawing("Meter_ION7650");
+		CASE 6
+			AssChainPopUp("!EquipAlarmList");
+		CASE 7
+			EquipAssMetadataWin("!meter_ion7650_di");
+		CASE 8
+			 PLSWaveformSearch(sEquipName);
+		CASE 9
+			IF Check_PME_Privilege() = "TRUE" THEN
+					//PLS_WebReachPopup(EquipGetProperty(AssInfo(sCluster,0) + "." + AssInfo("4",0),sEquipName));
+					//PLS_WebReachPopup(EquipGetProperty(AssInfo("Cluster",0) + "." + AssInfo("4",0),"Custom%Custom=8%"))
+					PLS_WebReachPopup("WEN2.PMDC_B3_1_i.METER1");
+			END
+		END SELECT //END CASE
+
+	IF sPage <> "" THEN
+		EquipAssMetadataWin("!Meter_" + sType + "_" + sPage);
+	END //END IF
+END //Meter_ION7650_EquipPopup_R
+
+
+! GPT RTS 2016/08/17 New
+FUNCTION Meter_ION7650_Zone_EquipPopup_L(STRING sTAGPFX,STRING sCluster,STRING sZone,INT iMeterConfig)
+
+				ErrLog("L Tag Prefix: " + sTAGPFX + " Cluster: " + sCluster + " Zone: " + sZone + " Meter COnfiguration: " + IntToStr(iMeterConfig));
+
+				!------------------------------------------------------
+				!                   Equip Ass
+				!------------------------------------------------------
+				Meter_ZONE_ASS_ION7650(sTAGPFX,sCluster,sZone,iMeterConfig);
+				!------------------------------------------------------
+				!                   Equip PopUp
+				!------------------------------------------------------
+				EquipAssMetadataWin("!Meter_ION7650_Main");
+				!------------------------------------------------------
+				!                   Equip Alarm List
+				!------------------------------------------------------
+				!EquipShowAlarmList();  !Into the General Page Event
+END
+
+
+FUNCTION Meter_ZONE_ASS_ION7650(STRING sTAGPFX,STRING sCluster,STRING sZone, INT iMeterConfig)
+	!Dim
+	STRING sType,sEquip,sRtnIOToEQ,sDotCluster;
+
+	IF iDebug_On THEN
+		 ErrLog("Init:Meter_ZONE_ASS_ION7650: sCluster: " + sCluster + " sTAGPFX: " + sTAGPFX + " Zone: " + sZone + " iMeterConfig: " + IntToStr(iMeterConfig));
+	END
+
+	!Init
+	sDotCluster=sCluster;
+	IF sCluster <> "" THEN sDotCluster = sCluster + "."; END
+	sType = "ION7650";            /* Type */
+	sEquip = sTAGPFX;             /* Equip */
+
+	IF iDebug_On THEN
+		 ErrLog("1:Meter_ZONE_ASS_ION7650: Cluster: " + sCluster + " Type: " + sType + " Euip: " + sEquip + " TAG PREFIX: " + sTAGPFX);
+	END
+
+	!------------------------------------------------------
+	!                   Equip Ass
+	!------------------------------------------------------
+	Ass(-2,"Cluster","'" + sCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + sTAGPFX + "'",0);
+	IF iDebug_On THEN
+		 ErrLog("************ Start Equip Ass IO Dev to Equip Name *****************");
+		 ErrLog("2:Meter_ZONE_ASS_ION7650: Cluster: " + sCluster + " Type: " + sType + " TAG PREFIX: " + sTAGPFX);
+	END
+	sRtnIOToEQ = ASS_IODevice_To_EquipName(sTAGPFX,sCluster);
+	IF iDebug_On THEN
+		 ErrLog("Return From ASS_IODevice_To_EquipName: " + sRtnIOToEQ);
+		 ErrLog("************ End Equip Ass IO Dev to Equip Name *****************");
+	END
+	!------------------------------------------------------
+	!        Variable,Alarm and Trend Tags Ass
+	!------------------------------------------------------
+	Equip_ASS_Meter(sTAGPFX,sDotCluster);
+	!------------------------------------------------------
+	!        IO Status MSG Ass
+	!------------------------------------------------------
+	Ass(-2,"Title","'" + sTAGPFX + "'",0);
+
+	ION7650_ZONE_ASS_MSG(sTAGPFX,sDotCluster,sZone,iMeterConfig);
+END
+
+INT
+FUNCTION ION7650_ASS_POPUP_MSG(STRING sGearName)
+	INT hDBFDevice;
+	INT iMsgCntr = 1;
+	STRING sION7650_IO_Descr;
+	STRING sION7650_IO_AreaP;
+	STRING sGear,sGear_DBF;
+
+	ErrSet(1);
+	IF StrLeft(sGearName,4) = "PMDC" THEN
+		sGear = StrLeft(sGearName,11);
+		sGear_DBF = CharReplace("_","-",	sGear);
+	ELSE
+		sGear = StrLeft(sGearName,8);
+		sGear_DBF = CharReplace("_","-",	sGear);
+	END
+
+	hDBFDevice = DevOpen("PMDCIONMap",16); //Open Device
+	TraceMsg("DBF Error: " + IntToStr(hDBFDevice))
+	IF hDBFDevice = -1 THEN
+		DspError("DBFDevice Device Error!!");
+		TraceMsg("Unable to Open DBF Device ");
+		Message("@(Database Access Error!)", "@(Does someone have the file open?)", 0);
+		RETURN FALSE;
+	ELSE
+		WHILE NOT DevEOF(hDBFDevice) DO
+			sION7650_IO_Descr = DevGetField(hDBFDevice,"DESCR");
+			sION7650_IO_AreaP = DevGetField(hDBFDevice,"AREAP");
+			ErrLog("Fields From DBF: " + sION7650_IO_Descr + " " + sION7650_IO_AreaP);
+			IF (sGear_DBF = sION7650_IO_AreaP) THEN
+						Ass(-2,"Msg" + IntToStr(iMsgCntr),"'" +  IntToStr(iMsgCntr) + ".) " + sGear_DBF + " " + sION7650_IO_Descr + "'",0);
+						ErrLog("String Assigned: " + IntToStr(iMsgCntr) + "'"	+	 IntToStr(iMsgCntr)	+	".)	"	+	sGear_DBF	+	"	"	+	sION7650_IO_Descr);
+						iMsgCntr = iMsgCntr + 1;
+			END
+			DevNext(hDBFDevice);
+		END //WHILE DO
+		DevClose(hDBFDevice);	//Close	Device
+	END
+	DevClose(hDBFDevice); //Close Device
+END
+
+
+
+
+!GPT RTS 2018/01/14 New
+INT
+FUNCTION Meter_Toggle_MM(STRING sCluster, STRING sTAGPFX, STRING sTAG)
+					IF(Meter_In_MM(sCluster,sTAGPFX,sTAG)) THEN
+								Message("@(Error)", "@(Meter already in Maintenance Mode)", 0);
+								RETURN -1;
+					END
+
+					IF(TagRead(sCluster + "." + sTAGPFX + "\LPHD\MtnMode\stVal") = "0") THEN
+								TagWrite(sCluster + "." + sTAGPFX + "\LPHD\MtnMode\stVal", 1, 0, TRUE);
+					ELSE
+								TagWrite(sCluster + "." + sTAGPFX + "\LPHD\MtnMode\stVal", 0, 0, TRUE);
+					END
+ END
+
+!GPT RTS 2018/01/14 New
+INT
+FUNCTION Meter_In_MM(STRING sCluster, STRING sTAGPFX, STRING sTAG)
+	INT iMntMode = 1;
+	// If not in Maintenance Mode
+	IF (TagInfo(sCluster + "." + sTAGPFX + "\LPHD\MtnMode\stVal", 0) <> "") THEN
+		IF (StrToInt(TagRead(sCluster + "." + sTAGPFX + "\LPHD\MtnMode\stVal")) <> 2) THEN
+			iMntMode =0;
+		END
+	END
+
+	RETURN iMntMode;
+END
+
+
+
+
+STRING
+FUNCTION Check_PME_Privilege()
+	IF (PLSSecGetPriv(PL_Sec_ViewWaveform) = 0) THEN
+		Message(StrToLocalText("@(Error)"), StrToLocalText("@(You must be an authorized user to view PME Diagrams.)"), 0+16);
+		RETURN "";
+	END
+	RETURN "TRUE";
+END
+
+
+!********************** ION7650 Msg **********************
+!*****Critical PMDC ION7650 DI and meter type Assignment  **********************
+!******** Parameter:
+!******** STRING strPMDCName Full PMDC Name
+!******** INT iIsVoltDelta Is the meter configured for Delta = 1 or WYE = 0
+FUNCTION ION7650_ZONE_ASS_MSG(STRING sTAGPFX,STRING sCluster,STRING sZone,INT iMeterConfig)
+			STRING sType = sTAGPFX;
+			INT iVoltDelta=iMeterConfig;
+			STRING sFunction,sArgs;
+
+			IF iDebug_On THEN
+					ErrLog("Tag Prefix: " + sTAGPFX + " Cluster: " + sCluster + " Zone: " + sZone + " Meter COnfiguration: " + IntToStr(iMeterConfig));
+			END
+
+			Ass(-2,"Type1","'" + "DI MODULES" + "'",0);
+			Ass(-2,"Type2","'" + "" + "'",0);
+			Ass(-2,"Type3","'" + "STD IO CARD" + "'",0);
+			Ass(-2,"Type4","'" + "OPT IO CARD" + "'",0);
+
+			SELECT CASE sType
+				CASE "MDC_B1_ION7650"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";
+				CASE "MDC_B2_ION7650"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";
+				CASE "MDC_B3_ION7650"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";
+				CASE "SDC_B1_1_ION7650_1"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";;
+				CASE "SDC_B1_1_ION7650_2"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";
+				CASE "SDC_B1_2_ION7650_1"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";
+				CASE "SDC_B2_1_ION7650_1"
+							sFunction = sTAGPFX + "_Msg";
+							sArgs = "";
+				CASE "PMDC_B1_1_q_ION7650", "PMDC_B1_1_r_ION7650", "PMDC_B1_1_s_ION7650", "PMDC_B1_2_q_ION7650", "PMDC_B1_2_r_ION7650", "PMDC_B1_2_s_ION7650"
+							sFunction = "PMDC_Mech_ION7650_DIO_Msg";
+							sArgs = sType;
+				CASE "SDC_B3_1_ION7650_1"
+							sFunction = "ION7650_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+							ErrLog("Function is : " + sFunction + " Arguments : " + sArgs);
+				CASE "PMDC_B3_1_q_ION7650","PMDC_B3_1_r_ION7650","PMDC_B3_2_q_ION7650","PMDC_B3_2_r_ION7650","PMDC_B3_2_s_ION7650"
+							sFunction = "ION7650_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+							ErrLog("Function is : " + sFunction + " Arguments : " + sArgs);
+				CASE "PMDC_B3_1_a_ION7650","PMDC_B3_1_b_ION7650","PMDC_B3_1_c_ION7650","PMDC_B3_1_d_ION7650","PMDC_B3_2_a_ION7650","PMDC_B3_2_b_ION7650","PMDC_B3_2_c_ION7650"
+						 ,"PMDC_B3_1_e_ION7650","PMDC_B3_1_f_ION7650","PMDC_B3_1_g_ION7650","PMDC_B3_2_d_ION7650","PMDC_B3_2_e_ION7650","PMDC_B3_2_f_ION7650","PMDC_B3_2_g_ION7650"
+						 ,"PMDC_B3_1_h_ION7650","PMDC_B3_1_j_ION7650","PMDC_B3_1_k_ION7650","PMDC_B3_1_m_ION7650","PMDC_B3_2_h_ION7650","PMDC_B3_2_j_ION7650","PMDC_B3_2_k_ION7650"
+							sFunction = "ION7650_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+							ErrLog("Function is : " + sFunction + " Arguments : " + sArgs);
+				CASE "PMDC_B3_1_i_ION7650"
+							sFunction = "ION7650_ASS_POPUP_MSG";
+							sArgs = sTAGPFX;
+							ErrLog("Function is : " + sFunction + " Arguments : " + sArgs);
+				CASE ELSE
+								PMDC_Zone_ION7650_Shared_MSG(sTAGPFX, sCluster, sZone);
+				END SELECT //END CASE
+
+				Ass(-2,"hVoltDelta","'" + IntToStr(iVoltDelta) + "'",0);
+				TaskCall(sFunction, sArgs);
+END
+
+!********************** ION7650 Digital IO Popup Msg Calls **********************
+
+!PMDC_B1_1_q ION7650 Digital IO Assignment
+FUNCTION PMDC_Zone_ION7650_Shared_MSG(STRING sPMDCName,STRING sCluster, STRING sZone)
+
+	STRING sPMDC = StrLeft(sPMDCName,11);
+	STRING sPanel = CharReplace("_","-", sPMDC);
+	IF iDebug_On THEN
+		 ErrLog("PMDC_Zone_ION7650_Shared_MSG.Tag Prefix: " + sPanel + " Cluster: " + sCluster + " Zone: " + sZone );
+	END
+
+	!Msg1~16
+	SELECT CASE sZone
+		CASE "Z1"
+				 Ass(-2,"Msg1","'" + "  1.) " + sPanel + " UCB52U" + " Breaker Open/Close" + "'",0);
+				 Ass(-2,"Msg2","'" + "  2.) " + sPanel + " UCB52U" + " Breaker Trip" + "'",0);
+				 Ass(-2,"Msg3","'" + "  3.) " + sPanel + " GCB52G" + " Breaker Open/Close" + "'",0);
+				 Ass(-2,"Msg4","'" + "  4.) " + sPanel + " GCB52G" + " Breaker Trip" + "'",0);
+				 Ass(-2,"Msg5","'" + "  5.) " + sPanel + " LCB52L" + " Breaker Open/Close" + "'",0);
+				 Ass(-2,"Msg6","'" + "  6.) " + sPanel + " LCB52L" + " Breaker Trip" + "'",0);
+				 Ass(-2,"Msg7","'" + "  7.) " + sPanel + " MDGF Status (Ground Fault)" + "" + "'",0);
+				 Ass(-2,"Msg8","'" + "  8.) " + sPanel + " TVSS Status" + "" + "'",0);
+				 Ass(-2,"Msg9","'" + "  9.) " + sPanel + " XCB52X" + " Breaker Open/Close" + "'",0);
+				 Ass(-2,"Msg10","'" + "10.) " + sPanel + " XCB52X" + " Breaker Trip" + "'",0);
+				 Ass(-2,"Msg11","'" + "11.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg12","'" + "12.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg13","'" + "13.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg14","'" + "14.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg15","'" + "15.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg16","'" + "16.) " + sPanel + " SPARE" + "" + "'",0);
+		CASE "Z2", "Z3", "Z4"
+			 Ass(-2,"Msg1","'" + "  1.) " + sPanel + " UCB52U" + " Breaker Open/Close Status" + "'",0);
+		 Ass(-2,"Msg2","'" + "  2.) " + sPanel + " UCB52U" + " Breaker Trip Status" + "'",0);
+		 Ass(-2,"Msg3","'" + "  3.) " + sPanel + " GCB52G" + " Breaker Open/Close Status" + "'",0);
+		 Ass(-2,"Msg4","'" + "  4.) " + sPanel + " GCB52G" + " Breaker Trip Status" + "'",0);
+				 Ass(-2,"Msg5","'" + "  5.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg6","'" + "  6.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg7","'" + "  7.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg8","'" + "  8.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg9","'" + "  9.) " + sPanel + " PMDC ATP Breaker Q1-1 Open/Close Status" + "" + "'",0);
+				 Ass(-2,"Msg10","'" + "10.) " + sPanel + " PMDC ATP Breaker Q1-1 Trip Status" + "" + "'",0);
+				 Ass(-2,"Msg11","'" + "11.) " + sPanel + " PMDC ATP Breaker Q1-2 Open/Close Status" + "" + "'",0);
+				 Ass(-2,"Msg12","'" + "12.) " + sPanel + " PMDC ATP Breaker Q1-2 Trip Status" + "" + "'",0);
+				 Ass(-2,"Msg13","'" + "13.) " + sPanel + " PMDC ATP Breaker Q1-3 Open/Close Status" + "" + "'",0);
+				 Ass(-2,"Msg14","'" + "14.) " + sPanel + " PMDC ATP Breaker Q1-3 Trip Status" + "" + "'",0);
+				 Ass(-2,"Msg15","'" + "15.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg16","'" + "16.) " + sPanel + " SPARE" + "" + "'",0);
+		CASE ELSE
+				 Ass(-2,"Msg1","'" + "  1.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg2","'" + "  2.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg3","'" + "  3.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg4","'" + "  4.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg5","'" + "  5.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg6","'" + "  6.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg7","'" + "  7.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg8","'" + "  8.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg9","'" + "  9.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg10","'" + "10.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg11","'" + "11.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg12","'" + "12.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg13","'" + "13.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg14","'" + "14.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg15","'" + "15.) " + sPanel + " SPARE" + "" + "'",0);
+				 Ass(-2,"Msg16","'" + "16.) " + sPanel + " SPARE" + "" + "'",0);
+	END SELECT
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+
+!MDC_B1 ION7650 Digital IO Assignment
+FUNCTION MDC_B1_ION7650_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) CB-QA1 Open/Close" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) CB-QA1 Tripped" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) GIS Command Alarm" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) Buchholz Relay Tripped" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) Top Oil Temperature Alarm" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) Winding Temperature Alarm" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) Top Oil Temperature Tripped" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) Winding Temperature Tripped" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) DC PS1 Healthy" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) DC PS2 Healthy" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+!MDC_B2 ION7650 Digital IO Assignment
+FUNCTION MDC_B2_ION7650_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) CB-QA1 Open/Close" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) CB-QA1 Tripped" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) GIS Command Alarm" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) Buchholz Relay Tripped" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) Top Oil Temperature Alarm" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) Winding Temperature Alarm" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) Top Oil Temperature Tripped" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) Winding Temperature Tripped" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) DC PS1 Healthy" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) DC PS2 Healthy" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+
+!MDC_B3 ION7650 Digital IO Assignment
+FUNCTION MDC_B3_ION7650_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) CB-QA1 Open/Close" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) CB-QA1 Tripped" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) GIS Command Alarm" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) Buchholz Relay Tripped" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) Top Oil Temperature Alarm" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) Winding Temperature Alarm" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) Top Oil Temperature Tripped" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) Winding Temperature Tripped" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) DC PS1 Healthy" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) DC PS2 Healthy" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+
+!SDC_B1_1 Meter 1 ION7650 Digital IO Assignment
+FUNCTION SDC_B1_1_ION7650_1_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) SDC B1-1-INCOMER Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) SDC B1-1-INCOMER Breaker Trip(86)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) PS1 FAULT" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) PS2 FAULT" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) SF6 LEAKAGE ALARM" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) SPARE" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) SPARE" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) SPARE" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) SPARE" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) SPARE" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+!SDC_B1_1 Meter 2 ION7650 Digital IO Assignment
+FUNCTION SDC_B1_1_ION7650_2_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) SPARE" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) SPARE" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) SPARE" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) SPARE" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) SPARE" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) SPARE" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) SPARE" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) SPARE" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) SPARE" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) SPARE" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+!SDC_B1_2 ION7650 Digital IO Assignment
+FUNCTION SDC_B1_2_ION7650_1_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) PS1 FAULT" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) PS2 FAULT" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) SF6 LEAKAGE ALARM" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) SPARE" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) SPARE" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) SPARE" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) SPARE" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) SPARE" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) SPARE" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) SPARE" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+!SDC_B2_1 ION7650 Digital IO Assignment
+FUNCTION SDC_B2_1_ION7650_1_Msg()
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) SDC B2-1-INCOMER Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) SDC B2-1-INCOMER Breaker Trip(86)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) SDC B2-1-TIE2 Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) SDC B2-1-TIE2 Breaker Trip(86)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) SDC B2-1-TIE3 Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) SDC B2-1-TIE3 Breaker Trip(86)" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) SPARE" + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) SPARE" + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) SF6 LEAKAGE ALARM" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) BUS DIFFERENTIAL ALARM" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) PS1 FAULT" + "'",0);
+	Ass(-2,"Msg12","'" + "12.) PS2 FAULT" + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE" + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE" + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE" + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE" + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+
+!PMDC_Mechanical ION7650 Digital IO Assignment
+FUNCTION PMDC_Mech_ION7650_DIO_Msg(STRING sPMDCName)
+	STRING sPMDC = StrLeft(sPMDCName,11);
+	STRING sPanel = CharReplace("_","-", sPMDC);
+
+	!Msg1~16
+	Ass(-2,"Msg1","'" + "  1.) PMDC " + sPanel + " UCB-52U" + "Utility Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg2","'" + "  2.) PMDC " + sPanel + " UCB-52U" + "Utility Breaker Trip(86)" + "'",0);
+	Ass(-2,"Msg3","'" + "  3.) PMDC " + sPanel + " GCB-52G" + "Emergency Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg4","'" + "  4.) PMDC " + sPanel + " GCB-52G" + "Emergency Breaker Trip(86)" + "'",0);
+	Ass(-2,"Msg5","'" + "  5.) PMDC " + sPanel + " MDGF Status (Ground Fault)" + " ACB MDGF Trip" + "'",0);
+	Ass(-2,"Msg6","'" + "  6.) PMDC " + sPanel + " SPD Status" + " (TVSS)" + "'",0);
+	Ass(-2,"Msg7","'" + "  7.) SPARE " + "'",0);
+	Ass(-2,"Msg8","'" + "  8.) SPARE " + "'",0);
+	Ass(-2,"Msg9","'" + "  9.) PMDC " + sPanel + " XCB52X" + " Breaker Open/Close" + "'",0);
+	Ass(-2,"Msg10","'" + "10.) PMDC " + sPanel + " XCB52X" + " Breaker Trip" + "'",0);
+	Ass(-2,"Msg11","'" + "11.) SPARE " + "'",0);
+	Ass(-2,"Msg12","'" + "12.) SPARE " + "'",0);
+	Ass(-2,"Msg13","'" + "13.) SPARE " + "'",0);
+	Ass(-2,"Msg14","'" + "14.) SPARE " + "'",0);
+	Ass(-2,"Msg15","'" + "15.) SPARE " + "'",0);
+	Ass(-2,"Msg16","'" + "16.) SPARE " + "'",0);
+
+	Ass(-2,"Type2","'" + "DI MODULE" + "'",0);
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION AssIEC(STRING IODevice,STRING ItemTag,STRING Cluster,STRING sHTR="")
+STRING sItem,sTag;
+
+SELECT CASE ItemTag
+	!@(External Equipment Health)
+	CASE "COMM","\LPHD1\EEHealth"
+		sItem = "COMM";
+		sTag = "\LPHD1\EEHealth";
+
+	!@(Active Energy)
+	CASE "TotWh","\MMTR1\TotWh"
+		sItem = "TotWh";
+		sTag = "\MMTR1\TotWh";
+
+	!@(Active Energy1)
+	CASE "TotWh1","\MMTR1\TotWh1"
+		sItem = "TotWh1";
+		sTag = "\MMTR1\TotWh1";
+
+	!@(Active Energy2)
+	CASE "TotWh2","\MMTR1\TotWh2"
+		sItem = "TotWh2";
+		sTag = "\MMTR1\TotWh2";
+
+	!@(Active Energy3)
+	CASE "TotWh3","\MMTR1\TotWh3"
+		sItem = "TotWh3";
+		sTag = "\MMTR1\TotWh3";
+
+	!@(Active Energy Into the Load)
+	CASE "DmdWh","\MMTR1\DmdWh"
+		sItem = "DmdWh";
+		sTag = "\MMTR1\DmdWh";
+
+	!@(Active Energy Out of the Load)
+	CASE "SupWh","\MMTR1\SupWh"
+		sItem = "SupWh";
+		sTag = "\MMTR1\SupWh";
+
+	!@(Active Energy Total)
+	CASE "AbsWh","\MMTR1\AbsWh"
+		sItem = "AbsWh";
+		sTag = "\MMTR1\AbsWh";
+
+	!@(Apparent Energy)
+	CASE "TotVAh","\MMTR1\TotVAh"
+		sItem = "TotVAh";
+		sTag = "\MMTR1\TotVAh";
+
+	!@(Apparent Energy Total)
+	CASE "AbsVAh","\MMTR1\AbsVAh"
+		sItem = "AbsVAh";
+		sTag = "\MMTR1\AbsVAh";
+
+	!@(Reactive Energy)
+	CASE "TotVArh","\MMTR1\TotVArh"
+		sItem = "TotVArh";
+		sTag = "\MMTR1\TotVArh";
+
+	!@(Reactive Energy Into the Load)
+	CASE "DmdVArh","\MMTR1\DmdVArh"
+		sItem = "DmdVArh";
+		sTag = "\MMTR1\DmdVArh";
+
+	!@(Reactive Energy Out of the Load)
+	CASE "SupVArh","\MMTR1\SupVArh"
+		sItem = "SupVArh";
+		sTag = "\MMTR1\SupVArh";
+
+	!@(Reactive Energy Total)
+	CASE "AbsVArh","\MMTR1\AbsVArh"
+		sItem = "AbsVArh";
+		sTag = "\MMTR1\AbsVArh";
+
+	!@(Power Factor)
+	CASE "PFTOT","\MMXU1\TotPF"
+		sItem = "PFTOT";
+		sTag = "\MMXU1\TotPF";
+
+	!@(Power Factor A)
+	CASE "PFA","\MMXU1\PF\phsA"
+		sItem = "PFA";
+		sTag = "\MMXU1\PF\phsA";
+
+	!@(Power Factor B)
+	CASE "PFB","\MMXU1\PF\phsB"
+		sItem = "PFB";
+		sTag = "\MMXU1\PF\phsB";
+
+	!@(Power Factor C)
+	CASE "PFC","\MMXU1\PF\phsC"
+		sItem = "PFC";
+		sTag = "\MMXU1\PF\phsC";
+
+	!@(Frequency)
+	CASE "HZ","\MMXU1\Hz"
+		sItem = "HZ";
+		sTag = "\MMXU1\Hz";
+
+	!@(Active Power)
+	CASE "WTOT","\MMXU1\TotW"
+		sItem = "WTOT";
+		sTag = "\MMXU1\TotW";
+
+	!@(Active Power A)
+	CASE "WA","\MMXU1\W\phsA"
+		sItem = "WA";
+		sTag = "\MMXU1\W\phsA";
+
+	!@(Active Power B)
+	CASE "WB","\MMXU1\W\phsB"
+		sItem = "WB";
+		sTag = "\MMXU1\W\phsB";
+
+	!@(Active Power C)
+	CASE "WC","\MMXU1\W\phsC"
+		sItem = "WC";
+		sTag = "\MMXU1\W\phsC";
+
+	!@(Reactive Power)
+	CASE "VARTOT","\MMXU1\TotVAr"
+		sItem = "VARTOT";
+		sTag = "\MMXU1\TotVAr";
+
+	!@(Reactive Power A)
+	CASE "VARA","\MMXU1\VAr\phsA"
+		sItem = "VARA";
+		sTag = "\MMXU1\VAr\phsA";
+
+	!@(Reactive Power B)
+	CASE "VARB","\MMXU1\VAr\phsB"
+		sItem = "VARB";
+		sTag = "\MMXU1\VAr\phsB";
+
+	!@(Reactive Power C)
+	CASE "VARC","\MMXU1\VAr\phsC"
+		sItem = "VARC";
+		sTag = "\MMXU1\VAr\phsC";
+
+	!@(Apparent Power)
+	CASE "VATOT","\MMXU1\TotVA"
+		sItem = "VATOT";
+		sTag = "\MMXU1\TotVA";
+
+	!@(Apparent Power A)
+	CASE "VA1","\MMXU1\VA\phsA"
+		sItem = "VA1";
+		sTag = "\MMXU1\VA\phsA";
+
+	!@(Apparent Power B)
+	CASE "VA2","\MMXU1\VA\phsB"
+		sItem = "VA2";
+		sTag = "\MMXU1\VA\phsB";
+
+	!@(Apparent Power C)
+	CASE "VA3","\MMXU1\VA\phsC"
+		sItem = "VA3";
+		sTag = "\MMXU1\VA\phsC";
+
+	!@(Voltage A-B)
+	CASE "VAB","\MMXU1\PPV\phsAB"
+		sItem = "VAB";
+		sTag = "\MMXU1\PPV\phsAB";
+
+	!@(Voltage B-C)
+	CASE "VBC","\MMXU1\PPV\phsBC"
+		sItem = "VBC";
+		sTag = "\MMXU1\PPV\phsBC";
+
+	!@(Voltage C-A)
+	CASE "VCA","\MMXU1\PPV\phsCA"
+		sItem = "VCA";
+		sTag = "\MMXU1\PPV\phsCA";
+
+	!@(Voltage L-L Avg)
+	CASE "VLLAVG","\MMXU1\PPV\zavg"
+		sItem = "VLLAVG";
+		sTag = "\MMXU1\PPV\zavg";
+
+	!@(Voltage Unbalance L-L Worst)
+	CASE "VLLUBL","\SLR_MSQI1\MaxImbPPV"
+		sItem = "VLLUBL";
+		sTag = "\SLR_MSQI1\MaxImbPPV";
+
+	!@(Voltage A-N)
+	CASE "VAN","\MMXU1\PhV\phsA"
+		sItem = "VAN";
+		sTag = "\MMXU1\PhV\phsA";
+
+	!@(Voltage B-N)
+	CASE "VBN","\MMXU1\PhV\phsB"
+		sItem = "VBN";
+		sTag = "\MMXU1\PhV\phsB";
+
+	!@(Voltage C-N)
+	CASE "VCN","\MMXU1\PhV\phsC"
+		sItem = "VCN";
+		sTag = "\MMXU1\PhV\phsC";
+
+	!@(Voltage L-N Avg)
+	CASE "VLNAVG","\MMXU1\PhV\zavg"
+		sItem = "VLNAVG";
+		sTag = "\MMXU1\PhV\zavg";
+
+	!@(Voltage Unbalance L-N Worst)
+	CASE "VLNUBL","\SLR_MSQI1\MaxImbV"
+		sItem = "VLNUBL";
+		sTag = "\SLR_MSQI1\MaxImbV";
+
+	!@(Residual voltage V0)
+	CASE "V0","\MSQI1\SeqV\c3"
+		sItem = "V0";
+		sTag = "\MSQI1\SeqV\c3";
+
+	!@(Pos sequence voltage Vd / rotation direction)
+	CASE "Vd","\MSQI1\SeqV\c1"
+		sItem = "Vd";
+		sTag = "\MSQI1\SeqV\c1";
+
+	!@(Negative sequence voltage Vi)
+	CASE "Vi","\MSQI1\SeqV\c2"
+		sItem = "Vi";
+		sTag = "\MSQI1\SeqV\c2";
+
+	!@(K-Factor A)
+	CASE "KFA","\MHAI1\HKf\phsA"
+		sItem = "KFA";
+		sTag = "\MHAI1\HKf\phsA";
+
+	!@(K-Factor B)
+	CASE "KFB","\MHAI1\HKf\phsB"
+		sItem = "KFB";
+		sTag = "\MHAI1\HKf\phsB";
+
+	!@(K-Factor C)
+	CASE "KFC","\MHAI1\HKf\phsC"
+		sItem = "KFC";
+		sTag = "\MHAI1\HKf\phsC";
+
+	!@(Crest Factor Current A)
+	CASE "CFA","\MHAI1\HCfA\phsA"
+		sItem = "CFA";
+		sTag = "\MHAI1\HCfA\phsA";
+
+	!@(Crest Factor Current B)
+	CASE "CFB","\MHAI1\HCfA\phsB"
+		sItem = "CFB";
+		sTag = "\MHAI1\HCfA\phsB";
+
+	!@(Crest Factor Current C)
+	CASE "CFC","\MHAI1\HCfA\phsC"
+		sItem = "CFC";
+		sTag = "\MHAI1\HCfA\phsC";
+
+	!@(Current Avg)
+	CASE "IAVG","\MMXU1\A\zavg"
+		sItem = "IAVG";
+		sTag = "\MMXU1\A\zavg";
+
+	!@(Current A)
+	CASE "IA","\MMXU1\A\phsA"
+		sItem = "IA";
+		sTag = "\MMXU1\A\phsA";
+
+	!@(Current B)
+	CASE "IB","\MMXU1\A\phsB"
+		sItem = "IB";
+		sTag = "\MMXU1\A\phsB";
+
+	!@(Current C)
+	CASE "IC","\MMXU1\A\phsC"
+		sItem = "IC";
+		sTag = "\MMXU1\A\phsC";
+
+	!@(Current G)
+	CASE "IG","\MMXU1\A\zgnd"
+		sItem = "IG";
+		sTag = "\MMXU1\A\zgnd";
+
+	!@(Current N)
+	CASE "IN","\MMXU1\A\neut"
+		sItem = "IN";
+		sTag = "\MMXU1\A\neut";
+
+	!@(Residual current I0 Sum)
+	CASE "I0","\MMXU1\A\res"
+		sItem = "I0";
+		sTag = "\MMXU1\A\res";
+
+	!@(Current Unbalance Worst)
+	CASE "IUBL","\SLR_MSQI1\MaxImbA"
+		sItem = "IUBL";
+		sTag = "\SLR_MSQI1\MaxImbA";
+
+	!@(THD Current A)
+	CASE "THDIA","\MHAI1\ThdA\phsA"
+		sItem = "THDIA";
+		sTag = "\MHAI1\ThdA\phsA";
+
+	!@(THD Current B)
+	CASE "THDIB","\MHAI1\ThdA\phsB"
+		sItem = "THDIB";
+		sTag = "\MHAI1\ThdA\phsB";
+
+	!@(THD Current C)
+	CASE "THDIC","\MHAI1\ThdA\phsC"
+		sItem = "THDIC";
+		sTag = "\MHAI1\ThdA\phsC";
+
+	!@(THD Current N)
+	CASE "THDIN","\MHAI1\ThdA\neut"
+		sItem = "THDIN";
+		sTag = "\MHAI1\ThdA\neut";
+
+	!@(THD Voltage A-B)
+	CASE "THDVAB","\MHAI1\ThdPPV\phsAB"
+		sItem = "THDVAB";
+		sTag = "\MHAI1\ThdPPV\phsAB";
+
+	!@(THD Voltage B-C)
+	CASE "THDVBC","\MHAI1\ThdPPV\phsBC"
+		sItem = "THDVBC";
+		sTag = "\MHAI1\ThdPPV\phsBC";
+
+	!@(THD Voltage C-A)
+	CASE "THDVCA","\MHAI1\ThdPPV\phsCA"
+		sItem = "THDVCA";
+		sTag = "\MHAI1\ThdPPV\phsCA";
+
+	!@(THD Voltage A-N)
+	CASE "THDVAN","\MHAI1\ZThdPhV\phsA"
+		sItem = "THDVAN";
+		sTag = "\MHAI1\ZThdPhV\phsA";
+
+	!@(THD Voltage B-N)
+	CASE "THDVBN","\MHAI1\ZThdPhV\phsB"
+		sItem = "THDVBN";
+		sTag = "\MHAI1\ZThdPhV\phsB";
+
+	!@(THD Voltage C-N)
+	CASE "THDVCN","\MHAI1\ZThdPhV\phsC"
+		sItem = "THDVCN";
+		sTag = "\MHAI1\ZThdPhV\phsC";
+
+	!@(Max Active Power)
+	CASE "MaxW","\SLR_MSTA1\MaxW"
+		sItem = "MaxW";
+		sTag = "\SLR_MSTA1\MaxW";
+
+	!@(Max Reactive Power)
+	CASE "MaxVAR","\SLR_MSTA1\MaxVAr"
+		sItem = "MaxVAR";
+		sTag = "\SLR_MSTA1\MaxVAr";
+
+	!@(Max Apparent Power)
+	CASE "MaxVA","\SLR_MSTA1\MaxVA"
+		sItem = "MaxVA";
+		sTag = "\SLR_MSTA1\MaxVA";
+
+	!@(Max Current Avg)
+	CASE "MaxIAVG","\SLR_MSTA1\ZMaxAvA"
+		sItem = "MaxIAVG";
+		sTag = "\SLR_MSTA1\ZMaxAvA";
+
+	!@(Max Frequency)
+	CASE "MaxHZ","\SLR_MSTA1\ZMaxHz"
+		sItem = "MaxHZ";
+		sTag = "\SLR_MSTA1\ZMaxHz";
+
+	!@(Max THD Current A)
+	CASE "MaxTHDIA","\THD_MSTA1\MaxAmps1"
+		sItem = "MaxTHDIA";
+		sTag = "\THD_MSTA1\MaxAmps1";
+
+	!@(Max THD Current B)
+	CASE "MaxTHDIB","\THD_MSTA1\MaxAmps2"
+		sItem = "MaxTHDIB";
+		sTag = "\THD_MSTA1\MaxAmps2";
+
+	!@(Max THD Current C)
+	CASE "MaxTHDIC","\THD_MSTA1\MaxAmps3"
+		sItem = "MaxTHDIC";
+		sTag = "\THD_MSTA1\MaxAmps3";
+
+	!@(Max THD Voltage A-B)
+	CASE "MaxTHDVAB","\THD_MSTA1\ZMaxPPV1"
+		sItem = "MaxTHDVAB";
+		sTag = "\THD_MSTA1\ZMaxPPV1";
+
+	!@(Max THD Voltage B-C)
+	CASE "MaxTHDVBC","\THD_MSTA1\ZMaxPPV2"
+		sItem = "MaxTHDVBC";
+		sTag = "\THD_MSTA1\ZMaxPPV2";
+
+	!@(Max THD Voltage C-A)
+	CASE "MaxTHDVCA","\THD_MSTA1\ZMaxPPV3"
+		sItem = "MaxTHDVCA";
+		sTag = "\THD_MSTA1\ZMaxPPV3";
+
+	!@(Max Voltage L-L Avg)
+	CASE "MaxVLLAVG","\SLR_MSTA1\ZMaxAvPPV"
+		sItem = "MaxVLLAVG";
+		sTag = "\SLR_MSTA1\ZMaxAvPPV";
+
+	!@(Max Voltage L-N Avg)
+	CASE "MaxVLNAVG","\SLR_MSTA1\ZMaxAvPhV"
+		sItem = "MaxVLNAVG";
+		sTag = "\SLR_MSTA1\ZMaxAvPhV";
+
+	!@(Min Current Avg)
+	CASE "MinIAVG","\SLR_MSTA1\ZMinAvA"
+		sItem = "MinIAVG";
+		sTag = "\SLR_MSTA1\ZMinAvA";
+
+	!@(Min Frequency)
+	CASE "MinHZ","\SLR_MSTA1\ZMinHz"
+		sItem = "MinHZ";
+		sTag = "\SLR_MSTA1\ZMinHz";
+
+	!@(Demand Active Power)
+	CASE "DmdW","\MSTA1\AvW"
+		sItem = "DmdW";
+		sTag = "\MSTA1\AvW";
+
+	!@(Demand Reactive Power)
+	CASE "DmdVAR","\MSTA1\AvVAr"
+		sItem = "DmdVAR";
+		sTag = "\MSTA1\AvVAr";
+
+	!@(Demand Apparent Power)
+	CASE "DmdVA","\MSTA1\AvVA"
+		sItem = "DmdVA";
+		sTag = "\MSTA1\AvVA";
+
+	!@(Peak Demand Active Power)
+	CASE "MaxDmdW","\MSTA1\MaxW"
+		sItem = "MaxDmdW";
+		sTag = "\MSTA1\MaxW";
+
+	!@(Peak Demand Reactive Power)
+	CASE "MaxDmdVAR","\MSTA1\MaxVAr"
+		sItem = "MaxDmdVAR";
+		sTag = "\MSTA1\MaxVAr";
+
+	!@(Peak Demand Apparent Power)
+	CASE "MaxDmdVA","\MSTA1\MaxVA"
+		sItem = "MaxDmdVA";
+		sTag = "\MSTA1\MaxVA";
+
+	!@(Demand Current A)
+	CASE "DmdIA","\MSTA1\AvAmps1"
+		sItem = "DmdIA";
+		sTag = "\MSTA1\AvAmps1";
+
+	!@(Demand Current B)
+	CASE "DmdIB","\MSTA1\AvAmps2"
+		sItem = "DmdIB";
+		sTag = "\MSTA1\AvAmps2";
+
+	!@(Demand Current C)
+	CASE "DmdIC","\MSTA1\AvAmps3"
+		sItem = "DmdIC";
+		sTag = "\MSTA1\AvAmps3";
+
+	!@(Demand Current N)
+	CASE "DmdIN","\MSTA1\AvAmps4"
+		sItem = "DmdIN";
+		sTag = "\MSTA1\AvAmps4";
+
+	!@(Demand Current Avg)
+	CASE "DmdIAVG","\MSTA1\AvAmps"
+		sItem = "DmdIAVG";
+		sTag = "\MSTA1\AvAmps";
+
+	!@(Peak Demand Current A)
+	CASE "MaxDmdIA","\MSTA1\MaxAmps1"
+		sItem = "MaxDmdIA";
+		sTag = "\MSTA1\MaxAmps1";
+
+	!@(Peak Demand Current B)
+	CASE "MaxDmdIB","\MSTA1\MaxAmps2"
+		sItem = "MaxDmdIB";
+		sTag = "\MSTA1\MaxAmps2";
+
+	!@(Peak Demand Current C)
+	CASE "MaxDmdIC","\MSTA1\MaxAmps3"
+		sItem = "MaxDmdIC";
+		sTag = "\MSTA1\MaxAmps3";
+
+	!@(Peak Demand Current N)
+	CASE "MaxDmdIN","\MSTA1\MaxAmps4"
+		sItem = "MaxDmdIN";
+		sTag = "\MSTA1\MaxAmps4";
+
+	!@(Peak Demand Current Avg)
+	CASE "MaxDmdIAVG","\MSTA1\MaxAmps"
+		sItem = "MaxDmdIAVG";
+		sTag = "\MSTA1\MaxAmps";
+
+	!@(H1 Current A Magnitude)
+	CASE "HARMONIC_IA_H1","\MHAI1\HA\phsAHar__1__\cVal\mag"
+		sItem = "HARMONIC_IA_H1";
+		sTag = "\MHAI1\HA\phsAHar__1__\cVal\mag";
+
+	!@(H1 Current B Magnitude)
+	CASE "HARMONIC_IB_H1","\MHAI1\HA\phsBHar__1__\cVal\mag"
+		sItem = "HARMONIC_IB_H1";
+		sTag = "\MHAI1\HA\phsBHar__1__\cVal\mag";
+
+	!@(H1 Current C Magnitude)
+	CASE "HARMONIC_IC_H1","\MHAI1\HA\phsCHar__1__\cVal\mag"
+		sItem = "HARMONIC_IC_H1";
+		sTag = "\MHAI1\HA\phsCHar__1__\cVal\mag";
+
+	!@(H1 Current N Magnitude)
+	CASE "HARMONIC_IN_H1","\MHAI1\HA\neutHar__1__\cVal\mag"
+		sItem = "HARMONIC_IN_H1";
+		sTag = "\MHAI1\HA\neutHar__1__\cVal\mag";
+
+	!@(H1 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H1","\MHAI1\HPPV\phsABHar__1__\cVal\mag"
+		sItem = "HARMONIC_VAB_H1";
+		sTag = "\MHAI1\HPPV\phsABHar__1__\cVal\mag";
+
+	!@(H1 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H1","\MHAI1\HPhV\phsAHar__1__\cVal\mag"
+		sItem = "HARMONIC_VAN_H1";
+		sTag = "\MHAI1\HPhV\phsAHar__1__\cVal\mag";
+
+	!@(H1 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H1","\MHAI1\HPPV\phsBCHar__1__\cVal\mag"
+		sItem = "HARMONIC_VBC_H1";
+		sTag = "\MHAI1\HPPV\phsBCHar__1__\cVal\mag";
+
+	!@(H1 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H1","\MHAI1\HPhV\phsBHar__1__\cVal\mag"
+		sItem = "HARMONIC_VBN_H1";
+		sTag = "\MHAI1\HPhV\phsBHar__1__\cVal\mag";
+
+	!@(H1 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H1","\MHAI1\HPPV\phsCAHar__1__\cVal\mag"
+		sItem = "HARMONIC_VCA_H1";
+		sTag = "\MHAI1\HPPV\phsCAHar__1__\cVal\mag";
+
+	!@(H1 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H1","\MHAI1\HPhV\phsCHar__1__\cVal\mag"
+		sItem = "HARMONIC_VCN_H1";
+		sTag = "\MHAI1\HPhV\phsCHar__1__\cVal\mag";
+
+	!@(H2 Current A Magnitude)
+	CASE "HARMONIC_IA_H2","\MHAI1\HA\phsAHar__2__\cVal\mag"
+		sItem = "HARMONIC_IA_H2";
+		sTag = "\MHAI1\HA\phsAHar__2__\cVal\mag";
+
+	!@(H2 Current B Magnitude)
+	CASE "HARMONIC_IB_H2","\MHAI1\HA\phsBHar__2__\cVal\mag"
+		sItem = "HARMONIC_IB_H2";
+		sTag = "\MHAI1\HA\phsBHar__2__\cVal\mag";
+
+	!@(H2 Current C Magnitude)
+	CASE "HARMONIC_IC_H2","\MHAI1\HA\phsCHar__2__\cVal\mag"
+		sItem = "HARMONIC_IC_H2";
+		sTag = "\MHAI1\HA\phsCHar__2__\cVal\mag";
+
+	!@(H2 Current N Magnitude)
+	CASE "HARMONIC_IN_H2","\MHAI1\HA\neutHar__2__\cVal\mag"
+		sItem = "HARMONIC_IN_H2";
+		sTag = "\MHAI1\HA\neutHar__2__\cVal\mag";
+
+	!@(H2 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H2","\MHAI1\HPPV\phsABHar__2__\cVal\mag"
+		sItem = "HARMONIC_VAB_H2";
+		sTag = "\MHAI1\HPPV\phsABHar__2__\cVal\mag";
+
+	!@(H2 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H2","\MHAI1\HPhV\phsAHar__2__\cVal\mag"
+		sItem = "HARMONIC_VAN_H2";
+		sTag = "\MHAI1\HPhV\phsAHar__2__\cVal\mag";
+
+	!@(H2 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H2","\MHAI1\HPPV\phsBCHar__2__\cVal\mag"
+		sItem = "HARMONIC_VBC_H2";
+		sTag = "\MHAI1\HPPV\phsBCHar__2__\cVal\mag";
+
+	!@(H2 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H2","\MHAI1\HPhV\phsBHar__2__\cVal\mag"
+		sItem = "HARMONIC_VBN_H2";
+		sTag = "\MHAI1\HPhV\phsBHar__2__\cVal\mag";
+
+	!@(H2 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H2","\MHAI1\HPPV\phsCAHar__2__\cVal\mag"
+		sItem = "HARMONIC_VCA_H2";
+		sTag = "\MHAI1\HPPV\phsCAHar__2__\cVal\mag";
+
+	!@(H2 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H2","\MHAI1\HPhV\phsCHar__2__\cVal\mag"
+		sItem = "HARMONIC_VCN_H2";
+		sTag = "\MHAI1\HPhV\phsCHar__2__\cVal\mag";
+
+	!@(H3 Current A Magnitude)
+	CASE "HARMONIC_IA_H3","\MHAI1\HA\phsAHar__3__\cVal\mag"
+		sItem = "HARMONIC_IA_H3";
+		sTag = "\MHAI1\HA\phsAHar__3__\cVal\mag";
+
+	!@(H3 Current B Magnitude)
+	CASE "HARMONIC_IB_H3","\MHAI1\HA\phsBHar__3__\cVal\mag"
+		sItem = "HARMONIC_IB_H3";
+		sTag = "\MHAI1\HA\phsBHar__3__\cVal\mag";
+
+	!@(H3 Current C Magnitude)
+	CASE "HARMONIC_IC_H3","\MHAI1\HA\phsCHar__3__\cVal\mag"
+		sItem = "HARMONIC_IC_H3";
+		sTag = "\MHAI1\HA\phsCHar__3__\cVal\mag";
+
+	!@(H3 Current N Magnitude)
+	CASE "HARMONIC_IN_H3","\MHAI1\HA\neutHar__3__\cVal\mag"
+		sItem = "HARMONIC_IN_H3";
+		sTag = "\MHAI1\HA\neutHar__3__\cVal\mag";
+
+	!@(H3 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H3","\MHAI1\HPPV\phsABHar__3__\cVal\mag"
+		sItem = "HARMONIC_VAB_H3";
+		sTag = "\MHAI1\HPPV\phsABHar__3__\cVal\mag";
+
+	!@(H3 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H3","\MHAI1\HPhV\phsAHar__3__\cVal\mag"
+		sItem = "HARMONIC_VAN_H3";
+		sTag = "\MHAI1\HPhV\phsAHar__3__\cVal\mag";
+
+	!@(H3 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H3","\MHAI1\HPPV\phsBCHar__3__\cVal\mag"
+		sItem = "HARMONIC_VBC_H3";
+		sTag = "\MHAI1\HPPV\phsBCHar__3__\cVal\mag";
+
+	!@(H3 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H3","\MHAI1\HPhV\phsBHar__3__\cVal\mag"
+		sItem = "HARMONIC_VBN_H3";
+		sTag = "\MHAI1\HPhV\phsBHar__3__\cVal\mag";
+
+	!@(H3 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H3","\MHAI1\HPPV\phsCAHar__3__\cVal\mag"
+		sItem = "HARMONIC_VCA_H3";
+		sTag = "\MHAI1\HPPV\phsCAHar__3__\cVal\mag";
+
+	!@(H3 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H3","\MHAI1\HPhV\phsCHar__3__\cVal\mag"
+		sItem = "HARMONIC_VCN_H3";
+		sTag = "\MHAI1\HPhV\phsCHar__3__\cVal\mag";
+
+	!@(H4 Current A Magnitude)
+	CASE "HARMONIC_IA_H4","\MHAI1\HA\phsAHar__4__\cVal\mag"
+		sItem = "HARMONIC_IA_H4";
+		sTag = "\MHAI1\HA\phsAHar__4__\cVal\mag";
+
+	!@(H4 Current B Magnitude)
+	CASE "HARMONIC_IB_H4","\MHAI1\HA\phsBHar__4__\cVal\mag"
+		sItem = "HARMONIC_IB_H4";
+		sTag = "\MHAI1\HA\phsBHar__4__\cVal\mag";
+
+	!@(H4 Current C Magnitude)
+	CASE "HARMONIC_IC_H4","\MHAI1\HA\phsCHar__4__\cVal\mag"
+		sItem = "HARMONIC_IC_H4";
+		sTag = "\MHAI1\HA\phsCHar__4__\cVal\mag";
+
+	!@(H4 Current N Magnitude)
+	CASE "HARMONIC_IN_H4","\MHAI1\HA\neutHar__4__\cVal\mag"
+		sItem = "HARMONIC_IN_H4";
+		sTag = "\MHAI1\HA\neutHar__4__\cVal\mag";
+
+	!@(H4 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H4","\MHAI1\HPPV\phsABHar__4__\cVal\mag"
+		sItem = "HARMONIC_VAB_H4";
+		sTag = "\MHAI1\HPPV\phsABHar__4__\cVal\mag";
+
+	!@(H4 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H4","\MHAI1\HPhV\phsAHar__4__\cVal\mag"
+		sItem = "HARMONIC_VAN_H4";
+		sTag = "\MHAI1\HPhV\phsAHar__4__\cVal\mag";
+
+	!@(H4 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H4","\MHAI1\HPPV\phsBCHar__4__\cVal\mag"
+		sItem = "HARMONIC_VBC_H4";
+		sTag = "\MHAI1\HPPV\phsBCHar__4__\cVal\mag";
+
+	!@(H4 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H4","\MHAI1\HPhV\phsBHar__4__\cVal\mag"
+		sItem = "HARMONIC_VBN_H4";
+		sTag = "\MHAI1\HPhV\phsBHar__4__\cVal\mag";
+
+	!@(H4 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H4","\MHAI1\HPPV\phsCAHar__4__\cVal\mag"
+		sItem = "HARMONIC_VCA_H4";
+		sTag = "\MHAI1\HPPV\phsCAHar__4__\cVal\mag";
+
+	!@(H4 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H4","\MHAI1\HPhV\phsCHar__4__\cVal\mag"
+		sItem = "HARMONIC_VCN_H4";
+		sTag = "\MHAI1\HPhV\phsCHar__4__\cVal\mag";
+
+	!@(H5 Current A Magnitude)
+	CASE "HARMONIC_IA_H5","\MHAI1\HA\phsAHar__5__\cVal\mag"
+		sItem = "HARMONIC_IA_H5";
+		sTag = "\MHAI1\HA\phsAHar__5__\cVal\mag";
+
+	!@(H5 Current B Magnitude)
+	CASE "HARMONIC_IB_H5","\MHAI1\HA\phsBHar__5__\cVal\mag"
+		sItem = "HARMONIC_IB_H5";
+		sTag = "\MHAI1\HA\phsBHar__5__\cVal\mag";
+
+	!@(H5 Current C Magnitude)
+	CASE "HARMONIC_IC_H5","\MHAI1\HA\phsCHar__5__\cVal\mag"
+		sItem = "HARMONIC_IC_H5";
+		sTag = "\MHAI1\HA\phsCHar__5__\cVal\mag";
+
+	!@(H5 Current N Magnitude)
+	CASE "HARMONIC_IN_H5","\MHAI1\HA\neutHar__5__\cVal\mag"
+		sItem = "HARMONIC_IN_H5";
+		sTag = "\MHAI1\HA\neutHar__5__\cVal\mag";
+
+	!@(H5 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H5","\MHAI1\HPPV\phsABHar__5__\cVal\mag"
+		sItem = "HARMONIC_VAB_H5";
+		sTag = "\MHAI1\HPPV\phsABHar__5__\cVal\mag";
+
+	!@(H5 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H5","\MHAI1\HPhV\phsAHar__5__\cVal\mag"
+		sItem = "HARMONIC_VAN_H5";
+		sTag = "\MHAI1\HPhV\phsAHar__5__\cVal\mag";
+
+	!@(H5 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H5","\MHAI1\HPPV\phsBCHar__5__\cVal\mag"
+		sItem = "HARMONIC_VBC_H5";
+		sTag = "\MHAI1\HPPV\phsBCHar__5__\cVal\mag";
+
+	!@(H5 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H5","\MHAI1\HPhV\phsBHar__5__\cVal\mag"
+		sItem = "HARMONIC_VBN_H5";
+		sTag = "\MHAI1\HPhV\phsBHar__5__\cVal\mag";
+
+	!@(H5 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H5","\MHAI1\HPPV\phsCAHar__5__\cVal\mag"
+		sItem = "HARMONIC_VCA_H5";
+		sTag = "\MHAI1\HPPV\phsCAHar__5__\cVal\mag";
+
+	!@(H5 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H5","\MHAI1\HPhV\phsCHar__5__\cVal\mag"
+		sItem = "HARMONIC_VCN_H5";
+		sTag = "\MHAI1\HPhV\phsCHar__5__\cVal\mag";
+
+	!@(H6 Current A Magnitude)
+	CASE "HARMONIC_IA_H6","\MHAI1\HA\phsAHar__6__\cVal\mag"
+		sItem = "HARMONIC_IA_H6";
+		sTag = "\MHAI1\HA\phsAHar__6__\cVal\mag";
+
+	!@(H6 Current B Magnitude)
+	CASE "HARMONIC_IB_H6","\MHAI1\HA\phsBHar__6__\cVal\mag"
+		sItem = "HARMONIC_IB_H6";
+		sTag = "\MHAI1\HA\phsBHar__6__\cVal\mag";
+
+	!@(H6 Current C Magnitude)
+	CASE "HARMONIC_IC_H6","\MHAI1\HA\phsCHar__6__\cVal\mag"
+		sItem = "HARMONIC_IC_H6";
+		sTag = "\MHAI1\HA\phsCHar__6__\cVal\mag";
+
+	!@(H6 Current N Magnitude)
+	CASE "HARMONIC_IN_H6","\MHAI1\HA\neutHar__6__\cVal\mag"
+		sItem = "HARMONIC_IN_H6";
+		sTag = "\MHAI1\HA\neutHar__6__\cVal\mag";
+
+	!@(H6 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H6","\MHAI1\HPPV\phsABHar__6__\cVal\mag"
+		sItem = "HARMONIC_VAB_H6";
+		sTag = "\MHAI1\HPPV\phsABHar__6__\cVal\mag";
+
+	!@(H6 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H6","\MHAI1\HPhV\phsAHar__6__\cVal\mag"
+		sItem = "HARMONIC_VAN_H6";
+		sTag = "\MHAI1\HPhV\phsAHar__6__\cVal\mag";
+
+	!@(H6 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H6","\MHAI1\HPPV\phsBCHar__6__\cVal\mag"
+		sItem = "HARMONIC_VBC_H6";
+		sTag = "\MHAI1\HPPV\phsBCHar__6__\cVal\mag";
+
+	!@(H6 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H6","\MHAI1\HPhV\phsBHar__6__\cVal\mag"
+		sItem = "HARMONIC_VBN_H6";
+		sTag = "\MHAI1\HPhV\phsBHar__6__\cVal\mag";
+
+	!@(H6 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H6","\MHAI1\HPPV\phsCAHar__6__\cVal\mag"
+		sItem = "HARMONIC_VCA_H6";
+		sTag = "\MHAI1\HPPV\phsCAHar__6__\cVal\mag";
+
+	!@(H6 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H6","\MHAI1\HPhV\phsCHar__6__\cVal\mag"
+		sItem = "HARMONIC_VCN_H6";
+		sTag = "\MHAI1\HPhV\phsCHar__6__\cVal\mag";
+
+	!@(H7 Current A Magnitude)
+	CASE "HARMONIC_IA_H7","\MHAI1\HA\phsAHar__7__\cVal\mag"
+		sItem = "HARMONIC_IA_H7";
+		sTag = "\MHAI1\HA\phsAHar__7__\cVal\mag";
+
+	!@(H7 Current B Magnitude)
+	CASE "HARMONIC_IB_H7","\MHAI1\HA\phsBHar__7__\cVal\mag"
+		sItem = "HARMONIC_IB_H7";
+		sTag = "\MHAI1\HA\phsBHar__7__\cVal\mag";
+
+	!@(H7 Current C Magnitude)
+	CASE "HARMONIC_IC_H7","\MHAI1\HA\phsCHar__7__\cVal\mag"
+		sItem = "HARMONIC_IC_H7";
+		sTag = "\MHAI1\HA\phsCHar__7__\cVal\mag";
+
+	!@(H7 Current N Magnitude)
+	CASE "HARMONIC_IN_H7","\MHAI1\HA\neutHar__7__\cVal\mag"
+		sItem = "HARMONIC_IN_H7";
+		sTag = "\MHAI1\HA\neutHar__7__\cVal\mag";
+
+	!@(H7 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H7","\MHAI1\HPPV\phsABHar__7__\cVal\mag"
+		sItem = "HARMONIC_VAB_H7";
+		sTag = "\MHAI1\HPPV\phsABHar__7__\cVal\mag";
+
+	!@(H7 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H7","\MHAI1\HPhV\phsAHar__7__\cVal\mag"
+		sItem = "HARMONIC_VAN_H7";
+		sTag = "\MHAI1\HPhV\phsAHar__7__\cVal\mag";
+
+	!@(H7 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H7","\MHAI1\HPPV\phsBCHar__7__\cVal\mag"
+		sItem = "HARMONIC_VBC_H7";
+		sTag = "\MHAI1\HPPV\phsBCHar__7__\cVal\mag";
+
+	!@(H7 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H7","\MHAI1\HPhV\phsBHar__7__\cVal\mag"
+		sItem = "HARMONIC_VBN_H7";
+		sTag = "\MHAI1\HPhV\phsBHar__7__\cVal\mag";
+
+	!@(H7 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H7","\MHAI1\HPPV\phsCAHar__7__\cVal\mag"
+		sItem = "HARMONIC_VCA_H7";
+		sTag = "\MHAI1\HPPV\phsCAHar__7__\cVal\mag";
+
+	!@(H7 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H7","\MHAI1\HPhV\phsCHar__7__\cVal\mag"
+		sItem = "HARMONIC_VCN_H7";
+		sTag = "\MHAI1\HPhV\phsCHar__7__\cVal\mag";
+
+	!@(H8 Current A Magnitude)
+	CASE "HARMONIC_IA_H8","\MHAI1\HA\phsAHar__8__\cVal\mag"
+		sItem = "HARMONIC_IA_H8";
+		sTag = "\MHAI1\HA\phsAHar__8__\cVal\mag";
+
+	!@(H8 Current B Magnitude)
+	CASE "HARMONIC_IB_H8","\MHAI1\HA\phsBHar__8__\cVal\mag"
+		sItem = "HARMONIC_IB_H8";
+		sTag = "\MHAI1\HA\phsBHar__8__\cVal\mag";
+
+	!@(H8 Current C Magnitude)
+	CASE "HARMONIC_IC_H8","\MHAI1\HA\phsCHar__8__\cVal\mag"
+		sItem = "HARMONIC_IC_H8";
+		sTag = "\MHAI1\HA\phsCHar__8__\cVal\mag";
+
+	!@(H8 Current N Magnitude)
+	CASE "HARMONIC_IN_H8","\MHAI1\HA\neutHar__8__\cVal\mag"
+		sItem = "HARMONIC_IN_H8";
+		sTag = "\MHAI1\HA\neutHar__8__\cVal\mag";
+
+	!@(H8 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H8","\MHAI1\HPPV\phsABHar__8__\cVal\mag"
+		sItem = "HARMONIC_VAB_H8";
+		sTag = "\MHAI1\HPPV\phsABHar__8__\cVal\mag";
+
+	!@(H8 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H8","\MHAI1\HPhV\phsAHar__8__\cVal\mag"
+		sItem = "HARMONIC_VAN_H8";
+		sTag = "\MHAI1\HPhV\phsAHar__8__\cVal\mag";
+
+	!@(H8 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H8","\MHAI1\HPPV\phsBCHar__8__\cVal\mag"
+		sItem = "HARMONIC_VBC_H8";
+		sTag = "\MHAI1\HPPV\phsBCHar__8__\cVal\mag";
+
+	!@(H8 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H8","\MHAI1\HPhV\phsBHar__8__\cVal\mag"
+		sItem = "HARMONIC_VBN_H8";
+		sTag = "\MHAI1\HPhV\phsBHar__8__\cVal\mag";
+
+	!@(H8 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H8","\MHAI1\HPPV\phsCAHar__8__\cVal\mag"
+		sItem = "HARMONIC_VCA_H8";
+		sTag = "\MHAI1\HPPV\phsCAHar__8__\cVal\mag";
+
+	!@(H8 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H8","\MHAI1\HPhV\phsCHar__8__\cVal\mag"
+		sItem = "HARMONIC_VCN_H8";
+		sTag = "\MHAI1\HPhV\phsCHar__8__\cVal\mag";
+
+	!@(H9 Current A Magnitude)
+	CASE "HARMONIC_IA_H9","\MHAI1\HA\phsAHar__9__\cVal\mag"
+		sItem = "HARMONIC_IA_H9";
+		sTag = "\MHAI1\HA\phsAHar__9__\cVal\mag";
+
+	!@(H9 Current B Magnitude)
+	CASE "HARMONIC_IB_H9","\MHAI1\HA\phsBHar__9__\cVal\mag"
+		sItem = "HARMONIC_IB_H9";
+		sTag = "\MHAI1\HA\phsBHar__9__\cVal\mag";
+
+	!@(H9 Current C Magnitude)
+	CASE "HARMONIC_IC_H9","\MHAI1\HA\phsCHar__9__\cVal\mag"
+		sItem = "HARMONIC_IC_H9";
+		sTag = "\MHAI1\HA\phsCHar__9__\cVal\mag";
+
+	!@(H9 Current N Magnitude)
+	CASE "HARMONIC_IN_H9","\MHAI1\HA\neutHar__9__\cVal\mag"
+		sItem = "HARMONIC_IN_H9";
+		sTag = "\MHAI1\HA\neutHar__9__\cVal\mag";
+
+	!@(H9 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H9","\MHAI1\HPPV\phsABHar__9__\cVal\mag"
+		sItem = "HARMONIC_VAB_H9";
+		sTag = "\MHAI1\HPPV\phsABHar__9__\cVal\mag";
+
+	!@(H9 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H9","\MHAI1\HPhV\phsAHar__9__\cVal\mag"
+		sItem = "HARMONIC_VAN_H9";
+		sTag = "\MHAI1\HPhV\phsAHar__9__\cVal\mag";
+
+	!@(H9 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H9","\MHAI1\HPPV\phsBCHar__9__\cVal\mag"
+		sItem = "HARMONIC_VBC_H9";
+		sTag = "\MHAI1\HPPV\phsBCHar__9__\cVal\mag";
+
+	!@(H9 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H9","\MHAI1\HPhV\phsBHar__9__\cVal\mag"
+		sItem = "HARMONIC_VBN_H9";
+		sTag = "\MHAI1\HPhV\phsBHar__9__\cVal\mag";
+
+	!@(H9 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H9","\MHAI1\HPPV\phsCAHar__9__\cVal\mag"
+		sItem = "HARMONIC_VCA_H9";
+		sTag = "\MHAI1\HPPV\phsCAHar__9__\cVal\mag";
+
+	!@(H9 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H9","\MHAI1\HPhV\phsCHar__9__\cVal\mag"
+		sItem = "HARMONIC_VCN_H9";
+		sTag = "\MHAI1\HPhV\phsCHar__9__\cVal\mag";
+
+	!@(H10 Current A Magnitude)
+	CASE "HARMONIC_IA_H10","\MHAI1\HA\phsAHar__10__\cVal\mag"
+		sItem = "HARMONIC_IA_H10";
+		sTag = "\MHAI1\HA\phsAHar__10__\cVal\mag";
+
+	!@(H10 Current B Magnitude)
+	CASE "HARMONIC_IB_H10","\MHAI1\HA\phsBHar__10__\cVal\mag"
+		sItem = "HARMONIC_IB_H10";
+		sTag = "\MHAI1\HA\phsBHar__10__\cVal\mag";
+
+	!@(H10 Current C Magnitude)
+	CASE "HARMONIC_IC_H10","\MHAI1\HA\phsCHar__10__\cVal\mag"
+		sItem = "HARMONIC_IC_H10";
+		sTag = "\MHAI1\HA\phsCHar__10__\cVal\mag";
+
+	!@(H10 Current N Magnitude)
+	CASE "HARMONIC_IN_H10","\MHAI1\HA\neutHar__10__\cVal\mag"
+		sItem = "HARMONIC_IN_H10";
+		sTag = "\MHAI1\HA\neutHar__10__\cVal\mag";
+
+	!@(H10 Voltage A-B Magnitude)
+	CASE "HARMONIC_VAB_H10","\MHAI1\HPPV\phsABHar__10__\cVal\mag"
+		sItem = "HARMONIC_VAB_H10";
+		sTag = "\MHAI1\HPPV\phsABHar__10__\cVal\mag";
+
+	!@(H10 Voltage A-N Magnitude)
+	CASE "HARMONIC_VAN_H10","\MHAI1\HPhV\phsAHar__10__\cVal\mag"
+		sItem = "HARMONIC_VAN_H10";
+		sTag = "\MHAI1\HPhV\phsAHar__10__\cVal\mag";
+
+	!@(H10 Voltage B-C Magnitude)
+	CASE "HARMONIC_VBC_H10","\MHAI1\HPPV\phsBCHar__10__\cVal\mag"
+		sItem = "HARMONIC_VBC_H10";
+		sTag = "\MHAI1\HPPV\phsBCHar__10__\cVal\mag";
+
+	!@(H10 Voltage B-N Magnitude)
+	CASE "HARMONIC_VBN_H10","\MHAI1\HPhV\phsBHar__10__\cVal\mag"
+		sItem = "HARMONIC_VBN_H10";
+		sTag = "\MHAI1\HPhV\phsBHar__10__\cVal\mag";
+
+	!@(H10 Voltage C-A Magnitude)
+	CASE "HARMONIC_VCA_H10","\MHAI1\HPPV\phsCAHar__10__\cVal\mag"
+		sItem = "HARMONIC_VCA_H10";
+		sTag = "\MHAI1\HPPV\phsCAHar__10__\cVal\mag";
+
+	!@(H10 Voltage C-N Magnitude)
+	CASE "HARMONIC_VCN_H10","\MHAI1\HPhV\phsCHar__10__\cVal\mag"
+		sItem = "HARMONIC_VCN_H10";
+		sTag = "\MHAI1\HPhV\phsCHar__10__\cVal\mag";
+
+	!@(Input Status 01)
+	CASE "DI1","\GGIO1\Ind1"
+		sItem = "DI1";
+		sTag = "\GGIO1\Ind1";
+
+	!@(Input Status 02)
+	CASE "DI2","\GGIO1\Ind2"
+		sItem = "DI2";
+		sTag = "\GGIO1\Ind2";
+
+	!@(Input Status 03)
+	CASE "DI3","\GGIO1\Ind3"
+		sItem = "DI3";
+		sTag = "\GGIO1\Ind3";
+
+	!@(Input Status 04)
+	CASE "DI4","\GGIO1\Ind4"
+		sItem = "DI4";
+		sTag = "\GGIO1\Ind4";
+
+	!@(Input Status 05)
+	CASE "DI5","\GGIO1\Ind5"
+		sItem = "DI5";
+		sTag = "\GGIO1\Ind5";
+
+	!@(Input Status 06)
+	CASE "DI6","\GGIO1\Ind6"
+		sItem = "DI6";
+		sTag = "\GGIO1\Ind6";
+
+	!@(Input Status 07)
+	CASE "DI7","\GGIO1\Ind7"
+		sItem = "DI7";
+		sTag = "\GGIO1\Ind7";
+
+	!@(Input Status 08)
+	CASE "DI8","\GGIO1\Ind8"
+		sItem = "DI8";
+		sTag = "\GGIO1\Ind8";
+
+	!@(Input Status 09)
+	CASE "DI9","\GGIO1\Ind9"
+		sItem = "DI9";
+		sTag = "\GGIO1\Ind9";
+
+	!@(Input Status 10)
+	CASE "DI10","\GGIO1\Ind10"
+		sItem = "DI10";
+		sTag = "\GGIO1\Ind10";
+
+	!@(Input Status 11)
+	CASE "DI11","\GGIO1\Ind11"
+		sItem = "DI11";
+		sTag = "\GGIO1\Ind11";
+
+	!@(Input Status 12)
+	CASE "DI12","\GGIO1\Ind12"
+		sItem = "DI12";
+		sTag = "\GGIO1\Ind12";
+
+	!@(Input Status 13)
+	CASE "DI13","\GGIO1\Ind13"
+		sItem = "DI13";
+		sTag = "\GGIO1\Ind13";
+
+	!@(Input Status 14)
+	CASE "DI14","\GGIO1\Ind14"
+		sItem = "DI14";
+		sTag = "\GGIO1\Ind14";
+
+	!@(Input Status 15)
+	CASE "DI15","\GGIO1\Ind15"
+		sItem = "DI15";
+		sTag = "\GGIO1\Ind15";
+
+	!@(Input Status 16)
+	CASE "DI16","\GGIO1\Ind16"
+		sItem = "DI16";
+		sTag = "\GGIO1\Ind16";
+
+	!@(Temperature)
+	CASE "TEMP","\TTMP1\TmpSv"
+		sItem = "TEMP";
+		sTag = "\TTMP1\TmpSv";
+
+	!@(Total cumulative breaking current^2)
+	CASE "SumSwARs","\XCBR1\SumSwARs"
+		sItem = "SumSwARs";
+		sTag = "\XCBR1\SumSwARs";
+
+	!@(Initial value of cumulative breaking currennt)
+	CASE "SumSwARs0","\XCBR1\SumSwARs0"
+		sItem = "SumSwARs0";
+		sTag = "\XCBR1\SumSwARs0";
+
+	!@(Cumulative breaking current^2 0<I<2In)
+	CASE "SumSwARs1","\XCBR1\SumSwARs1"
+		sItem = "SumSwARs1";
+		sTag = "\XCBR1\SumSwARs1";
+
+	!@(Cumulative breaking current^2 10<I<40In)
+	CASE "SumSwARs2","\XCBR1\SumSwARs4"
+		sItem = "SumSwARs2";
+		sTag = "\XCBR1\SumSwARs4";
+
+	!@(Cumulative breaking current^2 2<I<5In)
+	CASE "SumSwARs3","\XCBR1\SumSwARs2"
+		sItem = "SumSwARs3";
+		sTag = "\XCBR1\SumSwARs2";
+
+	!@(Cumulative breaking current^2 5<I<10In)
+	CASE "SumSwARs4","\XCBR1\SumSwARs3"
+		sItem = "SumSwARs4";
+		sTag = "\XCBR1\SumSwARs3";
+
+	!@(Cumulative breaking current^2 I>40In)
+	CASE "SumSwARs5","\XCBR1\SumSwARs5"
+		sItem = "SumSwARs5";
+		sTag = "\XCBR1\SumSwARs5";
+
+	!@(Number of Operations)
+	CASE "OpCnt","\XCBR1\OpCnt"
+		sItem = "OpCnt";
+		sTag = "\XCBR1\OpCnt";
+
+	!@(Operating Time)
+	CASE "OpTmms","\XCBR1\OpTmms"
+		sItem = "OpTmms";
+		sTag = "\XCBR1\OpTmms";
+
+	!@(Charging Time)
+	CASE "ChaTms","\XCBR1\ChaTms"
+		sItem = "ChaTms";
+		sTag = "\XCBR1\ChaTms";
+
+	!@(Starting time)
+	CASE "StrTmms","\PMSS1\StrTmms"
+		sItem = "StrTmms";
+		sTag = "\PMSS1\StrTmms";
+
+	!@(Starting current)
+	CASE "StrAmp","\PMSS1\StrAmp"
+		sItem = "StrAmp";
+		sTag = "\PMSS1\StrAmp";
+
+	!@(Running Hours Counter)
+	CASE "OpHrsCnt","\XCBR1\OpHrsCnt"
+		sItem = "OpHrsCnt";
+		sTag = "\XCBR1\OpHrsCnt";
+
+	!@(Thermal capacity used)
+	CASE "ThmRte","\A49_PTTR1\ThmRte"
+		sItem = "ThmRte";
+		sTag = "\A49_PTTR1\ThmRte";
+
+	!@(Time tagging)
+	CASE "TripTime","\TripTime"
+		sItem = "TripTime";
+		sTag = "\TripTime";
+
+	!@(Current A at Last Trip)
+	CASE "TrAmp1","\MSTA1\TrAmp1"
+		sItem = "TrAmp1";
+		sTag = "\MSTA1\TrAmp1";
+
+	!@(Current B at Last Trip)
+	CASE "TrAmp2","\MSTA1\TrAmp2"
+		sItem = "TrAmp2";
+		sTag = "\MSTA1\TrAmp2";
+
+	!@(Current C at Last Trip)
+	CASE "TrAmp3","\MSTA1\TrAmp3"
+		sItem = "TrAmp3";
+		sTag = "\MSTA1\TrAmp3";
+
+	!@(Current G at Last Trip)
+	CASE "TrAmp4","\MSTA1\TrAmp4"
+		sItem = "TrAmp4";
+		sTag = "\MSTA1\TrAmp4";
+
+	!@(Matching fault / trip circuit supervision)
+	CASE "ZCBAlm","\XCBR1\ZCBAlm"
+		sItem = "ZCBAlm";
+		sTag = "\XCBR1\ZCBAlm";
+
+	!@(Control fault)
+	CASE "ZCBCtlFlt","\XCBR1\ZCBCtlFlt"
+		sItem = "ZCBCtlFlt";
+		sTag = "\XCBR1\ZCBCtlFlt";
+
+	!@(External tripping 1)
+	CASE "ExTr1","\PTRC1\ExTr1"
+		sItem = "ExTr1";
+		sTag = "\PTRC1\ExTr1";
+
+	!@(External tripping 1)
+	CASE "ExTr1_dchg","\PTRC1\ExTr1\dchg"
+		sItem = "ExTr1_dchg";
+		sTag = "\PTRC1\ExTr1\dchg";
+
+	!@(TC phase fault)
+	CASE "CTFlt","\LLN0\CTFlt"
+		sItem = "CTFlt";
+		sTag = "\LLN0\CTFlt";
+
+	!@(TP phase fault)
+	CASE "VTFlt","\LLN0\VTFlt"
+		sItem = "VTFlt";
+		sTag = "\LLN0\VTFlt";
+
+	!@(Physical Device Health)
+	CASE "PhyHealth","\LPHD1\PhyHealth"
+		sItem = "PhyHealth";
+		sTag = "\LPHD1\PhyHealth";
+
+	!@(Protection 27/27S unit 1)
+	CASE "A27_PTUV1","\A27_PTUV1\Op"
+		sItem = "A27_PTUV1";
+		sTag = "\A27_PTUV1\Op";
+
+	!@(Protection 27/27S unit 2)
+	CASE "A27_PTUV2","\A27_PTUV2\Op"
+		sItem = "A27_PTUV2";
+		sTag = "\A27_PTUV2\Op";
+
+	!@(Protection 27/27S unit 1)
+	CASE "A27_PTUV1_dchg","\A27_PTUV1\Op\dchg"
+		sItem = "A27_PTUV1_dchg";
+		sTag = "\A27_PTUV1\Op\dchg";
+
+	!@(Protection 27/27S unit 2)
+	CASE "A27_PTUV2_dchg","\A27_PTUV2\Op\dchg"
+		sItem = "A27_PTUV2_dchg";
+		sTag = "\A27_PTUV2\Op\dchg";
+
+	!@(Protection 49 RMS trip)
+	CASE "A49_PTTR1","\A49_PTTR1\Op"
+		sItem = "A49_PTTR1";
+		sTag = "\A49_PTTR1\Op";
+
+	!@(Protection 49 RMS alarm)
+	CASE "A49_PTTR1_Str","\A49_PTTR1\Str"
+		sItem = "A49_PTTR1_Str";
+		sTag = "\A49_PTTR1\Str";
+
+	!@(Protection 50/51 unit 1)
+	CASE "A51_PTOC1","\A51_PTOC1\Op"
+		sItem = "A51_PTOC1";
+		sTag = "\A51_PTOC1\Op";
+
+	!@(Protection 50/51 unit 2)
+	CASE "A51_PTOC2","\A51_PTOC2\Op"
+		sItem = "A51_PTOC2";
+		sTag = "\A51_PTOC2\Op";
+
+	!@(Protection 50/51 unit 3)
+	CASE "A51_PTOC3","\A51_PTOC3\Op"
+		sItem = "A51_PTOC3";
+		sTag = "\A51_PTOC3\Op";
+
+	!@(Protection 50/51 unit 4)
+	CASE "A51_PTOC4","\A51_PTOC4\Op"
+		sItem = "A51_PTOC4";
+		sTag = "\A51_PTOC4\Op";
+
+	!@(Protection 50/51 unit 1)
+	CASE "A51_PTOC1_dchg","\A51_PTOC1\Op\dchg"
+		sItem = "A51_PTOC1_dchg";
+		sTag = "\A51_PTOC1\Op\dchg";
+
+	!@(Protection 50/51 unit 2)
+	CASE "A51_PTOC2_dchg","\A51_PTOC2\Op\dchg"
+		sItem = "A51_PTOC2_dchg";
+		sTag = "\A51_PTOC2\Op\dchg";
+
+	!@(Protection 50/51 unit 3)
+	CASE "A51_PTOC3_dchg","\A51_PTOC3\Op\dchg"
+		sItem = "A51_PTOC3_dchg";
+		sTag = "\A51_PTOC3\Op\dchg";
+
+	!@(Protection 50/51 unit 4)
+	CASE "A51_PTOC4_dchg","\A51_PTOC4\Op\dchg"
+		sItem = "A51_PTOC4_dchg";
+		sTag = "\A51_PTOC4\Op\dchg";
+
+	!@(Protection 50N/51N unit 1)
+	CASE "A51N_PTOC1","\A51N_PTOC1\Op"
+		sItem = "A51N_PTOC1";
+		sTag = "\A51N_PTOC1\Op";
+
+	!@(Protection 50N/51N unit 2)
+	CASE "A51N_PTOC2","\A51N_PTOC2\Op"
+		sItem = "A51N_PTOC2";
+		sTag = "\A51N_PTOC2\Op";
+
+	!@(Protection 50N/51N unit 3)
+	CASE "A51N_PTOC3","\A51N_PTOC3\Op"
+		sItem = "A51N_PTOC3";
+		sTag = "\A51N_PTOC3\Op";
+
+	!@(Protection 50N/51N unit 4)
+	CASE "A51N_PTOC4","\A51N_PTOC4\Op"
+		sItem = "A51N_PTOC4";
+		sTag = "\A51N_PTOC4\Op";
+
+	!@(Protection 50N/51N unit 1)
+	CASE "A51N_PTOC1_dchg","\A51N_PTOC1\Op\dchg"
+		sItem = "A51N_PTOC1_dchg";
+		sTag = "\A51N_PTOC1\Op\dchg";
+
+	!@(Protection 50N/51N unit 2)
+	CASE "A51N_PTOC2_dchg","\A51N_PTOC2\Op\dchg"
+		sItem = "A51N_PTOC2_dchg";
+		sTag = "\A51N_PTOC2\Op\dchg";
+
+	!@(Protection 50N/51N unit 3)
+	CASE "A51N_PTOC3_dchg","\A51N_PTOC3\Op\dchg"
+		sItem = "A51N_PTOC3_dchg";
+		sTag = "\A51N_PTOC3\Op\dchg";
+
+	!@(Protection 50N/51N unit 4)
+	CASE "A51N_PTOC4_dchg","\A51N_PTOC4\Op\dchg"
+		sItem = "A51N_PTOC4_dchg";
+		sTag = "\A51N_PTOC4\Op\dchg";
+
+	!@(Protection 59 unit 1)
+	CASE "A59_PTOV1","\A59_PTOV1\Op"
+		sItem = "A59_PTOV1";
+		sTag = "\A59_PTOV1\Op";
+
+	!@(Protection 59 unit 2)
+	CASE "A59_PTOV2","\A59_PTOV2\Op"
+		sItem = "A59_PTOV2";
+		sTag = "\A59_PTOV2\Op";
+
+	!@(Protection 59 unit 1)
+	CASE "A59_PTOV1_dchg","\A59_PTOV1\Op\dchg"
+		sItem = "A59_PTOV1_dchg";
+		sTag = "\A59_PTOV1\Op\dchg";
+
+	!@(Protection 59 unit 2)
+	CASE "A59_PTOV2_dchg","\A59_PTOV2\Op\dchg"
+		sItem = "A59_PTOV2_dchg";
+		sTag = "\A59_PTOV2\Op\dchg";
+
+	!@(Alarm)
+	CASE "Alarm","\YPTR\HPTmpAlm\Op"
+		sItem = "Alarm";
+		sTag = "\YPTR\HPTmpAlm\Op";
+
+	!@(Fan On)
+	CASE "Fan","\CCGR\FanCtl\stVal"
+		sItem = "Fan";
+		sTag = "\CCGR\FanCtl\stVal";
+
+	!@(Fault)
+	CASE "Fault","\LPHD\Com_Fault\Op"
+		sItem = "Fault";
+		sTag = "\LPHD\Com_Fault\Op";
+
+	!@(Trip)
+	CASE "Trip","\YPTR\HPTmpTr\Op"
+		sItem = "Trip";
+		sTag = "\YPTR\HPTmpTr\Op";
+
+	!@(RTD 1 Failure)
+	CASE "TEMP1_Failure","\GGIO\HPTmp_Fault1\Op"
+		sItem = "TEMP1_Failure";
+		sTag = "\GGIO\HPTmp_Fault1\Op";
+
+	!@(RTD 2 Failure)
+	CASE "TEMP2_Failure","\GGIO\HPTmp_Fault2\Op"
+		sItem = "TEMP2_Failure";
+		sTag = "\GGIO\HPTmp_Fault2\Op";
+
+	!@(RTD 3 Failure)
+	CASE "TEMP3_Failure","\GGIO\HPTmp_Fault3\Op"
+		sItem = "TEMP3_Failure";
+		sTag = "\GGIO\HPTmp_Fault3\Op";
+
+	!@(RTD Input 1)
+	CASE "TEMP1","\YPTR\HPTmp1\instMag"
+		sItem = "TEMP1";
+		sTag = "\YPTR\HPTmp1\instMag";
+
+	!@(RTD Input 2)
+	CASE "TEMP2","\YPTR\HPTmp2\instMag"
+		sItem = "TEMP2";
+		sTag = "\YPTR\HPTmp2\instMag";
+
+	!@(RTD Input 3)
+	CASE "TEMP3","\YPTR\HPTmp3\instMag"
+		sItem = "TEMP3";
+		sTag = "\YPTR\HPTmp3\instMag";
+
+	!@(Maximun RTD Input 1)
+	CASE "MaxTEMP1","\YPTR\HPTmp_MAX1\instMag"
+		sItem = "MaxTEMP1";
+		sTag = "\YPTR\HPTmp_MAX1\instMag";
+
+	!@(Maximun RTD Input 2)
+	CASE "MaxTEMP2","\YPTR\HPTmp_MAX2\instMag"
+		sItem = "MaxTEMP2";
+		sTag = "\YPTR\HPTmp_MAX2\instMag";
+
+	!@(Maximun RTD Input 3)
+	CASE "MaxTEMP3","\YPTR\HPTmp_MAX3\instMag"
+		sItem = "MaxTEMP3";
+		sTag = "\YPTR\HPTmp_MAX3\instMag";
+	!@(Protection 51G)
+	CASE "A51G_PTOC3","\A51G_PTOC3\Op"
+		sItem = "A51G_PTOC3";
+		sTag = "\A51G_PTOC3\Op";
+	!@(CCM Online status)
+	CASE "COMM_CCM","\LPHD1\EEHealthCCM"
+		sItem = "COMM_CCM";
+		sTag = "\LPHD1\EEHealthCCM";
+	!@(BCM Online status)
+	CASE "COMM_BCM","\LPHD1\EEHealthBCM"
+		sItem = "COMM_BCM";
+		sTag = "\LPHD1\EEHealthBCM";
+	!@(PM Online status)
+	CASE "COMM_PM","\LPHD1\EEHealthPM"
+		sItem = "COMM_PM";
+		sTag = "\LPHD1\EEHealthPM";
+	!@(MM Online status)
+	CASE "COMM_MM","\LPHD1\EEHealthMM"
+		sItem = "COMM_MM";
+		sTag = "\LPHD1\EEHealthMM";
+	!@(Communication profile activation)
+	CASE "Comm_Active","\GGIO\Comm_Active\stVal"
+		sItem = "Comm_Active";
+		sTag = "\GGIO\Comm_Active\stVal";
+	!@(Unhandled Alarm Received)
+	CASE "ArmUnd","\LLN0\AlarmUnhandled"
+		sItem = "ArmUnd";
+		sTag = "\LLN0\AlarmUnhandled";
+	!@(Invalid Timestamp Alarm Received)
+	CASE "ArmInvTimestamp","\LLN0\AlarmInvalidTimestamp"
+		sItem = "ArmInvTimestamp";
+		sTag = "\LLN0\AlarmInvalidTimestamp";
+	!@(Breaker Status)
+	CASE "CB_Status","\XCBR1\Pos"
+		sItem = "CB_Status";
+		sTag = "\XCBR1\Pos";
+	!@(Breaker Status - Closed)
+	CASE "CB_Closed","\XCBR1\Pos_On"
+		sItem = "CB_Closed";
+		sTag = "\XCBR1\Pos_On";
+	!@(Breaker Status - Open)
+	CASE "CB_Open","\XCBR1\Pos_Off"
+		sItem = "CB_Open";
+		sTag = "\XCBR1\Pos_Off";
+	!@(Breaker Trip Status)
+	CASE "CB_Trip","\PTRC1\Tr"
+		sItem = "CB_Trip";
+		sTag = "\PTRC1\Tr";!\XCBR1\BUS\Differential
+	!@(REF 620 BUS Differential)
+	CASE "B87B","\XCBR1\BUS\Differential"
+		sItem = "B87B";
+		sTag = "\XCBR1\BUS\Differential";!\XCBR1\BUS\Differential  \MMXU1\A\Neut
+	!@(REF 620 Current N)
+	CASE "Neut","\MMXU1\A\Neut"
+		sItem = "Neut";
+		sTag = "\MMXU1\A\Neut";!\XCBR1\BUS\Differential  \MMXU1\A\Neut
+	!@(REF 620 Current Avg)
+	CASE "AvAMP","\MSTA1\AvAmps1"
+		sItem = "AvAMP";
+		sTag = "\MSTA1\AvAmps1";!\XCBR1\BUS\Differential  \MMXU1\A\Neut
+	!@(REF 620 50/51)
+	CASE "R50","\A51_PTOC1\Op"
+		sItem = "R50";
+		sTag = "\A51_PTOC1\Op";!\XCBR1\BUS\Differential  \MMXU1\A\Neut
+	!@(REF 620 Current Avg)
+	CASE "R50N","\A51N_PTOC1\Op"
+		sItem = "R50N";
+		sTag = "\A51N_PTOC1\Op";!\XCBR1\BUS\Differential  \MMXU1\A\Neut
+	!@(Device drawn position - in)	!Service
+	CASE "Service","\XCBR1\CBRkdPos\In"
+		sItem = "Service";
+		sTag = "\XCBR1\CBRkdPos\In";
+	!@(Device drawn position - out)	!Disconnent
+	CASE "Disconnect","\XCBR1\CBRkdPos\Out"
+		sItem = "Disconnect";
+		sTag = "\XCBR1\CBRkdPos\Out";
+	!@(Device drawn position - test) !TEST
+	CASE "TEST","\XCBR1\CBRkdPos\Test"
+		sItem = "TEST";
+		sTag = "\XCBR1\CBRkdPos\Test";
+	!@(ACB Ready TO Close (PF))
+	CASE "Rdy_Close","\XCBR1\Rdy_Close\stVal"
+		sItem = "Rdy_Close";
+		sTag = "\XCBR1\Rdy_Close\stVal";
+	!@(Spring Charged)
+	CASE "Spring","\XCBR1\Spring\stVal"
+		sItem = "Spring";
+		sTag = "\XCBR1\Spring\stVal";
+	!@(ACB MDGF Trip)
+	CASE "MDGF","\PTRC1\MDGF_Tr"
+		sItem = "MDGF";
+		sTag = "\PTRC1\MDGF_Tr";
+!*******************For CHG*************************!
+	!@(Maintenance Mode)
+	CASE "MTN_Mode","\LPHD\MtnMode\stVal"
+		sItem = "MTN_Mode";
+		sTag = "\LPHD\MtnMode\stVal";
+	!@(Univ Time)
+	CASE "UnivTime","\LLN0\UnivTime\t"
+		sItem = "UnivTime";
+		sTag = "\LLN0\UnivTime\t";
+	!@(Sag/Swell Count)
+	CASE "Sag_Swell_Count","\MMXU1\SSC"
+		sItem = "Sag_Swell_Count";
+		sTag = "\MMXU1\SSC";
+	!@(Sag/Swell PQ event)
+	CASE "Sag_Swell","\MMXU1\SS"
+		sItem = "Sag_Swell";
+		sTag = "\MMXU1\SS";
+	!@(Transient Count)
+	CASE "Transient_Count","\Transient\Count"
+		sItem = "Transient_Count";
+		sTag = "\Transient\Count";
+	!@(Transient PQ event)
+	CASE "Transient","\Transient"
+		sItem = "Transient";
+		sTag = "\Transient";
+!***************************************************!
+	!@(Other)
+	CASE ELSE
+			sItem = ItemTag;
+			sTag = ItemTag;
+	END SELECT
+
+	Ass(-2,sItem,Cluster + IODevice + sTag,0);
+	Ass(-2,"A_" + sItem,"'" + IODevice + sTag + "'",0);
+	Ass(-2,"A_" + sItem + "_On",Cluster + IODevice + sTag + strON,0);
+	Ass(-2,"A_" + sItem + "_Dis",Cluster + IODevice + sTag + strDIS,0);
+	Ass(-2,"T_" + sItem,"'" + IODevice + sTag + sHTR + "'",0);
+
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION Equip_ASS_Meter(STRING strTAG,STRING strCluster)
+			STRING sHTR = "HTR";
+			STRING sRPT = "RPT";
+
+			!@(External Equipment Health)
+			AssIEC(strTAG,"COMM",strCluster);
+			!@(Active Energy)
+			AssIEC(strTAG,"TotWh",strCluster);
+			!@(Active Energy Into the Load)
+			AssIEC(strTAG,"DmdWh",strCluster);
+			!@(Active Energy Out of the Load)
+			AssIEC(strTAG,"SupWh",strCluster);
+			!@(Active Energy Total)
+			AssIEC(strTAG,"AbsWh",strCluster);
+			!@(Apparent Energy)
+			AssIEC(strTAG,"TotVAh",strCluster);
+			!@(Apparent Energy Total)
+			AssIEC(strTAG,"AbsVAh",strCluster);
+			!@(Reactive Energy)
+			AssIEC(strTAG,"TotVArh",strCluster);
+			!@(Reactive Energy Into the Load)
+			AssIEC(strTAG,"DmdVArh",strCluster);
+			!@(Reactive Energy Out of the Load)
+			AssIEC(strTAG,"SupVArh",strCluster);
+			!@(Reactive Energy Total)
+			AssIEC(strTAG,"AbsVArh",strCluster);
+			!@(Power Factor)
+			AssIEC(strTAG,"PFTOT",strCluster);
+			!@(Power Factor A)
+			AssIEC(strTAG,"PFA",strCluster);
+			!@(Power Factor B)
+			AssIEC(strTAG,"PFB",strCluster);
+			!@(Power Factor C)
+			AssIEC(strTAG,"PFC",strCluster);
+			!@(Frequency)
+			AssIEC(strTAG,"HZ",strCluster);
+			!@(Active Power)
+			AssIEC(strTAG,"WTOT",strCluster);
+			!@(Active Power A)
+			AssIEC(strTAG,"WA",strCluster);
+			!@(Active Power B)
+			AssIEC(strTAG,"WB",strCluster);
+			!@(Active Power C)
+			AssIEC(strTAG,"WC",strCluster);
+			!@(Reactive Power)
+			AssIEC(strTAG,"VARTOT",strCluster);
+			!@(Reactive Power A)
+			AssIEC(strTAG,"VARA",strCluster);
+			!@(Reactive Power B)
+			AssIEC(strTAG,"VARB",strCluster);
+			!@(Reactive Power C)
+			AssIEC(strTAG,"VARC",strCluster);
+			!@(Apparent Power)
+			AssIEC(strTAG,"VATOT",strCluster);
+			!@(Apparent Power A)
+			AssIEC(strTAG,"VA1",strCluster);
+			!@(Apparent Power B)
+			AssIEC(strTAG,"VA2",strCluster);
+			!@(Apparent Power C)
+			AssIEC(strTAG,"VA3",strCluster);
+			!@(Voltage A-B)
+			AssIEC(strTAG,"VAB",strCluster);
+			!@(Voltage B-C)
+			AssIEC(strTAG,"VBC",strCluster);
+			!@(Voltage C-A)
+			AssIEC(strTAG,"VCA",strCluster);
+			!@(Voltage L-L Avg)
+			AssIEC(strTAG,"VLLAVG",strCluster);
+			!@(Voltage Unbalance L-L Worst)
+			AssIEC(strTAG,"VLLUBL",strCluster);
+			!@(Voltage A-N)
+			AssIEC(strTAG,"VAN",strCluster);
+			!@(Voltage B-N)
+			AssIEC(strTAG,"VBN",strCluster);
+			!@(Voltage C-N)
+			AssIEC(strTAG,"VCN",strCluster);
+			!@(Voltage L-N Avg)
+			AssIEC(strTAG,"VLNAVG",strCluster);
+			!@(Voltage Unbalance L-N Worst)
+			AssIEC(strTAG,"VLNUBL",strCluster);
+			!@(Residual voltage V0)
+			AssIEC(strTAG,"V0",strCluster);
+			!@(K-Factor A)
+			AssIEC(strTAG,"KFA",strCluster);
+			!@(K-Factor B)
+			AssIEC(strTAG,"KFB",strCluster);
+			!@(K-Factor C)
+			AssIEC(strTAG,"KFC",strCluster);
+			!@(Crest Factor Current A)
+			AssIEC(strTAG,"CFA",strCluster);
+			!@(Crest Factor Current B)
+			AssIEC(strTAG,"CFB",strCluster);
+			!@(Crest Factor Current C)
+			AssIEC(strTAG,"CFC",strCluster);
+			!@(Current Avg)
+			AssIEC(strTAG,"IAVG",strCluster);
+			!@(Current A)
+			AssIEC(strTAG,"IA",strCluster);
+			!@(Current B)
+			AssIEC(strTAG,"IB",strCluster);
+			!@(Current C)
+			AssIEC(strTAG,"IC",strCluster);
+			!@(Current G)
+			AssIEC(strTAG,"IG",strCluster);
+			!@(Current N)
+			AssIEC(strTAG,"IN",strCluster);
+			!@(Current Unbalance Worst)
+			AssIEC(strTAG,"IUBL",strCluster);
+			!@(THD Current A)
+			AssIEC(strTAG,"THDIA",strCluster);
+			!@(THD Current B)
+			AssIEC(strTAG,"THDIB",strCluster);
+			!@(THD Current C)
+			AssIEC(strTAG,"THDIC",strCluster);
+			!@(THD Current N)
+			AssIEC(strTAG,"THDIN",strCluster);
+			!@(THD Voltage A-B)
+			AssIEC(strTAG,"THDVAB",strCluster);
+			!@(THD Voltage B-C)
+			AssIEC(strTAG,"THDVBC",strCluster);
+			!@(THD Voltage C-A)
+			AssIEC(strTAG,"THDVCA",strCluster);
+			!@(THD Voltage A-N)
+			AssIEC(strTAG,"THDVAN",strCluster);
+			!@(THD Voltage B-N)
+			AssIEC(strTAG,"THDVBN",strCluster);
+			!@(THD Voltage C-N)
+			AssIEC(strTAG,"THDVCN",strCluster);
+			!@(Max Active Power)
+			AssIEC(strTAG,"MaxW",strCluster);
+			!@(Max Reactive Power)
+			AssIEC(strTAG,"MaxVAR",strCluster);
+			!@(Max Apparent Power)
+			AssIEC(strTAG,"MaxVA",strCluster);
+			!@(Max Current Avg)
+			AssIEC(strTAG,"MaxIAVG",strCluster);
+			!@(Max Frequency)
+			AssIEC(strTAG,"MaxHZ",strCluster);
+			!@(Max THD Current A)
+			AssIEC(strTAG,"MaxTHDIA",strCluster);
+			!@(Max THD Current B)
+			AssIEC(strTAG,"MaxTHDIB",strCluster);
+			!@(Max THD Current C)
+			AssIEC(strTAG,"MaxTHDIC",strCluster);
+			!@(Max THD Voltage A-B)
+			AssIEC(strTAG,"MaxTHDVAB",strCluster);
+			!@(Max THD Voltage B-C)
+			AssIEC(strTAG,"MaxTHDVBC",strCluster);
+			!@(Max THD Voltage C-A)
+			AssIEC(strTAG,"MaxTHDVCA",strCluster);
+			!@(Max Voltage L-L Avg)
+			AssIEC(strTAG,"MaxVLLAVG",strCluster);
+			!@(Max Voltage L-N Avg)
+			AssIEC(strTAG,"MaxVLNAVG",strCluster);
+			!@(Min Current Avg)
+			AssIEC(strTAG,"MinIAVG",strCluster);
+			!@(Min Frequency)
+			AssIEC(strTAG,"MinHZ",strCluster);
+			!@(Demand Active Power)
+			AssIEC(strTAG,"DmdW",strCluster);
+			!@(Demand Reactive Power)
+			AssIEC(strTAG,"DmdVAR",strCluster);
+			!@(Demand Apparent Power)
+			AssIEC(strTAG,"DmdVA",strCluster);
+			!@(Peak Demand Active Power)
+			AssIEC(strTAG,"MaxDmdW",strCluster);
+			!@(Peak Demand Reactive Power)
+			AssIEC(strTAG,"MaxDmdVAR",strCluster);
+			!@(Peak Demand Apparent Power)
+			AssIEC(strTAG,"MaxDmdVA",strCluster);
+			!@(Demand Current A)
+			AssIEC(strTAG,"DmdIA",strCluster);
+			!@(Demand Current B)
+			AssIEC(strTAG,"DmdIB",strCluster);
+			!@(Demand Current C)
+			AssIEC(strTAG,"DmdIC",strCluster);
+			!@(Demand Current N)
+			AssIEC(strTAG,"DmdIN",strCluster);
+			!@(Demand Current Avg)
+			AssIEC(strTAG,"DmdIAVG",strCluster);
+			!@(Peak Demand Current A)
+			AssIEC(strTAG,"MaxDmdIA",strCluster);
+			!@(Peak Demand Current B)
+			AssIEC(strTAG,"MaxDmdIB",strCluster);
+			!@(Peak Demand Current C)
+			AssIEC(strTAG,"MaxDmdIC",strCluster);
+			!@(Peak Demand Current N)
+			AssIEC(strTAG,"MaxDmdIN",strCluster);
+			!@(Peak Demand Current Avg)
+			AssIEC(strTAG,"MaxDmdIAVG",strCluster);
+			!@(H1 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H1",strCluster);
+			!@(H1 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H1",strCluster);
+			!@(H1 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H1",strCluster);
+			!@(H1 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H1",strCluster);
+			!@(H1 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H1",strCluster);
+			!@(H1 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H1",strCluster);
+			!@(H1 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H1",strCluster);
+			!@(H1 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H1",strCluster);
+			!@(H1 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H1",strCluster);
+			!@(H1 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H1",strCluster);
+			!@(H2 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H2",strCluster);
+			!@(H2 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H2",strCluster);
+			!@(H2 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H2",strCluster);
+			!@(H2 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H2",strCluster);
+			!@(H2 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H2",strCluster);
+			!@(H2 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H2",strCluster);
+			!@(H2 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H2",strCluster);
+			!@(H2 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H2",strCluster);
+			!@(H2 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H2",strCluster);
+			!@(H2 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H2",strCluster);
+			!@(H3 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H3",strCluster);
+			!@(H3 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H3",strCluster);
+			!@(H3 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H3",strCluster);
+			!@(H3 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H3",strCluster);
+			!@(H3 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H3",strCluster);
+			!@(H3 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H3",strCluster);
+			!@(H3 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H3",strCluster);
+			!@(H3 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H3",strCluster);
+			!@(H3 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H3",strCluster);
+			!@(H3 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H3",strCluster);
+			!@(H4 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H4",strCluster);
+			!@(H4 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H4",strCluster);
+			!@(H4 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H4",strCluster);
+			!@(H4 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H4",strCluster);
+			!@(H4 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H4",strCluster);
+			!@(H4 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H4",strCluster);
+			!@(H4 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H4",strCluster);
+			!@(H4 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H4",strCluster);
+			!@(H4 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H4",strCluster);
+			!@(H4 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H4",strCluster);
+			!@(H5 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H5",strCluster);
+			!@(H5 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H5",strCluster);
+			!@(H5 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H5",strCluster);
+			!@(H5 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H5",strCluster);
+			!@(H5 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H5",strCluster);
+			!@(H5 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H5",strCluster);
+			!@(H5 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H5",strCluster);
+			!@(H5 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H5",strCluster);
+			!@(H5 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H5",strCluster);
+			!@(H5 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H5",strCluster);
+			!@(H6 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H6",strCluster);
+			!@(H6 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H6",strCluster);
+			!@(H6 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H6",strCluster);
+			!@(H6 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H6",strCluster);
+			!@(H6 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H6",strCluster);
+			!@(H6 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H6",strCluster);
+			!@(H6 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H6",strCluster);
+			!@(H6 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H6",strCluster);
+			!@(H6 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H6",strCluster);
+			!@(H6 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H6",strCluster);
+			!@(H7 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H7",strCluster);
+			!@(H7 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H7",strCluster);
+			!@(H7 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H7",strCluster);
+			!@(H7 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H7",strCluster);
+			!@(H7 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H7",strCluster);
+			!@(H7 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H7",strCluster);
+			!@(H7 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H7",strCluster);
+			!@(H7 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H7",strCluster);
+			!@(H7 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H7",strCluster);
+			!@(H7 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H7",strCluster);
+			!@(H8 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H8",strCluster);
+			!@(H8 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H8",strCluster);
+			!@(H8 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H8",strCluster);
+			!@(H8 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H8",strCluster);
+			!@(H8 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H8",strCluster);
+			!@(H8 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H8",strCluster);
+			!@(H8 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H8",strCluster);
+			!@(H8 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H8",strCluster);
+			!@(H8 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H8",strCluster);
+			!@(H8 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H8",strCluster);
+			!@(H9 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H9",strCluster);
+			!@(H9 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H9",strCluster);
+			!@(H9 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H9",strCluster);
+			!@(H9 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H9",strCluster);
+			!@(H9 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H9",strCluster);
+			!@(H9 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H9",strCluster);
+			!@(H9 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H9",strCluster);
+			!@(H9 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H9",strCluster);
+			!@(H9 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H9",strCluster);
+			!@(H9 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H9",strCluster);
+			!@(H10 Current A Magnitude)
+			AssIEC(strTAG,"HARMONIC_IA_H10",strCluster);
+			!@(H10 Current B Magnitude)
+			AssIEC(strTAG,"HARMONIC_IB_H10",strCluster);
+			!@(H10 Current C Magnitude)
+			AssIEC(strTAG,"HARMONIC_IC_H10",strCluster);
+			!@(H10 Current N Magnitude)
+			AssIEC(strTAG,"HARMONIC_IN_H10",strCluster);
+			!@(H10 Voltage A-B Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAB_H10",strCluster);
+			!@(H10 Voltage A-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VAN_H10",strCluster);
+			!@(H10 Voltage B-C Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBC_H10",strCluster);
+			!@(H10 Voltage B-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VBN_H10",strCluster);
+			!@(H10 Voltage C-A Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCA_H10",strCluster);
+			!@(H10 Voltage C-N Magnitude)
+			AssIEC(strTAG,"HARMONIC_VCN_H10",strCluster);
+			!@(Input Status 01)
+			AssIEC(strTAG,"DI1",strCluster);
+			!@(Input Status 02)
+			AssIEC(strTAG,"DI2",strCluster);
+			!@(Input Status 03)
+			AssIEC(strTAG,"DI3",strCluster);
+			!@(Input Status 04)
+			AssIEC(strTAG,"DI4",strCluster);
+			!@(Input Status 05)
+			AssIEC(strTAG,"DI5",strCluster);
+			!@(Input Status 06)
+			AssIEC(strTAG,"DI6",strCluster);
+			!@(Input Status 07)
+			AssIEC(strTAG,"DI7",strCluster);
+			!@(Input Status 08)
+			AssIEC(strTAG,"DI8",strCluster);
+			!@(Input Status 09)
+			AssIEC(strTAG,"DI9",strCluster);
+			!@(Input Status 10)
+			AssIEC(strTAG,"DI10",strCluster);
+			!@(Input Status 11)
+			AssIEC(strTAG,"DI11",strCluster);
+			!@(Input Status 12)
+			AssIEC(strTAG,"DI12",strCluster);
+			!@(Input Status 13)
+			AssIEC(strTAG,"DI13",strCluster);
+			!@(Input Status 14)
+			AssIEC(strTAG,"DI14",strCluster);
+			!@(Input Status 15)
+			AssIEC(strTAG,"DI15",strCluster);
+			!@(Input Status 16)
+			AssIEC(strTAG,"DI16",strCluster);
+			!@(Temperature)
+			AssIEC(strTAG,"TEMP",strCluster);
+			!*******************For WEN *************************!
+			!@(Maintenance Mode)
+			AssIEC(strTAG,"MTN_Mode",strCluster);
+			!@(Univ Time)
+			AssIEC(strTAG,"UnivTime",strCluster);
+			!@(Sag/Swell Count)
+			AssIEC(strTAG,"Sag_Swell_Count",strCluster);
+			!@(Sag/Swell PQ event)
+			AssIEC(strTAG,"Sag_Swell",strCluster);
+			!@(Transient Count)
+			AssIEC(strTAG,"Transient_Count",strCluster);
+			!@(Transient PQ event)
+			AssIEC(strTAG,"Transient",strCluster);
+			!***************************************************!
+END

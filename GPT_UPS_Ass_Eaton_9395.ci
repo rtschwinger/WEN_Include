@@ -1,0 +1,396 @@
+
+MODULE INT WINDOW_OPEN_FAILED = -1;   //WinNew or WinNewAt failed
+MODULE INT DEFAULT_WINDOW_MODE = 773;	//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+
+
+//********************** EATON 9395 UPS **********************
+//GPT RTS 06/03/19
+FUNCTION UPS_EATON_EquipPopup(STRING sTAGPFX,STRING sCluster,STRING sTitle)
+		INT iMouseX;
+		INT iMouseY;
+		INT hWin;
+		//------------------------------------------------------
+		//Message("1.)UPS_EATON_EquipPopup.sTAGPFX: ", sTAGPFX, 33);
+		//                   Equip Ass
+		//------------------------------------------------------
+		UPS_ASS_EATON(sTAGPFX,sCluster,sTitle);
+		//------------------------------------------------------
+		//                   Equip PopUp
+		//------------------------------------------------------
+		EquipAssMetadataWin("!ups_eaton_9395");
+		//---------------------------------------------------
+		//hWin = WinNewAt("!ups_eaton_9395" , iMouseX + StrToInt(PageInfo(14)) , iMouseY + StrToInt(PageInfo(15)) , DEFAULT_WINDOW_MODE);
+	
+		//Ensure popup window opened
+		//IF (hWin <> WINDOW_OPEN_FAILED) THEN
+				//Set window title
+		WinTitle(sTitle);
+		//END
+END
+
+// GPT RTS 2016/08/17 New
+FUNCTION UPS_ASS_EATON(STRING sTAGPFX,STRING sCluster,STRING sTitle)
+			//Dim
+			STRING sType,sEquip,sAreaP;
+			
+			//Init
+			strDevice=sTAGPFX;								/* strTAG is the Device Name */
+			strCluster=sCluster;
+			IF strCluster <> "" THEN strCluster = strCluster + "."; END
+			sType = "EATON";								/* Type */
+			sEquip = sTAGPFX;								/* Equip */
+			
+			//------------------------------------------------------
+			//                   Equip Ass
+			//------------------------------------------------------
+			Ass(-2,"Cluster","'" + sCluster + "'",0);
+			Ass(-2,"Type","'" + sType + "'",0);
+			Ass(-2,"Equip","'" + sTitle + "'",0);
+			sAreaP = StrMid(sTAGPFX,4,6);
+			Ass(-2,"AreaP","'" + sAreaP + "'",0);
+			ASS_IODevice_To_EquipName(sTAGPFX,sCluster);
+			//------------------------------------------------------
+			//        Variable and Alarm and Trend Tags Ass
+			//------------------------------------------------------
+			Equip_ASS_UPS(sTAGPFX,strCluster);
+END
+
+
+FUNCTION UPS_SIM_ASS_TAG(STRING sCluster,STRING sDevice)
+			IF iDebug_On THEN                                         
+				ErrLog("UPS_SIM_ASS_TAG Cluster: " + sCluster + " Device: " + sDevice);   
+			END
+			ESAssText("Inv_State",sDevice + "\Dig\St\Inv",sCluster);
+			ESAssText("MYB_State",sDevice + "\Dig\St\OnMaintByp",sCluster);
+			ESAssText("K3_State", sDevice + "\Dig\St\zOK3",sCluster);
+			ESAssText("K5_State", sDevice + "\Dig\St\zOK3",sCluster);
+   		ESAssText("Q1_State", sDevice + "\GGIO1\Ind1",sCluster);
+			PageDisplay("//UPS_Sim");
+END
+
+
+STRING FUNCTION UPS_Status(REAL rStatus)
+	STRING sStatus;
+	SELECT CASE rStatus
+		CASE 0 sStatus = "Off"
+		CASE 1 sStatus = "System Normal"
+		CASE 2 sStatus = "System Normal^nUPS Redundant"
+		CASE 3 sStatus = "System Normal^nNot Redundant"
+		CASE 4 sStatus = "System On Battery"
+		CASE 5 sStatus = "System On Battery^nShutdown Imminent"
+		CASE 6 sStatus = "System Normal^nBypass Not Available"
+		CASE 7 sStatus = "System Normal^nOn Line"
+		CASE 8 sStatus = "System Normal^nEnergy Saver System"
+		CASE 9 sStatus = "Variable Module^nManagement System"
+		CASE 16 sStatus = "On Bypass"
+		CASE 17 sStatus = "On Bypass^nStarting"
+		CASE 18 sStatus = "On Bypass^nReady"
+		CASE 32 sStatus = "On MBS"
+		CASE 33 sStatus = "On MBS^nUPS On Line"
+		CASE 34 sStatus = "ON MBS^nUPS On Bypass"
+		CASE 35 sStatus = "ON MBS^nUPS OFF"
+		CASE 48 sStatus = "Load Off"
+		CASE 49 sStatus = "Load Off^nStarting"
+		CASE 50 sStatus = "Load Off^nReady"
+		CASE 64 sStatus = "Supporting Load"
+		CASE 80 sStatus = "System Normal"
+		CASE 81 sStatus = "Energy Saver System"
+		CASE 96 sStatus = "System On Bypass"
+		CASE 100 sStatus = "System On^nManual/Maintenance Bypass"
+		CASE 224 sStatus = "Load Segment Overload"
+		CASE 240 sStatus = "System On Battery"
+		CASE 241 sStatus = "System Off"
+	END SELECT
+	
+	RETURN sStatus;
+END
+
+INT
+FUNCTION GetStaticSWState(INT iSS_State, REAL rSysStat)
+	IF iSS_State = 0 THEN
+		//ErrLog("iSS_State IS 0 RETURN 0");
+		RETURN 0;
+	ELSE
+		IF iSS_State = 1 AND rSysStat <> 8 THEN
+			//ErrLog("iSS_State IS 1 and ESS is On RETURN 1");
+			RETURN 1;
+		ELSE
+			//ErrLog("iSS_State IS 1 and ESS is Off RETURN 0");
+			RETURN 0;
+		END
+	END 
+END
+	
+
+//GPT RTSchwinger 2016/09/30
+FUNCTION Equip_ASS_UPS(STRING sTAGPFX,STRING strCluster)
+	STRING sHTR = "HTR";
+	STRING sRPT = "RPT";
+	STRING sBMTAGPFX;
+	
+    AssIEC_UPS(sTAGPFX,"BattSwCls","\Dig\St\BattSwCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"BfeedSwCls", "\Dig\St\BfeedSwCls",strCluster);    
+    AssIEC_UPS(sTAGPFX,"RecSwCls", "\Dig\St\RecSwCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"BattTest", "\Dig\St\BattTest",strCluster);    
+    AssIEC_UPS(sTAGPFX,"SysStat", "\Dig\St\SysStat",strCluster);
+    //@(UPS_B3_1_r_2_UA1 Check Battery Charger)
+    AssIEC_UPS(sTAGPFX,"BatChaFail", "\Dig\St\BatChaFail",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatChk", "\Dig\St\BatChk",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatCurLim", "\Dig\St\BatCurLim",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatDisc", "\Dig\St\BatDisc",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatDpl", "\Dig\St\BatDpl",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatDsch", "\Dig\St\BatDsch",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatSwCls", "\Dig\St\BatSwCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"BattBnkBrkr1", "\Dig\St\BattBnkBrkr1",strCluster);
+    AssIEC_UPS(sTAGPFX,"BattBnkBrkr2", "\Dig\St\BattBnkBrkr2",strCluster);
+    AssIEC_UPS(sTAGPFX,"BattBnkOvrTemp", "\Dig\St\BattBnkOvrTemp",strCluster);
+    AssIEC_UPS(sTAGPFX,"BattErgd", "\Dig\St\BattErgd",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatTestRplBat", "\Dig\St\BatTestRplBat",strCluster);
+    AssIEC_UPS(sTAGPFX,"BattVoltExtLow", "\Dig\St\BattVoltExtLow",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatVoltsHi", "\Dig\St\BatVoltsHi",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatVoltsLo", "\Dig\St\BatVoltsLo",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypAvail", "\Dig\St\BypAvail",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypHzFlt", "\Dig\St\BypHzFlt",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypNotAvail", "\Dig\St\BypNotAvail",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypOvVolts", "\Dig\St\BypOvVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypPhsRot", "\Dig\St\BypPhsRot",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypSwCls", "\Dig\St\BypSwCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"BypUnVolts", "\Dig\St\BypUnVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"CB1Cls", "\Dig\St\CB1Cls",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkBatSw", "\Dig\St\ChkBatSw",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkByp", "\Dig\St\ChkByp",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkBypSw", "\Dig\St\ChkBypSw",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkFan", "\Dig\St\ChkFan",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkFu", "\Dig\St\ChkFu",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkInSw", "\Dig\St\ChkInSw",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkInv", "\Dig\St\ChkInv",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkInvSw", "\Dig\St\ChkInvSw",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkPwrSup", "\Dig\St\ChkPwrSup",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkRect", "\Dig\St\ChkRect",strCluster);
+    AssIEC_UPS(sTAGPFX,"ChkSTS", "\Dig\St\ChkSTS",strCluster);
+    AssIEC_UPS(sTAGPFX,"ClsBattSw", "\Dig\St\ClsBattSw",strCluster);
+    AssIEC_UPS(sTAGPFX,"DCLinkOvVolts", "\Dig\St\DCLinkOvVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"DCLinkUnVolts", "\Dig\St\DCLinkUnVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"GndFlt", "\Dig\St\GndFlt",strCluster);
+    AssIEC_UPS(sTAGPFX,"InHzFlt", "\Dig\St\InHzFlt",strCluster);
+    AssIEC_UPS(sTAGPFX,"InInLmt", "\Dig\St\InInLmt",strCluster);
+    AssIEC_UPS(sTAGPFX,"InOvVolts", "\Dig\St\InOvVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"IntComFail", "\Dig\St\IntComFail",strCluster);
+    AssIEC_UPS(sTAGPFX,"InUnVolts", "\Dig\St\InUnVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"Inv_State", "\Dig\St\Inv",strCluster);
+    AssIEC_UPS(sTAGPFX,"InvHzFlt", "\Dig\St\InvHzFlt",strCluster);
+    AssIEC_UPS(sTAGPFX,"InvOutFail", "\Dig\St\InvOutFail",strCluster);
+    AssIEC_UPS(sTAGPFX,"InvOutOvCur", "\Dig\St\InvOutOvCur",strCluster);
+    AssIEC_UPS(sTAGPFX,"InvOvrTemp", "\Dig\St\InvOvrTemp",strCluster);
+    AssIEC_UPS(sTAGPFX,"InvOvVolts", "\Dig\St\InvOvVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"InvUnVolts", "\Dig\St\InvUnVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"LodBat", "\Dig\St\LodBat",strCluster);
+    AssIEC_UPS(sTAGPFX,"LodByp", "\Dig\St\LodByp",strCluster);
+    AssIEC_UPS(sTAGPFX,"MaintBypBkrCls", "\Dig\St\MBYP\MaintBypBkrCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"MajAlrm", "\Dig\St\MajAlrm",strCluster);
+    AssIEC_UPS(sTAGPFX,"MBSBrkrSt", "\Dig\St\MBYP\MBSBrkrSt",strCluster);
+    AssIEC_UPS(sTAGPFX,"NVMemFail", "\Dig\St\NVMemFail",strCluster);
+    AssIEC_UPS(sTAGPFX,"OnMaintByp", "\Dig\St\MBYP\OnMaintByp",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutHzFlt", "\Dig\St\OutHzFlt",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutOvl", "\Dig\St\OutOvl",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutOvlkW", "\Dig\St\OutOvlkW",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutOvlPhA", "\Dig\St\OutOvlPhA",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutOvlPhB", "\Dig\St\OutOvlPhB",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutOvlPhC", "\Dig\St\OutOvlPhC",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutOvVolts", "\Dig\St\OutOvVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutShtCrt", "\Dig\St\OutShtCrt",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutSwCls", "\Dig\St\OutSwCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutSwDis", "\Dig\St\OutSwDis",strCluster);
+    AssIEC_UPS(sTAGPFX,"OutUnVolts", "\Dig\St\OutUnVolts",strCluster);
+    AssIEC_UPS(sTAGPFX,"Rect_State", "\Dig\St\Rec",strCluster);
+    AssIEC_UPS(sTAGPFX,"RecOvrTemp", "\Dig\St\RecOvrTemp",strCluster);
+    AssIEC_UPS(sTAGPFX,"RectInOvCur", "\Dig\St\RectInOvCur",strCluster);
+    AssIEC_UPS(sTAGPFX,"RemEPO", "\Dig\St\RemEPO",strCluster);
+    AssIEC_UPS(sTAGPFX,"SelTripMod", "\Dig\St\SelTripMod",strCluster);
+    AssIEC_UPS(sTAGPFX,"ShtdnImm", "\Dig\St\ShtdnImm",strCluster);
+    AssIEC_UPS(sTAGPFX,"STS_State", "\Dig\St\STS",strCluster);
+    AssIEC_UPS(sTAGPFX,"STSW_State", "\Dig\St\Stsw",strCluster);
+    AssIEC_UPS(sTAGPFX,"SysAlmAct", "\Dig\St\SysAlmAct",strCluster);
+    AssIEC_UPS(sTAGPFX,"SysNorm", "\Dig\St\SysNorm",strCluster);
+    AssIEC_UPS(sTAGPFX,"SysNotRdnt", "\Dig\St\SysNotRdnt",strCluster);
+    AssIEC_UPS(sTAGPFX,"SysNtcAct", "\Dig\St\SysNtcAct",strCluster);
+    AssIEC_UPS(sTAGPFX,"SysOnByp", "\Dig\St\SysOnByp",strCluster);
+    AssIEC_UPS(sTAGPFX,"UtilNotPres", "\Dig\St\UtilNotPres",strCluster);
+    AssIEC_UPS(sTAGPFX,"UtilOutOfLim", "\Dig\St\UtilOutOfLim",strCluster);
+    AssIEC_UPS(sTAGPFX,"UtilPrnt", "\Dig\St\UtilPrnt",strCluster);
+    AssIEC_UPS(sTAGPFX,"CB2_State", "\Dig\St\zOCB2",strCluster);
+    AssIEC_UPS(sTAGPFX,"zOInSwCls", "\Dig\St\zOInSwCls",strCluster);
+    AssIEC_UPS(sTAGPFX,"K2_State", "\Dig\St\zOK2",strCluster);
+    AssIEC_UPS(sTAGPFX,"K3_State", "\Dig\St\zOK3",strCluster);
+    AssIEC_UPS(sTAGPFX,"K5_State", "\Dig\St\zOK5",strCluster);
+    AssIEC_UPS(sTAGPFX,"ABat", "\An\A\Bat",strCluster);
+    AssIEC_UPS(sTAGPFX,"ANeutOut", "\An\A\Neut\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsAByp", "\An\A\PhsA\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsAIn", "\An\A\PhsA\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsAOut", "\An\A\PhsA\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsBByp", "\An\A\PhsB\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsBIn", "\An\A\PhsB\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsBOut", "\An\A\PhsB\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsCByp", "\An\A\PhsC\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsCIn", "\An\A\PhsC\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"APhsCOut", "\An\A\PhsC\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"BatRemn", "\An\Clk\BatRemn",strCluster);
+    AssIEC_UPS(sTAGPFX,"EnWhIn", "\An\En\Wh\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"EnWhOut", "\An\En\Wh\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"HzByp", "\An\Hz\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"HzIn", "\An\Hz\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"HzOut", "\An\Hz\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PctBatRemn", "\An\Pct\BatRemn",strCluster);
+    AssIEC_UPS(sTAGPFX,"PctLod", "\An\Pct\Lod",strCluster);
+    AssIEC_UPS(sTAGPFX,"THDV%PhsAIn", "\An\Pct\THDVolt\PhsA\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"THDV%PhsAOut", "\An\Pct\THDVolt\PhsA\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"THDV%PhsBIn", "\An\Pct\THDVolt\PhsB\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"THDV%PhsBOut", "\An\Pct\THDVolt\PhsB\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"THDV%PhsCIn", "\An\Pct\THDVolt\PhsC\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"THDV%PhsCOut", "\An\Pct\THDVolt\PhsC\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PFDspIn", "\An\PF\Dsp\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PFDspOut", "\An\PF\Dsp\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsAByp", "\An\PhV\PhsA\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsAIn", "\An\PhV\PhsA\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsAOut", "\An\PhV\PhsA\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsBByp", "\An\PhV\PhsB\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsBIn", "\An\PhV\PhsB\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsBOut", "\An\PhV\PhsB\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsCByp", "\An\PhV\PhsC\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsCIn", "\An\PhV\PhsC\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PhVPhsCOut", "\An\PhV\PhsC\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsABByp", "\An\PPV\PhsAB\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsABIn", "\An\PPV\PhsAB\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsABOut", "\An\PPV\PhsAB\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsBCByp", "\An\PPV\PhsBC\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsBCIn", "\An\PPV\PhsBC\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsBCOut", "\An\PPV\PhsBC\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsCAByp", "\An\PPV\PhsCA\Byp",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsCAIn", "\An\PPV\PhsCA\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PPVPhsCAOut", "\An\PPV\PhsCA\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PwrTotVAIn", "\An\Pwr\TotVA\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PwrTotVAOut", "\An\Pwr\TotVA\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"PwrTotWIn", "\An\Pwr\TotW\In",strCluster);
+    AssIEC_UPS(sTAGPFX,"PwrTotWOut", "\An\Pwr\TotW\Out",strCluster);
+    AssIEC_UPS(sTAGPFX,"AmbTemp", "\An\Tmp\AmbTemp",strCluster);
+    AssIEC_UPS(sTAGPFX,"VBat", "\An\V\Bat",strCluster);
+    AssIEC_UPS(sTAGPFX,"VaRating", "\Diag\VaRating",strCluster);
+    AssIEC_UPS(sTAGPFX,"WttsRating", "\Diag\WttsRating",strCluster);
+	
+	  AssIEC_UPS(sTAGPFX,"PMDC_BUSV","\PMDC_ION7650\MMXU1\PPV\zavg",strCluster);
+	  AssIEC_UPS(sTAGPFX,"PMDC_IO2","\PMDC_Q1_2\XCBR1\Pos_On",strCluster);
+	
+		IF sTAGPFX = "UPS_B3_1_r_2_UA1" THEN
+				sBMTAGPFX = "CPLP_B3_1_r_7_METER1";
+		ELSE 
+		    sBMTAGPFX = "CPLP_B3_2_s_9_METER1";
+		END
+		AssIEC_UPS(sBMTAGPFX,"MBImpExcd","\UPS\BM\ImpE",strCluster);
+		AssIEC_UPS(sBMTAGPFX,"MBPostTemp","\UPS\BM\PT",strCluster);
+		AssIEC_UPS(sBMTAGPFX,"MBIVL","\UPS\BM\IVL",strCluster);
+	        
+		
+    //@(Meter Digital Input Status 01)		[Q1 Open/Close Status]  
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_OC","\MeterQ1_4_1\GGIO1\Ind1",strCluster);
+    //@(Meter Digital Input Status 02)  	[Q1 Tripped Status]
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_TR","\MeterQ1_4_1\GGIO1\Ind2",strCluster);
+    //@(Meter Digital Input Status 03)  
+    AssIEC_UPS(sTAGPFX,"MtrQ1_4_1_DI3","\MeterQ1_4_1\GGIO1\Ind3",strCluster);
+    //@(Meter Digital Input Status 01) 	[Q1-1 Open/Close Status] 
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_1_OC","\MeterQ1_4_2\GGIO1\Ind1",strCluster);
+    //@(Meter Digital Input Status 02)  	[Q1-1 Tripped Status]
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_1_TR","\MeterQ1_4_2\GGIO1\Ind2",strCluster);
+    //@(Meter Digital Input Status 03)
+    AssIEC_UPS(sTAGPFX,"MtrQ1_4_2_DI3","\MeterQ1_4_2\GGIO1\Ind3",strCluster);
+    //@(Meter Digital Input Status 01)  	[Q1-2 Open/Close Status] 
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_2_OC","\MeterQ1_4_3\GGIO1\Ind1",strCluster);
+    //@(Meter Digital Input Status 02)  	[Q1-2 Tripped Status]
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_2_TR","\MeterQ1_4_3\GGIO1\Ind2",strCluster);
+    //@(Meter Digital Input Status 03)
+    AssIEC_UPS(sTAGPFX,"MtrQ1_4_3_DI3","\MeterQ1_4_3\GGIO1\Ind3",strCluster);
+    //@(Meter Digital Input Status 01)  [Q1-3 Open/Close Status] 
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_3_OC","\MeterQ1_4_4\GGIO1\Ind1",strCluster);
+    //@(Meter Digital Input Status 02)  [Q1-3 Tripped Status]
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_3_TR","\MeterQ1_4_4\GGIO1\Ind2",strCluster);
+    //@(Meter Digital Input Status 03)
+    AssIEC_UPS(sTAGPFX,"MtrQ1_4_4_DI3","\MeterQ1_4_4\GGIO1\Ind3",strCluster);
+    //@(Meter Digital Input Status 01)  [Q1-4 Open/Close Status] 
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_4_OC","\MeterQ1_4_5\GGIO1\Ind1",strCluster);
+    //@(Meter Digital Input Status 02)  [Q1-4 Tripped Status]
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_4_TR","\MeterQ1_4_5\GGIO1\Ind2",strCluster);
+    //@(Meter Digital Input Status 03)
+    AssIEC_UPS(sTAGPFX,"MtrQ1_4_5_DI3","\MeterQ1_4_5\GGIO1\Ind3",strCluster);
+		//@(Meter Digital Input Status 01)  [Q1-5 Open/Close Status] 
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_5_OC","\MeterQ1_4_6\GGIO1\Ind1",strCluster);
+    //@(Meter Digital Input Status 02)  [Q1-5 Tripped Status]
+    AssIEC_UPS(sTAGPFX,"UPSSWBD_Q1_5_TR","\MeterQ1_4_6\GGIO1\Ind2",strCluster);
+    //@(Meter Digital Input Status 03)
+    AssIEC_UPS(sTAGPFX,"MtrQ1_4_5_DI3","\MeterQ1_4_6\GGIO1\Ind3",strCluster);
+    
+    	
+END 
+
+//GPT RTSchwinger 2018/09/13
+FUNCTION AssIEC_UPS(STRING sIODevice,STRING sItem,STRING sTag,STRING sCluster,STRING sHTR="")
+	INT iAssReturn = 0;
+	STRING sAssTag = sCluster + sIODevice + sTag;
+
+		iAssReturn = Ass(-2,sItem,sAssTag,0);
+		
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS Assign item : " + sItem );
+				ErrLog("UPS Assign IODevice : " + sIODevice );
+				ErrLog("UPS Assign TAG : " + sTag );
+				ErrLog("UPS Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		iAssReturn = Ass(-2,"A_" + sItem,"'" + sAssTag + "'",0);
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS A_Assign item : " + sItem );
+				ErrLog("UPS A_Assign IODevice : " + sIODevice );
+				ErrLog("UPS A_Assign TAG : " + sTag );
+				ErrLog("UPS A_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_On",sAssTag + strON,0);
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS Assign_On item : " + sItem );
+				ErrLog("UPS Assign_On IODevice : " + sIODevice );
+				ErrLog("UPS Assign_On TAG : " + sTag );
+				ErrLog("UPS Assign_On Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_Dis",sAssTag + strDIS,0);
+		IF iAssReturn <> 0 THEN
+		 	IF iDebug_On THEN
+		 	  ErrLog("--------------------------------------------" );
+				ErrLog("UPS Assign_Dis item : " + sItem );
+				ErrLog("UPS Assign_Dis IODevice : " + sIODevice );
+				ErrLog("UPS Assign_Dis TAG : " + sTag );
+				ErrLog("UPS Assign_Dis Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		// Assign Trend Tag whether it exists or not
+	iAssReturn = Ass(-2,"T_" + sItem,"'" + sIODevice + sTag + sHTR + "'",0);
+		IF iAssReturn <> 0 THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS Trend_Assign item : " + sItem );
+				ErrLog("UPS Trend_Assign IODevice : " + sIODevice );
+				ErrLog("UPS Trend_Assign TAG : " + sTag );
+				ErrLog("UPS Trend_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+    iAssReturn = 0;
+  	
+END

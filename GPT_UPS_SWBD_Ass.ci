@@ -1,0 +1,245 @@
+
+MODULE INT WINDOW_OPEN_FAILED = -1;   //WinNew or WinNewAt failed
+MODULE INT DEFAULT_WINDOW_MODE = 773;	//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+
+! GPT RTS 2016/08/17 New
+FUNCTION UPS_SWBD_EquipPopup(STRING sTAGPFX, STRING sCluster, STRING sZone, INT iMeterConfig)
+!------------------------------------------------------
+Message("1.)UPS_SWBD_EquipPopup.sTAGPFX: ", sTAGPFX, 33);
+ErrLog("UPS Switch board Popup");
+!                   Equip Ass
+!------------------------------------------------------
+UPS_ASS_SWBD(sTAGPFX,sCluster,sZone,iMeterConfig);
+!------------------------------------------------------
+!                   Equip PopUp
+!------------------------------------------------------
+EquipAssMetadataWin("!UPS_SWBD_Main");
+!---------------------------------------------------
+END
+
+!********************** EATON 9395 UPS **********************
+! GPT RTS 2016/08/17 New
+FUNCTION UPS_ASS_SWBD(STRING sTAGPFX, STRING sCluster, STRING sZone, INT iMeterConfig)
+!Dim
+STRING sType,sEquip; 
+ErrLog("UPS Assign Switch board");
+!Init
+strDevice=sTAGPFX;								/* strTAG is the Device Name */
+strCluster=sCluster;
+IF strCluster <> "" THEN strCluster = strCluster + "."; END
+sType = "UPS_SWBD";								/* Type */
+sEquip = sTAGPFX;								/* Equip */
+
+
+!------------------------------------------------------
+!                   Equip Ass
+!------------------------------------------------------
+Ass(-2,"Cluster","'" + sCluster + "'",0);
+Ass(-2,"Zone","'" + sZone + "'",0);
+Ass(-2,"MeterConfig","'" + IntToStr(iMeterConfig) + "'",0);
+Ass(-2,"Type","'" + sType + "'",0);
+Ass(-2,"Equip","'" + sTAGPFX + "'",0);
+
+ASS_IODevice_To_EquipName(sTAGPFX,sCluster);  
+
+!------------------------------------------------------
+!        Variable and Alarm and Trend Tags Ass
+!------------------------------------------------------
+Equip_ASS_SWBD(sTAGPFX,strCluster);
+END
+
+FUNCTION ASS_Brkr_Lbls (STRING sTAGPFX,STRING strCluster, STRING sBrkr)
+	  STRING sType;
+	  STRING sLabel;
+	  STRING sRating;
+	  STRING sSupplyTo;
+	  STRING sTypeVar = sBrkr + "_TYPE";
+	  STRING sLabelVar = sBrkr + "_LBL";
+	  STRING sRatingVar = sBrkr + "_RATE";
+	  STRING sSupplyToVar = sBrkr + "_SUPTO";
+	  INT AssReturn;
+	  
+	  ErrLog("TAGPFX: " + sTAGPFX);
+	  ErrLog("SBRKR: " + sBrkr);
+	  ErrLog("sTypeVar: " +  sTypeVar);   
+	  ErrLog("sLabelVar: " +  sLabelVar);  
+	  ErrLog("sRatingVar: " +  sRatingVar); 
+	  ErrLog("sSupplyToVar: " +  sSupplyToVar);
+	  
+	  ErrLog("_______________________________________");
+	  sLabel = GetMecFdrLbl(sTAGPFX, sBrkr, "FEEDER");
+	  ErrLog("Return From GetMecFdrLbl1: " + sLabel);
+	  
+	  sType = GetMecFdrLbl(sTAGPFX, sBrkr, "BRKRTYP");
+	  ErrLog("Return From GetMecFdrLbl2: " + sType);
+	  
+	  sRating = GetMecFdrLbl(sTAGPFX, sBrkr, "RATING");
+	  ErrLog("Return From GetMecFdrLbl3: " + sRating);
+	  
+	  sSupplyTo = GetMecFdrLbl(sTAGPFX, sBrkr, "SUPPLYTO");
+	  ErrLog("Return From GetMecFdrLbl4: " + sSupplyTo);
+	  ErrLog("_______________________________________");
+	   
+		AssReturn = Ass(-2,sTypeVar,"'" + sType + "'",0);
+		ErrLog("Return From ASS1: " + IntToStr(AssReturn));
+		
+		AssReturn = Ass(-2,sLabelVar,"'" + sLabel + "'",0);
+		ErrLog("Return From ASS2: " + IntToStr(AssReturn));
+		
+		AssReturn = Ass(-2,sRatingVar,"'" + sRating + "'",0);
+		ErrLog("Return From ASS3: " + IntToStr(AssReturn));
+		
+		AssReturn = Ass(-2,sSupplyToVar,"'" + sSupplyTo + "'",0);
+		ErrLog("Return From ASS4: " + IntToStr(AssReturn));    
+		
+END
+
+!GPT RTSchwinger 2016/09/30
+FUNCTION Equip_ASS_SWBD(STRING sTAGPFX,STRING strCluster)
+	STRING sHTR = "HTR";
+	STRING sRPT = "RPT";
+   
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_1_Vzavg","\MeterQ1_4_1\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_1_Azavg","\MeterQ1_4_1\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_2_Vzavg","\MeterQ1_4_2\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_2_Azavg","\MeterQ1_4_2\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_3_Vzavg","\MeterQ1_4_3\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_3_Azavg","\MeterQ1_4_3\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_4_Vzavg","\MeterQ1_4_4\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_4_Azavg","\MeterQ1_4_4\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_5_Vzavg","\MeterQ1_4_5\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_5_Azavg","\MeterQ1_4_5\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_6_Vzavg","\MeterQ1_4_6\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_6_Azavg","\MeterQ1_4_6\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_7_Vzavg","\MeterQ1_4_7\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_7_Azavg","\MeterQ1_4_7\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_8_Vzavg","\MeterQ1_4_8\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_8_Azavg","\MeterQ1_4_8\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_9_Vzavg","\MeterQ1_4_9\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_9_Azavg","\MeterQ1_4_9\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_10_Vzavg","\MeterQ1_4_10\MMXU1\PPV\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"MeterQ1_4_10_Azavg","\MeterQ1_4_10\MMXU1\A\zavg",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_OC","\Q1\XCBR1\Pos_On",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_TR","\Q1\PTRC1\Tr",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster, "Q1");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_1_OC","\Q1_1\XCBR1\Pos_On",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_1_TR","\Q1_1\PTRC1\Tr",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_1");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_2_OC","\Q1_2\XCBR1\Pos_On",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_2_TR","\Q1_2\PTRC1\Tr",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_2");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_3_OC","\Q1_3\XCBR1\Pos_On",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_3_TR","\Q1_3\PTRC1\Tr",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_3");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_OC","\Q1_4\XCBR1\Pos_On",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_TR","\Q1_4\PTRC1\Tr",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_5_OC","\Q1_5\XCBR1\Pos_On",strCluster);
+     Ass_IEC_SWBD(sTAGPFX,"Q1_5_TR","\Q1_5\PTRC1\Tr",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_5");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_1_OC","\Q1_4_1\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_1");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_2_OC","\Q1_4_2\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_2");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_3_OC","\Q1_4_3\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_3");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_4_OC","\Q1_4_4\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_4");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_5_OC","\Q1_4_5\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_5");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_6_OC","\Q1_4_6\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_6");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_7_OC","\Q1_4_7\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_7");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_8_OC","\Q1_4_8\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_8");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_9_OC","\Q1_4_9\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_9");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_10_OC","\Q1_4_10\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_10");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_11_OC","\Q1_4_11\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_11");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_12_OC","\Q1_4_12\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_12");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_13_OC","\Q1_4_13\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_13");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_14_OC","\Q1_4_14\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_14");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_15_OC","\Q1_4_15\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_15");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_16_OC","\Q1_4_16\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_16");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_17_OC","\Q1_4_17\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_17");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_18_OC","\Q1_4_18\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_18");
+     Ass_IEC_SWBD(sTAGPFX,"Q1_4_19_OC","\Q1_4_19\XCBR1\Pos_On",strCluster);
+     ASS_Brkr_Lbls(sTAGPFX, strCluster,"Q1_4_19");
+END 
+
+!GPT RTSchwinger 2018/09/13
+FUNCTION Ass_IEC_SWBD(STRING sIODevice,STRING sItem,STRING sTag,STRING sCluster,STRING sHTR="")
+INT iAssReturn = 0;
+	ErrLog("Assign IEC SWBD:Cluster: " + sCluster + " IODev: " + sIODevice+ " Item: " + sItem + " Tag: " + sTag); 
+	iAssReturn = Ass(-2,sItem,sCluster + sIODevice + sTag,0);
+	ErrLog("Assign IEC SWBD: : " + IntToStr(iAssReturn) );
+	
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS SWBD Assign item : " + sItem );
+				ErrLog("UPS SWBD Assign IODevice : " + sIODevice );
+				ErrLog("UPS SWBD Assign TAG : " + sTag );
+				ErrLog("UPS SWBD Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem,"'" + sIODevice + sTag + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS SWBD A_Assign item : " + sItem );
+				ErrLog("UPS SWBD A_Assign IODevice : " + sIODevice );
+				ErrLog("UPS SWBD A_Assign TAG : " + sTag );
+				ErrLog("UPS SWBD A_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_On",sCluster + sIODevice + sTag + strON,0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS SWBD Assign_On item : " + sItem );
+				ErrLog("UPS SWBD Assign_On IODevice : " + sIODevice );
+				ErrLog("UPS SWBD Assign_On TAG : " + sTag );
+				ErrLog("UPS SWBD Assign_On Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+	iAssReturn = Ass(-2,"A_" + sItem + "_Dis",sCluster + sIODevice + sTag + strDIS,0);
+		IF iAssReturn THEN
+		 	IF iDebug_On THEN
+		 	  ErrLog("--------------------------------------------" );
+				ErrLog("UPS SWBD Assign_Dis item : " + sItem );
+				ErrLog("UPS SWBD Assign_Dis IODevice : " + sIODevice );
+				ErrLog("UPS SWBD Assign_Dis TAG : " + sTag );
+				ErrLog("UPS SWBD Assign_Dis Return : " + IntToStr(iAssReturn) );
+			END
+		END
+		iAssReturn = 0;
+		// Assign Trend Tag whether it exists or not
+	iAssReturn = Ass(-2,"T_" + sItem,"'" + sIODevice + sTag + sHTR + "'",0);
+		IF iAssReturn THEN
+			IF iDebug_On THEN
+			  ErrLog("--------------------------------------------" );
+				ErrLog("UPS SWBD Trend_Assign item : " + sItem );
+				ErrLog("UPS SWBD Trend_Assign IODevice : " + sIODevice );
+				ErrLog("UPS SWBD Trend_Assign TAG : " + sTag );
+				ErrLog("UPS SWBD Trend_Assign Return : " + IntToStr(iAssReturn) );
+			END
+		END
+    iAssReturn = 0;
+  	
+END 
+
+                               

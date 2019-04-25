@@ -1,0 +1,851 @@
+FUNCTION Sim_Win_Open()
+STRING sCluster = StrLeft(PageInfo(0),4);
+STRING sArea;
+INT iAreaCheck;
+INT iAreaMechCheck;
+STRING sAreaCheck;
+STRING sFullPageName = PageInfo(0);
+
+	//IF UserInfo(1) <> "rtschwinger" THEN
+	//	ErrLog("Sim_Win_Open: The boss isn't Logged In" );
+	//	RETURN;
+	//END
+	
+	WinGoto(0);
+	iAreaCheck = StrSearch(0,sFullPageName,"MDC");
+	sAreaCheck = StrMid(PageInfo(0),5,3);
+	
+	IF sAreaCheck = "MDC" THEN
+		sArea = "B1,B2 & B3";
+		Sim_Ass_MDC(sArea,sCluster);
+		RETURN;
+	END
+	
+	iAreaCheck = StrSearch(0,sFullPageName,"WEN2_MV");
+	sAreaCheck = StrMid(PageInfo(0),5,2);
+	
+	IF sAreaCheck = "MV" THEN
+		sArea = "MV";
+		Sim_Ass_MV(sArea,sCluster);
+		RETURN;
+	END
+
+	//Check if SDC is a substring of Page Info
+	iAreaCheck = StrSearch(5,sFullPageName,"SDC");
+	sAreaCheck = StrMid(sFullPageName,5,3);
+  //If SDC not substring of Page Info Assign SDC Area and pass to Sim Ass SDC
+	IF iAreaCheck <> -1 THEN
+		sArea = StrMid(sFullPageName,iAreaCheck + 4,4);
+		Sim_Ass_SDC(sArea,sCluster);
+		RETURN;
+	END
+	
+	//Check if PMDC is a substring of Page Info
+	iAreaCheck = StrSearch(5,sFullPageName,"PMDC");
+	ErrLog("iAreaCheck1: " + IntToStr(iAreaCheck));
+	IF iAreaCheck <> -1 THEN
+		IF iAreaCheck = 5 OR iAreaCheck = 7 THEN 
+			 iAreaMechCheck = StrSearch(17,sFullPageName,"pg");
+			 ErrLog("iAreaCheck2: " + IntToStr(iAreaMechCheck));
+			 IF iAreaMechCheck = -1 THEN
+		      sArea = StrRight(sFullPageName,6);
+		      ErrLog("Area Crit or IR: " + sArea);
+		      Sim_Ass_PMDC(sArea,sCluster);
+		   ELSE
+		   	  ErrLog("iAreaCheck3: " + IntToStr(iAreaMechCheck));
+		   	  sArea = StrMid(sFullPageName,iAreaCheck + 5,6);
+		   	  ErrLog("Area Mech: " + sArea);
+		   	  Sim_Ass_PMDC(sArea,sCluster);
+		   END
+	  END
+		
+		RETURN;
+	END
+
+	//Check if ATP is a substring of Page Info
+	iAreaCheck = StrSearch(0,sFullPageName,"ATP");
+	IF iAreaCheck <> -1 THEN
+		sArea = StrRight(sFullPageName,7);
+		Sim_Ass_ATP(sArea,sCluster);
+		RETURN;
+	END
+	
+	//WEN2_PMS_Architecture
+	//Check if PMS is a substring of Page Info
+	iAreaCheck = StrSearch(5,sFullPageName,"PMS");
+	
+  //If PMS not substring of Page Info Assign PMS Area and pass to Sim Ass HUB
+	IF iAreaCheck <> -1 THEN
+	    sArea = StrMid(sFullPageName,iAreaCheck + 4,4);
+			RETURN;
+	END
+END
+
+FUNCTION Sim_Ass_MV(STRING sArea,STRING sCluster)
+	Sim_Ass_MDC("B1_B2_B3",sCluster);
+	Sim_Ass_SDC("B1_1",sCluster);
+	Sim_Ass_SDC("B1_2",sCluster);
+	Sim_Ass_SDC("B2_1",sCluster);
+	Sim_Ass_SDC("B3_1",sCluster);
+	Sim_Ass_SDC("B3_2",sCluster);
+	EquipAssMetadataWin("!mv_colorsim_t2");	
+END
+
+FUNCTION Sim_Ass_MDC(STRING sArea,STRING sCluster)
+  STRING sMDC;
+	!Title
+	Ass(-2,"Area","'" + sArea + "'",0);
+	!Source Volt
+	Ass(-2,"MDC_B1_Bus",sCluster + "." + "MDC_B1_ION7650\MMXU1\PPV\zavg",0);
+	Ass(-2,"MDC_B2_Bus",sCluster + "." + "MDC_B2_ION7650\MMXU1\PPV\zavg",0);	
+	Ass(-2,"MDC_B3_Bus",sCluster + "." + "MDC_B3_ION7650\MMXU1\PPV\zavg",0);	
+	!Relay B-1
+	sMDC = "B1"
+	Ass(-2,"MDC_" + sMDC + "_On",sCluster + "." + "MDC_" + sMDC + "_VCB\XCBR1\Pos_On",0);
+	Ass(-2,"MDC_" + sMDC + "_Trip",sCluster + "." + "MDC_" + sMDC + "_VCB\PTRC1\Tr",0);
+	!Relay B-2
+	sMDC = "B2"
+	Ass(-2,"MDC_" + sMDC + "_On",sCluster + "." + "MDC_" + sMDC + "_VCB\XCBR1\Pos_On",0);
+	Ass(-2,"MDC_" + sMDC + "_Trip",sCluster + "." + "MDC_" + sMDC + "_VCB\PTRC1\Tr",0);
+	!Relay B-3
+	sMDC = "B3"
+	Ass(-2,"MDC_" + sMDC + "_On",sCluster + "." + "MDC_" + sMDC + "_VCB\XCBR1\Pos_On",0);
+	Ass(-2,"MDC_" + sMDC + "_Trip",sCluster + "." + "MDC_" + sMDC + "_VCB\PTRC1\Tr",0);
+	!Sim Win Popup
+	IF sArea <> "MV" THEN
+		EquipAssMetadataWin("!mdc_colorsim");
+	END
+END
+
+FUNCTION Sim_Ass_SDC(STRING sArea,STRING sCluster)
+STRING sVCB;
+STRING sMDC;
+STRING sSDC = "SDC_";
+INT i;
+
+	//Title
+	Ass(-2,"Area","'" + sArea + "'",0);
+	//VCB-INC0 VCB-INC1 VCB-INC2
+	IF sArea = "B1_1" OR sArea = "B2_1" OR sArea = "B3_1" THEN
+	   sVCB = sSDC + sArea + "_INC_REF620";
+		 Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+		 Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	END
+	//Set a-k for B1-1, B1-2, B3-1 and B3-2 -- Set m for all but B3-2.
+	IF (sArea = "B1_1" OR sArea = "B1_2" OR sArea = "B3_1" OR sArea = "B3_2") THEN
+	    !VCB-a
+	    sVCB = sSDC + sArea + "_a_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-b
+	    sVCB = sSDC + sArea + "_b_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-c
+	    sVCB = sSDC + sArea + "_c_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-d
+	    sVCB = sSDC + sArea + "_d_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-e
+	    sVCB = sSDC + sArea + "_e_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-f
+	    sVCB = sSDC + sArea + "_f_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-g
+	    sVCB = sSDC + sArea + "_g_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-h
+	    sVCB = sSDC + sArea + "_h_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    sVCB = sSDC + sArea + "_h_REF620";
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-i
+	    sVCB = sSDC + sArea + "_i_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-j
+	    sVCB = sSDC + sArea + "_j_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-k
+	    sVCB = sSDC + sArea + "_k_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    IF sArea = "B1_1" OR sArea = "B1_2" OR sArea = "B3_1" THEN
+	       !VCB-m
+	       sVCB = sSDC + sArea + "_m_REF620";
+	       IF iDebug_On THEN
+             ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+         END
+	       Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	       Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    END
+	END
+	// Set B1-1,B1-2,B3-1 and B3-2 (q,r, and spare) set (s) for all but B3-2 not needed. 
+	IF sArea = "B1_1" OR sArea = "B1_2" OR sArea = "B3_1" OR sArea = "B3_2" THEN  
+	    //VCB-q
+	    sVCB = sSDC + sArea + "_q_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    //VCB-r
+	    sVCB = sSDC + sArea + "_r_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    //VCB Spare
+	    sVCB = sSDC + sArea + "_SPARE_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    IF sArea = "B1_1" OR sArea = "B1_2" OR sArea = "B3_2" THEN
+	       //VCB-s
+	       sVCB = sSDC + sArea + "_s_REF620";
+	       IF iDebug_On THEN
+             ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+         END
+	       Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	       Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	  	END
+	END   
+	// Set B1-1 and B1-2 (n,o, or p) for Tower 1 Not needed for Tower 2
+	IF (sArea = "B1_1" OR sArea = "B1_2") THEN
+	    !VCB-n
+	    sVCB = sSDC + sArea + "_n_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-o
+	    sVCB = sSDC + sArea + "_o_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-p
+	    sVCB = sSDC + sArea + "_p_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+	    Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	END    
+	// Set B1-1 TIE
+	IF sArea = "B1_1" THEN
+	    //VCB-B1-1 Tie
+	    sVCB = sSDC + sArea + "_TIE_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+      Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+  END
+  // Set TIE1 and TIE2 B1-2, B3-2 and exclude B3-1 from setting TIE2
+  IF sArea = "B1_2" OR sArea = "B3_1" OR sArea = "B3_2" THEN
+      !VCB-B1-2 Tie1
+	    sVCB = sSDC + sArea + "_TIE1_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+      Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    IF sArea = "B1_2" OR sArea = "B3_2" THEN
+         !VCB-B1-2 Tie2
+	       sVCB = sSDC + sArea + "_TIE2_REF620";
+	       IF iDebug_On THEN
+             ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+         END
+         Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	       Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    END
+  END
+  // Set TIE2 and TIE3 B2-1
+  IF sArea = "B2_1" THEN
+      !VCB-B2-1 Tie2
+	    sVCB = sSDC + sArea + "_TIE2_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+      Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+	    !VCB-B2-1 Tie3
+	    sVCB = sSDC + sArea + "_TIE3_REF620";
+	    IF iDebug_On THEN
+          ErrLog("Sim_Ass_SDC sVCB : " + sVCB);
+      END
+      Ass(-2,sVCB + "_On",sCluster + "." + sVCB + "\XCBR1\Pos_On",0);
+	    Ass(-2,sVCB + "_Trip",sCluster + "." + sVCB + "\PTRC1\Tr",0);
+  END
+	
+	!Volt Data
+	Ass(-2,"SDC_B1_1_Bus",sCluster + "." + "SDC_" + "B1_1" + "_ION7650_1\MMXU1\PPV\zavg",0);
+	Ass(-2,"SDC_B1_1_Bus",sCluster + "." + "SDC_" + "B1_1" + "_ION7650_2\MMXU1\PPV\zavg",0);
+	Ass(-2,"SDC_B1_2_Bus",sCluster + "." + "SDC_" + "B1_2" + "_ION7650_1\MMXU1\PPV\zavg",0);
+	Ass(-2,"SDC_B3_1_Bus",sCluster + "." + "SDC_" + "B3_1" + "_ION7650_1\MMXU1\PPV\zavg",0);
+	//Ass(-2,"SDC_B3_2_Bus",sCluster + "." + "SDC_" + "B3_2" + "_ION7650_1\MMXU1\PPV\zavg",0);
+	Ass(-2,"SDC_B2_1_Bus",sCluster + "." + "SDC_" + "B2_1" + "_ION7650_1\MMXU1\PPV\zavg",0);
+	Ass(-2,"MDC_B1_Bus",sCluster + "." + "MDC_" + StrLeft(sArea,2) + "_ION7650\MMXU1\PPV\zavg",0);
+	ErrLog("Sim_Ass_SDC  : MDC_B1_Bus Tag " + "MDC_" + StrLeft(sArea,2) + "_ION7650\MMXU1\PPV\zavg");
+	Ass(-2,"MDC_B2_Bus",sCluster + "." + "MDC_" + StrLeft(sArea,2) + "_ION7650\MMXU1\PPV\zavg",0);
+	ErrLog("Sim_Ass_SDC  : MDC_B2_Bus Tag " + "MDC_" + StrLeft(sArea,2) + "_ION7650\MMXU1\PPV\zavg");
+	Ass(-2,"MDC_B1_On",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\XCBR1\Pos_On",0);
+	Ass(-2,"MDC_B1_Trip",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\PTRC1\Tr",0);
+	Ass(-2,"MDC_B2_On",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\XCBR1\Pos_On",0);
+	Ass(-2,"MDC_B2_Trip",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\PTRC1\Tr",0);
+	Ass(-2,"MDC_B3_On",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\XCBR1\Pos_On",0);
+	Ass(-2,"MDC_B3_Trip",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\PTRC1\Tr",0);
+	!Sim Win Popup
+	IF sArea <> "MV" THEN
+  	IF sArea = "B3_1" OR sArea = "B3_2" THEN
+				EquipAssMetadataWin("!sdc_colorsim_t2");
+				Ass(-2,"MDC_B3_Trip",sCluster + "." + "MDC_" + StrLeft(sArea,3) + "_REF620\PTRC1\Tr",0);
+		ELSE
+		  	EquipAssMetadataWin("!sdc_colorsim_t1");
+		END
+	END
+END
+
+FUNCTION Sim_Ass_PMDC(STRING sArea,STRING sCluster)
+STRING sACB;
+STRING sMCCB;
+STRING sSDC= StrLeft(sArea,5);
+STRING sACBTagPrefix = sArea;
+STRING sPMDCName = sArea;
+INT i;
+ 
+	!Title
+	Ass(-2,"Area","'" + sArea + "'",0);
+	Ass(-2,"Etc_Hidden","'0'",0);
+	Ass(-2,"LB_Hidden","'0'",0);
+	
+	IF StrRight(sArea,1) <> "q" OR StrRight(sArea,1) <> "r" OR StrRight(sArea,1) <> "s" THEN
+		Ass(-2,"LB_Hidden","'1'",0);
+		Ass(-2,"Etc_Hidden","'1'",0);
+	END
+	
+	Ass(-2,"IR_Hidden","'1'",0);
+	
+	IF StrRight(sArea,1) = "i" THEN
+		Ass(-2,"IR_Hidden","'0'",0);
+		Ass(-2,"Etc_Hidden","'1'",0);
+	END
+	
+	!All PMDCs have these three breakers
+	!UCB Setup substitutions for Utility Breaker.
+	sACB = "U";
+	Ass(-2,"CB_" + sACB + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On",0);
+	Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
+	Ass(-2,"CB_" + sACB + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Test",0);
+	Ass(-2,"CB_" + sACB + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Out",0);
+	TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On")
+	!GCB Setup substitutions for Generator Breaker.
+	sACB = "G";
+	Ass(-2,"CB_" + sACB + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On",0);
+	Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
+	Ass(-2,"CB_" + sACB + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Test",0);
+	Ass(-2,"CB_" + sACB + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Out",0);
+	TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On") 
+	!XCB
+	sACB = "X";
+	Ass(-2,"CB_" + sACB + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On",0);
+	Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
+	TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On") 
+	
+	!LCB
+	IF (StrRight(sArea,1) <> "q") OR (StrRight(sArea,1) <> "r") OR (StrRight(sArea,5) <> "s")  THEN
+				//IF this is a critical or IR PMDC and not a Mechanical PMDC Inialize and show the Load Bank Breaker.
+				sACB = "LB";
+				Ass(-2,"CB_" + sACB + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB +"\XCBR1\Pos_On",0);
+				Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
+				Ass(-2,"CB_" + sACB + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Test",0);
+				Ass(-2,"CB_" + sACB + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB +"\XCBR1\CBRkdPos\Out",0);
+				Ass(-2,"CB_" + sACB + "_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\MMXU1\PPV\phsAB",0);
+				TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On");
+  END
+  
+    i = 0;
+    ErrLog("PMDC Name: " + sPMDCName);
+    SELECT CASE sPMDCName
+        CASE "B1_1_a","B1_1_b","B3_1_a","B3_1_b","B3_1_c","B3_1_d","B3_2_a","B3_2_b","B3_2_c"
+           FOR i = 0 TO 3 DO
+              IF i < 4 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+                 TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                  TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+              END
+           END
+        CASE "B1_1_i","B1_2_i","B3_1_i","B3_2_i"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+                 TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+              END
+           END
+        CASE "B1_1_q"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B1_2_q"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B1_1_r"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B1_2_r"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B1_1_s"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B1_2_s"
+           FOR i = 0 TO 6 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B3_1_q"
+           FOR i = 0 TO 16 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B3_2_q"
+           FOR i = 0 TO 15 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B3_1_r"
+           FOR i = 0 TO 15 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B3_2_r"
+           FOR i = 0 TO 15 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE "B3_2_s"
+           FOR i = 0 TO 18 DO
+              IF i < 5 THEN
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
+              ELSE
+                 Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
+                 Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
+              END
+           END
+        CASE ELSE
+           ErrLog("Invalide Case PMDC Does not exist");
+    END SELECT
+  
+  !M340 Data
+	Ass(-2,"DI_Auto_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" + "\GGIO\SS\Auto\Mode",0);
+  Ass(-2,"DI_Fan_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +    "\GGIO\XFMR\Fan\Status" ,0);						
+	Ass(-2,"DI_Door_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +   "\GGIO\XFMR\Door\Status",0);
+	Ass(-2,"DI_XTemp_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" + "\GGIO\XFMR\Temp\Alarm" ,0);
+	Ass(-2,"DI_FanFlt_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" + "\CCGR\FanCtlFl\stVal"  ,0);
+	Ass(-2,"DI_125PS1_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" + "\GGIO\DC\PS1\Health"   ,0);
+	Ass(-2,"DI_125PS2_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +  "\GGIO\DC\PS2\Health"   ,0);
+	Ass(-2,"DI_24PS1_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +  "\GGIO\DC\24VPS1\Health",0);
+	Ass(-2,"DI_24PS2_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +  "\GGIO\DC\24VPS2\Health",0);
+	Ass(-2,"DI_RP_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +  "\GGIO\Bus\Rev\Pwr",0);     
+  Ass(-2,"DI_86U_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +  "\GGIO\52U\CB\86Trip",0);
+  Ass(-2,"DI_86G_On",sCluster + "." + "PMDC_" + sPMDCName + "_M340" +  "\GGIO\52G\CB\86Trip",0);       
+	!Volt Data
+	Ass(-2,"SDC_Bus",sCluster + "." + "SDC_" + sSDC + "_ION7650\MMXU1\PPV\phsAB",0);
+	Ass(-2,"INC_REF620_On",sCluster + "." + "SDC_" + sSDC + "_INC_REF620\XCBR1\Pos_On",0);
+	Ass(-2,"FDR_REF620_On",sCluster + "." + "SDC_" + sPMDCName + "_REF620\XCBR1\Pos_On",0);
+	Ass(-2,"52_G_Volt",sCluster + "." + "GEN_" + sPMDCName + "_Genset\MMXU\REG\VoltsAB",0);
+	Ass(-2,"Gen_Hz",sCluster + "." + "Gen_" + sPMDCName + "_GenSet\MMXU2\GenFreq",0);
+	Ass(-2,"Gen_Trip",sCluster + "." + "Gen_" + sPMDCName + "_GenSet\GGIO3\EngAlm",0);
+	Ass(-2,"LOAD_BANK_On",sCluster + ".LOAD_BANK\LDPH\LDBK_On\stVal",0);
+	Ass(-2,"ION7650_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_ION7650\MMXU1\PPV\zavg",0);
+	
+	IF StrRight(sPMDCName,1) = "i" THEN
+		Ass(-2,"CB_1_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_1\MMXU1\PPV\zavg",0);
+		Ass(-2,"CB_2_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_2\MMXU1\PPV\zavg",0);
+		Ass(-2,"CB_3_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_3\MMXU1\PPV\zavg",0);
+		Ass(-2,"CB_4_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_4\MMXU1\PPV\zavg",0);
+  END
+	
+	!Sim Win Popup
+	IF StrRight(sPMDCName,1) = "q" OR StrRight(sPMDCName,1) = "r" OR StrRight(sPMDCName,1) = "s" THEN
+	   	EquipAssMetadataWin("!mpmdc_colorsim");
+  END
+  
+  IF StrRight(sPMDCName,1) = "i" THEN
+      EquipAssMetadataWin("!irpmdc_colorsim");
+  END
+  	
+  IF StrRight(sPMDCName,1) = "a" OR  StrRight(sPMDCName,1) = "b" OR StrRight(sPMDCName,1) = "c" OR StrRight(sPMDCName,1) = "d" THEN	
+      EquipAssMetadataWin("!pmdc_colorsim");
+  END	
+END
+
+FUNCTION Sim_Ass_ATP(STRING sArea ,STRING sCluster)
+	STRING sACB;
+
+	!Title
+	Ass(-2,"Area","'" + sArea  + "'",0);
+
+	sACB = "1" //WEN2.IRSWBD__B1_1_aQ1_1\XCBR1\Pos_On
+	Ass(-2,"IR_Q1_" + sACB + "_On", sCluster + ".IRSWBD" + sArea  + "_Q1_" + sACB + "\XCBR1\Pos_On",0);
+    ErrLog("IRSWBD Tag: " + sCluster + ".IRSWBD_" + sArea  + "Q1_" + sACB + "\XCBR1\Pos_On");
+    ErrLog("ATP Tag: " + sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N");
+	Ass(-2,"IR_Q1_" + sACB + "_Trip", sCluster + ".IRSWBD" + sArea  + "_Q1_" + sACB + "\PTRC1\Tr",0);
+	Ass(-2,"Q1_N_"  + sACB + "_On", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N" + "\XCBR1\Pos_On",0);
+	Ass(-2,"Q1_N_"  + sACB + "_Discon", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N" + "\XCBR1\Pos_On\In",0);
+	Ass(-2,"Q2_A_"  + sACB + "_On", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q2_A" + "\XCBR1\Pos_On",0);
+	Ass(-2,"Q2_A_"  + sACB + "_Discon", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q2_A" + "\XCBR1\Pos_On\In",0);
+
+	sACB = "2"
+	Ass(-2,"IR_Q1_" + sACB + "_On", sCluster + ".IRSWBD" + sArea  + "_Q1_" + sACB + "\XCBR1\Pos_On",0);
+	Ass(-2,"IR_Q1_" + sACB + "_Trip", sCluster + ".IRSWBD" + sArea  + "_Q1_" + sACB + "\PTRC1\Tr",0);
+	Ass(-2,"Q1_N_"  + sACB + "_On", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N" + "\XCBR1\Pos_On",0);
+	Ass(-2,"Q1_N_"  + sACB + "_Discon", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N" + "\XCBR1\Pos_On\In",0);
+	Ass(-2,"Q2_A_"  + sACB + "_On", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q2_A" + "\XCBR1\Pos_On",0);
+	Ass(-2,"Q2_A_"  + sACB + "_Discon", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q2_A" + "\XCBR1\Pos_On\In",0);
+	
+	sACB = "3"
+	Ass(-2,"IR_Q1_" + sACB + "_On", sCluster + ".IRSWBD" + sArea  + "_Q1_" + sACB + "\XCBR1\Pos_On",0);
+	Ass(-2,"IR_Q1_" + sACB + "_Trip", sCluster + ".IRSWBD" + sArea  + "_Q1_" + sACB + "\PTRC1\Tr",0);
+	Ass(-2,"Q1_N_"  + sACB + "_On", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N" + "\XCBR1\Pos_On",0);
+	Ass(-2,"Q1_N_"  + sACB + "_Discon", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q1_N" + "\XCBR1\Pos_On\In",0);
+	Ass(-2,"Q2_A_"  + sACB + "_On", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q2_A" + "\XCBR1\Pos_On",0);
+	Ass(-2,"Q2_A_"  + sACB + "_Discon", sCluster + ".ATP" + sArea  + "_" + sACB + "_Q2_A" + "\XCBR1\Pos_On\In",0);
+	
+	!ACB-1
+	sACB = "Q1_1";
+	Ass(-2,sACB + "_On",sCluster + "." + "PMDC_" + sArea  + sACB + "\XCBR1\Pos_On",0);
+	!ACB-2
+	sACB = "Q1_2";
+	Ass(-2,sACB + "_On",sCluster + "." + "PMDC_" + sArea   + sACB + "\XCBR1\Pos_On",0);
+	!ACB-3
+	sACB = "Q1_3";
+	Ass(-2,sACB + "_On",sCluster + "." + "PMDC_" + sArea  + sACB + "\XCBR1\Pos_On",0);
+	!ACB-U
+	sACB = "U";
+	Ass(-2,"UCB52_" + sACB + "_On",sCluster + "." + "PMDC_" + sArea  + sACB + "\XCBR1\Pos_On",0);
+	!ACB-E
+	sACB = "G";
+	Ass(-2,"GCB52_" + sACB + "_On",sCluster + "." + "PMDC_" + sArea  + sACB + "\XCBR1\Pos_On",0);
+	
+	!Volt Data
+	Ass(-2,"ION7650_Volt",sCluster + "." + "PMDC_" + sArea  + "_ION7650\MMXU1\PPV\zavg",0);
+	Ass(-2,"ATP_1_Volt",sCluster + ".ATP_" + sArea  + "_1_METER1\MMXU1\PPV\zavg",0);
+	Ass(-2,"ATP_2_Volt",sCluster + ".ATP_" + sArea  + "_2_METER2\MMXU1\PPV\zavg",0);
+	Ass(-2,"ATP_3_Volt",sCluster + ".ATP_" + sArea  + "_3_METER3\MMXU1\PPV\zavg",0);
+	!Sim Win Popup
+	EquipAssMetadataWin("!atp_irswbd_sim");
+END
+
+FUNCTION Sim_Ass_HUB(STRING sArea ,STRING sCluster)
+	INT i, j;
+	STRING sHUB;
+			
+	!Title
+	Ass(-2,"Area","'" + sArea  + "'",0);
+	
+	!HUB_CCR_SW_S1
+	sHUB = "HUB_CCR_SW_S1"; 
+	//Ass(-2,"HUB" + IntToStr(j) + "_Title","'" + sHUB + "'",0);
+	Ass(-2,sHUB + "_FLED",sCluster + "." + sHUB + "\FLED",0);
+	Ass(-2,sHUB + "_PS1",sCluster + "." + sHUB + "\PS\Power1",0); 
+	Ass(-2,sHUB + "_PS2",sCluster + "." + sHUB + "\PS\Power2",0);
+	Ass(-2,sHUB + "_M4" + "_Port01",sCluster + "." + sHUB + "\M4" + "_Port01",0);
+	Ass(-2,sHUB + "_M4" + "_Port02",sCluster + "." + sHUB + "\M4" + "_Port02",0);
+	Ass(-2,sHUB + "_M4" + "_Port03",sCluster + "." + sHUB + "\M4" + "_Port03",0);
+	Ass(-2,sHUB + "_M4" + "_Port04",sCluster + "." + sHUB + "\M4" + "_Port04",0);
+	
+	FOR i = 1 TO 3 DO
+		FOR j = 1 TO 8 DO
+			    ErrLog(sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j));
+			    Ass(-2,sHUB + "_M" + IntToStr(i) + "_Port0" + IntToStr(j),sCluster + "." + sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j),0); 
+		END
+	END
+  
+    !HUB_SSNR_SW_S2
+	sHUB = "HUB_SSNR_SW_S2";
+	//Ass(-2,"HUB" + IntToStr(j) + "_Title","'" + sHUB + "'",0);
+	Ass(-2,sHUB + "_FLED",sCluster + "." + sHUB + "\FLED",0);
+	Ass(-2,sHUB + "_PS1",sCluster + "." + sHUB + "\PS\Power1",0); 
+	Ass(-2,sHUB + "_PS2",sCluster + "." + sHUB + "\PS\Power2",0);
+	Ass(-2,sHUB + "_M4" + "_Port01",sCluster + "." + sHUB + "\M4" + "_Port01",0);
+	Ass(-2,sHUB + "_M4" + "_Port02",sCluster + "." + sHUB + "\M4" + "_Port02",0);
+	Ass(-2,sHUB + "_M4" + "_Port03",sCluster + "." + sHUB + "\M4" + "_Port03",0);
+	Ass(-2,sHUB + "_M4" + "_Port04",sCluster + "." + sHUB + "\M4" + "_Port04",0);
+	
+	FOR i = 1 TO 3 DO
+		FOR j = 1 TO 8 DO
+			    ErrLog(sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j));
+			    Ass(-2,sHUB + "_M" + IntToStr(i) + "_Port0" + IntToStr(j),sCluster + "." + sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j),0); 
+		END
+	END
+	
+	!HUB_SSNR_SW_S3
+	sHUB = "HUB_SSNR_SW_S3";
+    //Ass(-2,"HUB" + IntToStr(j) + "_Title","'" + sHUB + "'",0);
+	Ass(-2,sHUB + "_FLED",sCluster + "." + sHUB + "\FLED",0);
+	Ass(-2,sHUB + "_PS1",sCluster + "." + sHUB + "\PS\Power1",0); 
+	Ass(-2,sHUB + "_PS2",sCluster + "." + sHUB + "\PS\Power2",0);
+	Ass(-2,sHUB + "_M4" + "_Port01",sCluster + "." + sHUB + "\M4" + "_Port01",0);
+	Ass(-2,sHUB + "_M4" + "_Port02",sCluster + "." + sHUB + "\M4" + "_Port02",0);
+	Ass(-2,sHUB + "_M4" + "_Port03",sCluster + "." + sHUB + "\M4" + "_Port03",0);
+	Ass(-2,sHUB + "_M4" + "_Port04",sCluster + "." + sHUB + "\M4" + "_Port04",0);
+	
+	FOR i = 1 TO 3 DO
+		FOR j = 1 TO 8 DO
+			    ErrLog(sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j));
+			    Ass(-2,sHUB + "_M" + IntToStr(i) + "_Port0" + IntToStr(j),sCluster + "." + sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j),0); 
+		END
+	END
+	
+    !HUB_PMS_RACK_SW_S4
+	sHUB = "HUB_PMS_RACK_SW_S4";
+	
+	//Ass(-2,"HUB" + IntToStr(j) + "_Title","'" + sHUB + "'",0);
+	Ass(-2,sHUB + "_FLED",sCluster + "." + sHUB + "\FLED",0);
+	Ass(-2,sHUB + "_PS1",sCluster + "." + sHUB + "\PS\Power1",0); 
+	Ass(-2,sHUB + "_PS2",sCluster + "." + sHUB + "\PS\Power2",0);
+	Ass(-2,sHUB + "_M4" + "_Port01",sCluster + "." + sHUB + "\M4" + "_Port01",0);
+	Ass(-2,sHUB + "_M4" + "_Port02",sCluster + "." + sHUB + "\M4" + "_Port02",0);
+	Ass(-2,sHUB + "_M4" + "_Port03",sCluster + "." + sHUB + "\M4" + "_Port03",0);
+	Ass(-2,sHUB + "_M4" + "_Port04",sCluster + "." + sHUB + "\M4" + "_Port04",0);
+	
+	FOR i = 1 TO 3 DO
+		FOR j = 1 TO 8 DO
+			    ErrLog(sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j));
+			    Ass(-2,sHUB + "_M" + IntToStr(i) + "_Port0" + IntToStr(j),sCluster + "." + sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j),0); 
+		END
+	END
+	
+	 !HUB_PMS_RACK_SW_S5
+	sHUB = "HUB_PMS_RACK_SW_S5";
+	//Ass(-2,"HUB" + IntToStr(j) + "_Title","'" + sHUB + "'",0);
+	Ass(-2,sHUB + "_FLED",sCluster + "." + sHUB + "\FLED",0);
+	Ass(-2,sHUB + "_PS1",sCluster + "." + sHUB + "\PS\Power1",0); 
+	Ass(-2,sHUB + "_PS2",sCluster + "." + sHUB + "\PS\Power2",0);
+	Ass(-2,sHUB + "_M4" + "_Port01",sCluster + "." + sHUB + "\M4" + "_Port01",0);
+	Ass(-2,sHUB + "_M4" + "_Port02",sCluster + "." + sHUB + "\M4" + "_Port02",0);
+	Ass(-2,sHUB + "_M4" + "_Port03",sCluster + "." + sHUB + "\M4" + "_Port03",0);
+	Ass(-2,sHUB + "_M4" + "_Port04",sCluster + "." + sHUB + "\M4" + "_Port04",0);
+	
+	FOR i = 1 TO 3 DO
+		FOR j = 1 TO 8 DO
+			    ErrLog(sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j));
+			    Ass(-2,sHUB + "_M" + IntToStr(i) + "_Port0" + IntToStr(j),sCluster + "." + sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j),0); 
+		END
+	END
+	
+	 !HUB_PMS_RACK_SW_S6
+	sHUB = "HUB_PMS_RACK_SW_S6";
+	
+	//Ass(-2,"HUB" + IntToStr(j) + "_Title","'" + sHUB + "'",0);
+	Ass(-2,sHUB + "_FLED",sCluster + "." + sHUB + "\FLED",0);
+	Ass(-2,sHUB + "_PS1",sCluster + "." + sHUB + "\PS\Power1",0); 
+	Ass(-2,sHUB + "_PS2",sCluster + "." + sHUB + "\PS\Power2",0);
+	Ass(-2,sHUB + "_M4" + "_Port01",sCluster + "." + sHUB + "\M4" + "_Port01",0);
+	Ass(-2,sHUB + "_M4" + "_Port02",sCluster + "." + sHUB + "\M4" + "_Port02",0);
+	Ass(-2,sHUB + "_M4" + "_Port03",sCluster + "." + sHUB + "\M4" + "_Port03",0);
+	Ass(-2,sHUB + "_M4" + "_Port04",sCluster + "." + sHUB + "\M4" + "_Port04",0);
+	
+	FOR i = 1 TO 3 DO
+		FOR j = 1 TO 8 DO
+			    ErrLog(sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j));
+			    Ass(-2,sHUB + "_M" + IntToStr(i) + "_Port0" + IntToStr(j),sCluster + "." + sHUB + "\M" + IntToStr(i) + "_Port0" + IntToStr(j),0); 
+		END
+	END
+END
+
+FUNCTION Sim_Ass_IRSWBD(STRING sArea ,STRING sCluster)
+//	INT i, j;
+//	STRING sBoard[7];
+//			
+//	!Title
+//	Ass(-2,"Area","'" + sArea  + "'",0);
+//	
+//	SELECT CASE 
+//	    CASE "2M"
+//	        sBoard[1] = "_1_a";
+//	        sBoard[2] = "_1_b";
+//	        sBoard[3] = "_1_c";
+//	        sBoard[4] = "_1_d"; 
+//	        sBoard[5] = "_2_a"; 
+//	        sBoard[6] = "_2_b";
+//	        sBoard[7] = "_2_c";
+//	        FOR i = 1 TO 7 DO
+//	        	FOR j = 1 TO 3 DO
+//	        		    ErrLog("IRSWBD_" + IntToStr(i) + "_" + IntToStr(j) + "_On");
+//	        		    Ass(-2,"IRSWBD_" + IntToStr(i) + "_" + IntToStr(j) + "_On",sCluster + ".IRSWBD_" + "B1" + sBoard[i] + "Q1_" + IntToStr(j) + "\XCBR1\Pos_On",0);
+//	        		    ErrLog("IRSWBD_" + IntToStr(i) + "_" + IntToStr(j) + "_Trip");
+//	        		    Ass(-2,"IRSWBD_" + IntToStr(i) + "_" + IntToStr(j) + "_Trip",sCluster + ".IRSWBD_" + "B1" + sBoard[i] + "Q1_" + IntToStr(j) + "\PTRC1\Tr",0);
+//	        	END
+//	        END
+//	CASE "3M"
+//	sBoard1 = "_1_e";
+//	sBoard2 = "_1_f";
+//	sBoard3 = "_1_g";
+//	sBoard4 = "_2_d"; 
+//	sBoard5 = "_2_e"; 
+//	sBoard6 = "_2_f";
+//	sBoard7 = "_2_g";
+//	CASE "4M"
+//	sBoard1 = "_1_h";
+//	sBoard2 = "_1_j";
+//	sBoard3 = "_1_k";
+//	sBoard4 = "_1_m"; 
+//	sBoard5 = "_2_h"; 
+//	sBoard6 = "_2_j";
+//	sBoard7 = "_2_k";
+//	CASE "5M"
+//	sBoard1 = "_1_n";
+//	sBoard2 = "_1_o";
+//	sBoard3 = "_1_p";
+//	sBoard4 = "_2_m"; 
+//	sBoard5 = "_2_n"; 
+//	sBoard6 = "_2_o";
+//	sBoard7 = "_2_p";
+//    END SELECT
+//	
+END
+	

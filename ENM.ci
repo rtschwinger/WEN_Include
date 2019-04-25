@@ -1,0 +1,48 @@
+//!ENM Event
+FUNCTION WEN_CCR_RST_ENM_Test()
+	Sleep(10)
+	WEN2.ENM_EMAIL\TestTag = 0;
+END
+
+//!ENM Mail TEST
+FUNCTION _WEN_CCR_ENM_Mail_TEST()
+
+	IF GetPriv(PLS_Sec_Operator1,0) THEN
+		FormNew("ENM Confirm",40,4,8)
+		FormPrompt(13,0,"Send Test Mail ?");
+		FormButton(5,3,"   OK   ", 0, 1);
+		FormButton(25,3," Cancel ", 0, 2);
+		IF FormRead(0)=0 THEN
+			WEN2.ENM_EMAIL\TestTag = 1;
+			SOEEventAdd(StrToTimestamp(TimeToStr(TimeCurrent(),10)),"CCR Send ENM Test Mail");
+			//!SOEEventAdd(StrToTimestamp(TimeToStr(TimeCurrent(),10)),UserInfo(1) + " : " + "Send ENM Test Mail");
+		END
+	ELSE
+		Message("Error","No Permission",48);
+	END
+END
+
+//!**************************************************************
+
+//!ENM Event
+FUNCTION WEN_CCR_RST_ENM_Test_OnCall()
+	Sleep(10)
+	WEN2.ENM_EMAIL\CCR_ENM_OnCall_Test = 0;
+END
+
+//!ENM Mail TEST
+FUNCTION _WEN_CCR_ENM_OnCall_TEST()
+
+	IF GetPriv(PLS_Sec_Operator1,0) THEN
+		FormNew("ENM Confirm",40,4,8)
+		FormPrompt(13,0,"Send Test OnCall ?");
+		FormButton(5,3,"   OK   ", 0, 1);
+		FormButton(25,3," Cancel ", 0, 2);
+		IF FormRead(0)=0 THEN
+			WEN2.ENM_EMAIL\CCR_ENM_OnCall_Test = 1;
+			SOEEventAdd(StrToTimestamp(TimeToStr(TimeCurrent(),10)),"CCR Send ENM Test OnCall");
+		END
+	ELSE
+		Message("Error","You do not have the correct priveleges to perform this operation",48);
+	END
+END

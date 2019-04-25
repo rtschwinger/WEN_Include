@@ -1,0 +1,43 @@
+
+
+INT
+FUNCTION GetDCCSummary(STRING sCluster, STRING sTAGPFX, STRING sDCCharger)
+			INT iDCCSum;
+			STRING sHiDCTag = sCluster + "." + sTAGPFX + "\GGIO\" + sDCCharger + "\HighDCVolt";
+			STRING sLoDCTag = sCluster + "." + sTAGPFX + "\GGIO\" + sDCCharger + "\LowDCVolt";
+			STRING sDCCFailTag = sCluster + "." + sTAGPFX + "\GGIO\" + sDCCharger + "\ChgrFail";
+			STRING sACFailTag = sCluster + "." + sTAGPFX + "\GGIO\" + sDCCharger + "\ACMainsFail";
+			STRING sISOSwTag = sCluster + "." + sTAGPFX + "\GGIO\" + sDCCharger + "\IsoSW";
+			STRING sCmmnAlmTag = sCluster + "." + sTAGPFX + "\GGIO\" + sDCCharger + "\CmmnAlm";
+			
+			
+			
+			IF ( StrToInt (sHiDCTag) OR StrToInt (sLoDCTag) OR ( NOT StrToInt (sDCCFailTag) ) OR ( NOT StrToInt (sACFailTag) ) OR ( NOT StrToInt (sISOSwTag) ) OR ( NOT StrToInt (sCmmnAlmTag) )) THEN
+						iDCCSum = 1;
+			ELSE
+						iDCCSum = 0;
+			END
+			
+			RETURN iDCCSum;
+END
+
+//( NOT %NotInAutoTag%) AND %NIA_ECS% AND %NIAGenSyncSw% AND %NIAMasterMode% AND %NIAUtilSyncSw%
+INT
+FUNCTION GetDCCOpMode( STRING sCluster, STRING sTAGPFX )
+			INT iDCCSum;
+			STRING sNotInAutoTag = sCluster + "." + sTAGPFX + "\GGIO\EXL\Gen\NotInAuto";
+			STRING sNIA_ECSTag = sCluster + "." + sTAGPFX + "\GGIO\EXL\Gen\NIA_ECS";
+			STRING sNIAGenSyncSwTag = sCluster + "." + sTAGPFX + "\GGIO\EXL\Gen\NIAGenSyncSw";
+			STRING sNIAMasterModeTag = sCluster + "." + sTAGPFX + "\GGIO\EXL\Gen\NIAMasterMode";
+			STRING sNIAUtilSyncSwTag = sCluster + "." + sTAGPFX + "\GGIO\EXL\Gen\NIAUtilSyncSw";
+			
+			
+			
+			IF ( ( NOT StrToInt(sNotInAutoTag) ) AND StrToInt(sNIA_ECSTag) AND StrToInt(sNIAGenSyncSwTag) AND StrToInt(sNIAMasterModeTag) AND StrToInt(sNIAUtilSyncSwTag) ) THEN
+						iDCCSum = 1;
+			ELSE
+						iDCCSum = 0;
+			END
+			
+			RETURN iDCCSum;
+END

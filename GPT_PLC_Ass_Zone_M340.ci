@@ -1,0 +1,1551 @@
+//********************** PLC M340 DIO **********************/
+//Global Power  RTS 2016/08/12 New
+//********************** PLC M340 Msg **********************
+FUNCTION M340_ASS_DIO(STRING strDevice,STRING strCluster,STRING sZone="Z1",STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING sRev1="3202",STRING sRev2="K")
+	STRING sEquip,sTitle;
+	STRING sType1,sType2,sType3;
+	
+	//Init
+	IF strCluster <> "" THEN strCluster = strCluster + "."; END
+	//------------------------------------------------------
+	//                   Equip Ass
+	//------------------------------------------------------
+	Ass(-2,"Cluster","'" + strCluster + "'",0);
+	Ass(-2,"Type","'" + sType + "'",0);
+	Ass(-2,"Equip","'" + strDevice + "'",0);
+	Ass(-2,"Title","'" + "Rack " + sRack + ",Slot " + sSlot + "'",0);
+	//------------------------------------------------------
+	//                   Type Ass
+	//------------------------------------------------------
+	Ass(-2,"Type1","'" + "BMX" + "'",0);
+	Ass(-2,"Type2","'" + sType + "" + sRev1 + "" + sRev2 + "'",0);
+	IF sType = "DDI" THEN Ass(-2,"Type3","'" + "DIGITAL INPUT MODULE" + "'",0); END
+	IF sType = "DDO" THEN Ass(-2,"Type3","'" + "DIGITAL OUTPUT MODULE" + "'",0); END
+	//------------------------------------------------------
+	//             Variable and Msg Ass
+	//------------------------------------------------------
+	M340_ASS_TAG(strDevice,strCluster,sRack,sSlot,sType,sRev1,sRev2);
+	M340_ASS_MSG(strDevice,strCluster,sRack,sSlot,sType,sRev1,sRev2);
+	//------------------------------------------------------
+	//                   Equip PopUp
+	//------------------------------------------------------
+	EquipAssMetadataWin("!PLC_DIO_Popup");
+	WinTitle(AssInfo("4",0));
+END
+
+//********************** PLC M340 Tag M340_ASS_TAG **********************
+
+FUNCTION M340_ASS_TAG(STRING strTAG,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING Rev1="",STRING Rev2="")
+	INT i, session, status, numRecs;
+	STRING sItem;
+		
+	FOR i = 0 TO 31 DO
+		sItem = sCluster + strTAG + "\GGIO" + sRack + "\SLOT" + sSlot + "\" + sType + "[" + IntToStr(i) + "]";
+		IF iDebug_On THEN
+		   ErrLog(" PLC M340 sItem: " +  sItem);
+		END	
+		Ass(-2,"Tag" + IntToStr(i),sItem,0);
+	END
+END
+
+//********************** PLC M340 Message M340_ASS_MSG **********************
+
+FUNCTION M340_ASS_MSG(STRING strTAG,STRING sCluster,STRING sRack="1",STRING sSlot="1",STRING sType="DDI",STRING Rev1="",STRING Rev2="")
+		STRING sFunction,sArgs;
+
+		SELECT CASE strTAG
+					//Medium Voltage Monitoring PLCs
+					CASE "MDC_B1_M340", "MDC_B2_M340", "MDC_B3_M340", "SDC_B1_1_M340","SDC_B1_2_M340"
+							sFunction = strTAG + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = "";
+					//IR PMDC Monitoring PLCs
+					CASE "PMDC_B1_1_i_M340","PMDC_B1_2_i_M340"
+							sFunction = strTAG + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = "";
+					//Mechanical PMDC Monitoring PLCs
+					CASE "PMDC_B1_1_q_M340","PMDC_B1_1_r_M340","PMDC_B1_1_s_M340","PMDC_B1_2_q_M340","PMDC_B1_2_r_M340","PMDC_B1_2_s_M340"
+							sFunction = strTAG + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = "";
+					//Zone 1 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B1_1_a_M340","PMDC_B1_2_a_M340","PMDC_B1_1_b_M340","PMDC_B1_2_b_M340","PMDC_B1_1_c_M340","PMDC_B1_2_c_M340","PMDC_B1_1_d_M340"
+							sFunction = "PMDC_M340_Z1" + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = strTAG;
+					//Zone 2 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B1_1_e_M340","PMDC_B1_2_e_M340","PMDC_B1_1_f_M340","PMDC_B1_2_f_M340","PMDC_B1_1_g_M340","PMDC_B1_2_g_M340","PMDC_B1_2_d_M340"
+							sFunction = "PMDC_M340_Z3" + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = strTAG;
+					//Zone 3 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B1_1_n_M340","PMDC_B1_2_n_M340","PMDC_B1_1_o_M340","PMDC_B1_2_o_M340","PMDC_B1_1_p_M340","PMDC_B1_2_p_M340","PMDC_B1_2_m_M340"
+							sFunction = "PMDC_M340_Z3" + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = strTAG;
+					//Zone 4 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B1_1_h_M340","PMDC_B1_2_h_M340","PMDC_B1_1_j_M340","PMDC_B1_2_j_M340","PMDC_B1_1_k_M340","PMDC_B1_2_k_M340","PMDC_B1_1_m_M340"
+							sFunction = "PMDC_M340_Z3" + "_Rack" + sRack + "_Slot" + sSlot + "_Msg";
+							sArgs = strTAG;
+					//Zone 5 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B3_1_a_M340","PMDC_B3_1_b_M340","PMDC_B3_1_c_M340","PMDC_B3_1_d_M340","PMDC_B3_2_a_M340","PMDC_B3_2_b_M340","PMDC_B3_2_c_M340"
+							sFunction = "M340_ASS_POPUP_MSG";
+							sArgs = strTAG + "," + sSlot + "," + sSlot;
+					//Zone 6 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B3_2_d_M340","PMDC_B3_2_e_M340","PMDC_B3_2_f_M340","PMDC_B3_2_g_M340","PMDC_B3_1_e_M340","PMDC_B3_1_f_M340","PMDC_B3_1_g_M340"
+							sFunction = "M340_ASS_POPUP_MSG";
+							sArgs = strTAG + "," + sSlot + "," + sSlot;
+					//Zone 7 Critical PMDC Monitoring PLCs
+					CASE "PMDC_B3_1_h_M340","PMDC_B3_1_j_M340","PMDC_B3_1_k_M340","PMDC_B3_1_m_M340","PMDC_B3_2_h_M340","PMDC_B3_2_j_M340","PMDC_B3_2_k_M340"
+							sFunction = "M340_ASS_POPUP_MSG";
+							sArgs = strTAG + "," + sSlot + "," + sSlot;
+					//Zone 5 SDC Monitoring PLCs
+					CASE "SDC_B3_1_M340","SDC_B3_2_M340","MDC_B3_M340"
+							sFunction = "M340_ASS_POPUP_MSG";
+						strTAG = StrLeft(strTAG,8);
+							sArgs = strTAG + "," + sSlot + "," + sSlot;
+							ErrLog("Function is : " + sFunction + " Arguments : " + sArgs);
+					//Zone 5 Mechanical PMDC Monitoring PLCs
+					CASE "PMDC_B3_1_q_M340","PMDC_B3_1_r_M340","PMDC_B3_2_q_M340","PMDC_B3_2_r_M340","PMDC_B3_2_s_M340"
+							sFunction = "M340_ASS_POPUP_MSG";
+							sArgs = strTAG + "," + sSlot + "," + sSlot;
+					//IR PMDC Monitoring PLCs
+					CASE "PMDC_B3_1_i_M340","PMDC_B3_2_i_M340"
+							sFunction = "M340_ASS_POPUP_MSG";
+							sArgs = strTAG + "," + sSlot + "," + sSlot;
+		END SELECT
+		IF iDebug_On THEN
+					ErrLog("M340 Taskcall Function: " + sFunction + " M340 Taskcall Args: " + sArgs);
+		END
+
+			TaskCall(sFunction, sArgs);
+		END
+
+//********************** PLC M340 Tag M340_ASS_POPUP_MSG **********************
+INT
+FUNCTION M340_ASS_POPUP_MSG(STRING sGearName,	STRING sSLOTNUM, STRING	sCOLNAME)
+	INT	hDBFDevice;
+	INT	iMsgCntr = 0;
+	STRING sM340_IO_Descr;
+	STRING sSLOTLBL = "SLOT" + sSLOTNUM;
+	STRING sM340_IO_Location;
+	STRING sM340_IO_Area;
+	STRING sGear,sGear_DBF;
+  ErrLog("M340 Gearname: " +  sGearName + " Slot: " + sSLOTNUM + " Colum: " + sCOLNAME);
+	ErrSet(1);
+	IF StrLeft(sGearName,4) = "PMDC" THEN
+		sGear = StrLeft(sGearName,11);
+		sGear_DBF = CharReplace("_","-",	sGear);
+	ELSE
+		sGear = StrLeft(sGearName,8);
+		sGear_DBF = CharReplace("_","-",	sGear);
+	END
+
+	ErrLog("M340 Gearname: " +  sGearName + " Slot: " + sSLOTLBL + " Colum: " + sCOLNAME);
+
+	hDBFDevice = DevOpen("PMDCM340Map",16); //Open	Device
+	ErrLog("M340 DBF	Error: " + IntToStr(hDBFDevice))
+	IF hDBFDevice	=	-1 THEN
+		DspError("DBFDevice	Device Error!!");
+		TraceMsg("Unable to	Open DBF Device	");
+		Message("Database	Access Error!", "Does someone have the file open?",	0);
+		RETURN FALSE;
+	ELSE
+		WHILE	NOT	DevEOF(hDBFDevice) DO
+			sM340_IO_Area = DevGetField(hDBFDevice,"AREAP");
+			sM340_IO_Location = DevGetField(hDBFDevice,"LOCATION");
+			sM340_IO_Descr = DevGetField(hDBFDevice,"DESCR");
+			IF ((sGear_DBF = sM340_IO_Area) AND (sSLOTLBL = sM340_IO_Location)) THEN
+		          ErrLog("------------------------------------------------");
+		          ErrLog("String Returned: " + sM340_IO_Area);
+		          ErrLog("String Returned: " + sM340_IO_Location);
+		          ErrLog("String Returned: " + sM340_IO_Descr);
+		          ErrLog("------------------------------------------------");
+					    Ass(-2,"Msg" + IntToStr(iMsgCntr),"'"	+	 IntToStr(iMsgCntr)	+	".)	"	+	sGear_DBF	+	"	"	+	sM340_IO_Descr + "'",0);
+					    ErrLog("String Assigned: " + IntToStr(iMsgCntr) + "'"	+	 IntToStr(iMsgCntr)	+	".)	"	+	sGear_DBF	+	"	"	+	sM340_IO_Descr);
+					    iMsgCntr = iMsgCntr	+	1;
+			END
+	    DevNext(hDBFDevice);
+			
+		END	//WHILE	DO
+		DevClose(hDBFDevice); //Close Device
+	END
+	DevClose(hDBFDevice);	//Close	Device
+END
+
+//********************** PLC M340 Msg Call **********************
+
+FUNCTION PMDC_M340_Z3_Rack1_Slot3_Msg(STRING strPMDCName)	
+	   //Msg1~32
+	   STRING strPMDC = StrLeft(strPMDCName,11); 
+     STRING strnewPMDC = CharReplace("_","-", strPMDC); 
+     //Msg1~16 Register 40262 
+	   Ass(-2,"Msg0","'" +  "00.) " + strnewPMDC + " Load Bank Breaker Open/Closed Status" + "'",0);                                         
+	   Ass(-2,"Msg1","'" +  "01.) " + strnewPMDC + " Load Bank Breaker Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" +  "02.) " + strnewPMDC + " SPD OK Status" + "'",0);
+	   Ass(-2,"Msg3","'" +  "03.) " + strnewPMDC + " PS1 24VDC Healthy" + "'",0);
+	   Ass(-2,"Msg4","'" +  "04.) " + strnewPMDC + " PS2 24VDC Healthy" + "'",0);
+	   Ass(-2,"Msg5","'" +  "05.) " + strnewPMDC + " XFMR Temperature Alarm" + "'",0);
+	   Ass(-2,"Msg6","'" +  "06.) " + strnewPMDC + " Q1-4 Breaker Open/Closed Status" + "'",0);
+	   Ass(-2,"Msg7","'" +  "07.) " + strnewPMDC + " Q1-4 Breaker Tripped Status" + "'",0);    
+	   Ass(-2,"Msg8","'" +  "08.) " + strnewPMDC + " Q1-5 Breaker Open/Closed Status" + "'",0);
+	   Ass(-2,"Msg9","'" +  "09.) " + strnewPMDC + " Q1-5 Breaker Tripped Status" + "'",0);      
+	   Ass(-2,"Msg10","'" + "10.) " + strnewPMDC + " XFMR Door Open" + "'",0);    
+	   Ass(-2,"Msg11","'" + "11.) " + strnewPMDC + " XFMR FAN Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) " + strnewPMDC + " XFMR Fault" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) " + strnewPMDC + " Auto Mode" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) " + strnewPMDC + " Manual Mode" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) " + strnewPMDC + " Reverse Power 86RP" + "'",0);
+	   //Msg16~32 Register 40263
+	   Ass(-2,"Msg16","'" + "16.) " + strnewPMDC + " 52-U CB 86 Trip" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) " + strnewPMDC + " 52-G CB 86 Trip" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) " + strnewPMDC + " 125VDC Input Healthy" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) " + strnewPMDC + " 125VDC Power Supply Failure" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) " + strnewPMDC + " 300kA ATP1 TVSS" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) " + strnewPMDC + " 300kA ATP2 TVSS" + "'",0);
+	   IF strnewPMDC <> "PMDC_B1_2_p_M340" OR strnewPMDC <> "PMDC_B1_1_m_M340" OR strnewPMDC <> "PMDC_B1_2_g_M340" THEN
+	   		Ass(-2,"Msg22","'" + "22.) " + strnewPMDC + " 300kA ATP3 TVSS" + "'",0);
+	   ELSE
+	   		Ass(-2,"Msg22","'" + "22.) SPARE " + "'",0);
+	   END	
+	   Ass(-2,"Msg23","'" + "23.) " + strnewPMDC + " 150kA ATP1 TVSS" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) " + strnewPMDC + " 150kA ATP2 TVSS" + "'",0);
+	   IF strnewPMDC <> "PMDC_B1_2_p_M340" OR strnewPMDC <> "PMDC_B1_1_m_M340" OR strnewPMDC <> "PMDC_B1_2_g_M340" THEN
+	   		Ass(-2,"Msg25","'" + "25.) " + strnewPMDC + " 150kA ATP3 TVSS" + "'",0);
+	   ELSE
+	   		Ass(-2,"Msg25","'" + "25.) SPARE " + "'",0);
+	   END
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) " + strnewPMDC + " Gen Common SD" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) " + strnewPMDC + " Gen Common Alarm" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) " + strnewPMDC + " Gen RDY for Load",0);
+	   Ass(-2,"Msg30","'" + "30.) SPARE " + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0);
+END	   
+
+FUNCTION PMDC_M340_Zoned_Rack1_Slot3_Msg(STRING sPMDCName, STRING sZone)	
+	 //Msg1~32
+	 STRING sPMDC = StrLeft(sPMDCName,11); 
+     STRING snewPMDC = CharReplace("_","-", sPMDC); 
+     
+     SELECT CASE sZone
+     	CASE "Z1"
+     			//Msg1~16 Register 40262
+	   			Ass(-2,"Msg0","'" +  "00.) " + snewPMDC + " Q1-1 Closed" + "'",0);
+	   			Ass(-2,"Msg1","'" +  "01.) " + snewPMDC + " Q1-1 Trip" + "'",0);
+	   			Ass(-2,"Msg2","'" +  "02.) " + snewPMDC + " Q1-2 Closed" + "'",0);
+	   			Ass(-2,"Msg3","'" +  "03.) " + snewPMDC + " Q1-2 Trip" + "'",0);
+	   			Ass(-2,"Msg4","'" +  "04.) " + snewPMDC + " Q1-3 Closed" + "'",0);
+	   			Ass(-2,"Msg5","'" +  "05.) " + snewPMDC + " Q1-3 Trip" + "'",0);
+	   			Ass(-2,"Msg6","'" +  "06.) " + snewPMDC + " Q1-4 Closed" + "'",0);
+	   			Ass(-2,"Msg7","'" +  "07.) " + snewPMDC + " Q1-4 Trip" + "'",0);
+	   			Ass(-2,"Msg8","'" +  "08.) " + snewPMDC + " Q1-5 Closed" + "'",0);
+	   			Ass(-2,"Msg9","'" +  "09.) " + snewPMDC + " Q1-5 Trip" + "'",0);  
+	   			Ass(-2,"Msg10","'" + "10.) " + snewPMDC + " XFMR Door Open" + "'",0);    
+	   			Ass(-2,"Msg11","'" + "11.) " + snewPMDC + " XFMR FAN Status" + "'",0);
+	   			Ass(-2,"Msg12","'" + "12.) " + snewPMDC + " XFMR Fault" + "'",0);
+	   			Ass(-2,"Msg13","'" + "13.) " + snewPMDC + " Auto Mode" + "'",0);
+	   			Ass(-2,"Msg14","'" + "14.) " + snewPMDC + " Manual Mode" + "'",0);
+	   			Ass(-2,"Msg15","'" + "15.) " + snewPMDC + " Reverse Power 86RP" + "'",0);
+	   			Ass(-2,"Msg16","'" + "16.) " + snewPMDC + " 52-U CB 86 Trip" + "'",0);
+	   			//Msg16~32 Register 40263
+	   			Ass(-2,"Msg17","'" + "17.) " + snewPMDC + " 52-G CB 86 Trip" + "'",0);
+	   			Ass(-2,"Msg18","'" + "18.) " + snewPMDC + " 125VDC PS1 Healthy" + "'",0);
+	   			Ass(-2,"Msg19","'" + "19.) " + snewPMDC + " 125VDC PS2 Healthy" + "'",0);
+	   			Ass(-2,"Msg20","'" + "20.) " + snewPMDC + " 300kA ATP1 TVSS" + "'",0);
+	   			Ass(-2,"Msg21","'" + "21.) " + snewPMDC + " 300kA ATP2 TVSS" + "'",0);
+	   			Ass(-2,"Msg22","'" + "22.) " + snewPMDC + " 300kA ATP3 TVSS" + "'",0);
+	   			Ass(-2,"Msg23","'" + "23.) " + snewPMDC + " 150kA ATP1 TVSS" + "'",0);
+	   			Ass(-2,"Msg24","'" + "24.) " + snewPMDC + " 150kA ATP2 TVSS" + "'",0);
+	   			Ass(-2,"Msg25","'" + "25.) " + snewPMDC + " 150kA ATP3 TVSS" + "'",0);
+	   			Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   			Ass(-2,"Msg27","'" + "27.) " + snewPMDC + " Gen Common SD" + "'",0);
+	   			Ass(-2,"Msg28","'" + "28.) " + snewPMDC + " Gen Common Alarm" + "'",0);
+	   			Ass(-2,"Msg29","'" + "29.) " + snewPMDC + " Gen RDY for Load",0);
+	   			Ass(-2,"Msg30","'" + "30.) " + snewPMDC + " XFMR Temperature Alarm" + "'",0);
+	   			Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0);
+	    CASE "Z2","Z3","Z4","Z5","Z6","Z7"
+	            //Msg1~16 Register 40262
+	    		Ass(-2,"Msg0","'" +  "00.) " + snewPMDC + " Load Bank Breaker Open/Closed Status" + "'",0);                                         
+	   			Ass(-2,"Msg1","'" +  "01.) " + snewPMDC + " Load Bank Breaker Tripped Status" + "'",0);
+	   			Ass(-2,"Msg2","'" +  "02.) " + snewPMDC + " SPD OK Status" + "'",0);
+	   			Ass(-2,"Msg3","'" +  "03.) " + snewPMDC + " PS1 24VDC Healthy" + "'",0);
+	   			Ass(-2,"Msg4","'" +  "04.) " + snewPMDC + " PS2 24VDC Healthy" + "'",0);
+	   			Ass(-2,"Msg5","'" +  "05.) " + snewPMDC + " XFMR Temperature Alarm" + "'",0);
+	   			Ass(-2,"Msg6","'" +  "06.) " + snewPMDC + " Q1-4 Breaker Open/Closed Status" + "'",0);
+	   			Ass(-2,"Msg7","'" +  "07.) " + snewPMDC + " Q1-4 Breaker Tripped Status" + "'",0);    
+	   			Ass(-2,"Msg8","'" +  "08.) " + snewPMDC + " Q1-5 Breaker Open/Closed Status" + "'",0);
+	   			Ass(-2,"Msg9","'" +  "09.) " + snewPMDC + " Q1-5 Breaker Tripped Status" + "'",0);      
+	   			Ass(-2,"Msg10","'" + "10.) " + snewPMDC + " XFMR Door Open" + "'",0);    
+	   			Ass(-2,"Msg11","'" + "11.) " + snewPMDC + " XFMR FAN Status" + "'",0);
+	   			Ass(-2,"Msg12","'" + "12.) " + snewPMDC + " XFMR Fault" + "'",0);
+	   			Ass(-2,"Msg13","'" + "13.) " + snewPMDC + " Auto Mode" + "'",0);
+	   			Ass(-2,"Msg14","'" + "14.) " + snewPMDC + " Manual Mode" + "'",0);
+	   			Ass(-2,"Msg15","'" + "15.) " + snewPMDC + " Reverse Power 86RP" + "'",0);
+	   			//Msg16~32 Register 40263
+	   			Ass(-2,"Msg16","'" + "16.) " + snewPMDC + " 52-U CB 86 Trip" + "'",0);
+	   			Ass(-2,"Msg17","'" + "17.) " + snewPMDC + " 52-G CB 86 Trip" + "'",0);
+	   			Ass(-2,"Msg18","'" + "18.) " + snewPMDC + " 125VDC Input Healthy" + "'",0);
+	   			Ass(-2,"Msg19","'" + "19.) " + snewPMDC + " 125VDC Power Supply Failure" + "'",0);
+	   			Ass(-2,"Msg20","'" + "20.) " + snewPMDC + " 300kA ATP1 TVSS" + "'",0);
+	   			Ass(-2,"Msg21","'" + "21.) " + snewPMDC + " 300kA ATP2 TVSS" + "'",0);
+	   			//Exception for PMDCs with 2 ATPs
+	   			IF snewPMDC <> "PMDC_B1_2_p_M340" OR snewPMDC <> "PMDC_B1_1_m_M340" OR snewPMDC <> "PMDC_B1_2_g_M340" OR snewPMDC <> "PMDC_B3_1_d_M340" THEN 
+	   					Ass(-2,"Msg22","'" + "22.) " + snewPMDC + " 300kA ATP3 TVSS" + "'",0);
+	   			ELSE
+	   					Ass(-2,"Msg22","'" + "22.) SPARE " + "'",0);
+	   			END	
+	   			Ass(-2,"Msg23","'" + "23.) " + snewPMDC + " 150kA ATP1 TVSS" + "'",0);
+	   			Ass(-2,"Msg24","'" + "24.) " + snewPMDC + " 150kA ATP2 TVSS" + "'",0);
+	   			//Exception for PMDCs with 2 ATPs
+	   			IF snewPMDC <> "PMDC_B1_2_p_M340" OR snewPMDC <> "PMDC_B1_1_m_M340" OR snewPMDC <> "PMDC_B1_2_g_M340" OR snewPMDC <> "PMDC_B3_1_d_M340" THEN
+	   					Ass(-2,"Msg25","'" + "25.) " + snewPMDC + " 150kA ATP3 TVSS" + "'",0);
+	   			ELSE
+	   					Ass(-2,"Msg25","'" + "25.) SPARE " + "'",0);
+	   			END
+	   			Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   			Ass(-2,"Msg27","'" + "27.) " + snewPMDC + " Gen Common SD" + "'",0);
+	   			Ass(-2,"Msg28","'" + "28.) " + snewPMDC + " Gen Common Alarm" + "'",0);
+	   			Ass(-2,"Msg29","'" + "29.) " + snewPMDC + " Gen RDY for Load",0);
+	   			Ass(-2,"Msg30","'" + "30.) SPARE " + "'",0);
+	   			Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0);
+	 END SELECT
+END	   
+
+FUNCTION PMDC_M340_Z1_Rack1_Slot3_Msg(STRING strPMDCName)	
+	   //Msg1~32
+	 STRING strPMDC = StrLeft(strPMDCName,11); 
+     STRING strnewPMDC = CharReplace("_","-", strPMDC); 
+     //Msg1~16 Register 40262
+	   Ass(-2,"Msg0","'" +  "00.) " + strnewPMDC + " Q1-1 Closed" + "'",0);
+	   Ass(-2,"Msg1","'" +  "01.) " + strnewPMDC + " Q1-1 Trip" + "'",0);
+	   Ass(-2,"Msg2","'" +  "02.) " + strnewPMDC + " Q1-2 Closed" + "'",0);
+	   Ass(-2,"Msg3","'" +  "03.) " + strnewPMDC + " Q1-2 Trip" + "'",0);
+	   Ass(-2,"Msg4","'" +  "04.) " + strnewPMDC + " Q1-3 Closed" + "'",0);
+	   Ass(-2,"Msg5","'" +  "05.) " + strnewPMDC + " Q1-3 Trip" + "'",0);
+	   Ass(-2,"Msg6","'" +  "06.) " + strnewPMDC + " Q1-4 Closed" + "'",0);
+	   Ass(-2,"Msg7","'" +  "07.) " + strnewPMDC + " Q1-4 Trip" + "'",0);
+	   Ass(-2,"Msg8","'" +  "08.) " + strnewPMDC + " Q1-5 Closed" + "'",0);
+	   Ass(-2,"Msg9","'" +  "09.) " + strnewPMDC + " Q1-5 Trip" + "'",0);  
+	   Ass(-2,"Msg10","'" + "10.) " + strnewPMDC + " XFMR Door Open" + "'",0);    
+	   Ass(-2,"Msg11","'" + "11.) " + strnewPMDC + " XFMR FAN Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) " + strnewPMDC + " XFMR Fault" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) " + strnewPMDC + " Auto Mode" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) " + strnewPMDC + " Manual Mode" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) " + strnewPMDC + " Reverse Power 86RP" + "'",0);
+	   //Msg16~32 Register 40263
+	   Ass(-2,"Msg16","'" + "16.) " + strnewPMDC + " 52-U CB 86 Trip" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) " + strnewPMDC + " 52-G CB 86 Trip" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) " + strnewPMDC + " 125VDC PS1 Healthy" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) " + strnewPMDC + " 125VDC PS2 Healthy" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) " + strnewPMDC + " 300kA ATP1 TVSS" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) " + strnewPMDC + " 300kA ATP2 TVSS" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) " + strnewPMDC + " 300kA ATP3 TVSS" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) " + strnewPMDC + " 150kA ATP1 TVSS" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) " + strnewPMDC + " 150kA ATP2 TVSS" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) " + strnewPMDC + " 150kA ATP3 TVSS" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) " + strnewPMDC + " Gen Common SD" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) " + strnewPMDC + " Gen Common Alarm" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) " + strnewPMDC + " Gen RDY for Load",0);
+	   Ass(-2,"Msg30","'" + "30.) " + strnewPMDC + " XFMR Temperature Alarm" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0);
+END	   
+
+FUNCTION PMDC_B1_1_d_M340_Rack1_Slot3_Msg()	
+	   //Msg1~16 Register 40262
+	   Ass(-2,"Msg0","'" +  "00.) PMDC B1_1_d" + " Q1-1 Closed" + "'",0);
+	   Ass(-2,"Msg1","'" +  "01.) PMDC B1_1_d" + " Q1-1 Trip" + "'",0);
+	   Ass(-2,"Msg2","'" +  "02.) PMDC B1_1_d" + " Q1-2 Closed" + "'",0);
+	   Ass(-2,"Msg3","'" +  "03.) PMDC B1_1_d" + " Q1-2 Trip" + "'",0);
+	   Ass(-2,"Msg4","'" +  "04.) PMDC B1_1_d" + " Q1-3 Closed" + "'",0);
+	   Ass(-2,"Msg5","'" +  "05.) PMDC B1_1_d" + " Q1-3 Trip" + "'",0);
+	   Ass(-2,"Msg6","'" +  "06.) PMDC B1_1_d" + " Q1-4 Closed" + "'",0);
+	   Ass(-2,"Msg7","'" +  "07.) PMDC B1_1_d" + " Q1-4 Trip" + "'",0);
+	   Ass(-2,"Msg8","'" +  "08.) PMDC B1_1_d" + " Q1-5 Closed" + "'",0);
+	   Ass(-2,"Msg9","'" +  "09.) PMDC B1_1_d" + " Q1-5 Trip" + "'",0);  
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1_1_d" + " XFMR Door Open" + "'",0);    
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1_1_d" + " XFMR FAN Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1_1_d" + " XFMR Fault" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) PMDC B1_1_d" + " Auto Mode" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) PMDC B1_1_d" + " Manual Mode" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) PMDC B1_1_d" + " Reverse Power 86RP" + "'",0);
+     //Msg16~32 Register 40263
+	   Ass(-2,"Msg16","'" + "16.) PMDC B1_1_d" + " 52-U CB 86 Trip" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) PMDC B1_1_d" + " 52-G CB 86 Trip" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) PMDC B1_1_d" + " 125VDC PS1 Healthy" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) PMDC B1_1_d" + " 125VDC PS2 Healthy" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) PMDC B1_1_d" + " 300kA ATP1 TVSS" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) PMDC B1_1_d" + " 300kA ATP2 TVSS" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) SPARE " + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) PMDC B1_1_d" + " 150kA ATP1 TVSS" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) PMDC B1_1_d" + " 150kA ATP2 TVSS" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) SPARE " + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1_1_d" + " Generator Common Shutdown" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1_1_d" + " Generator Common Alarm" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1_1_d" + " Generator Ready for Load",0);
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1_1_d" + " XFMR Temperature Alarm" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0);
+END	   
+
+//IR PMDC For Levels 2 and 3 Located at 2M
+FUNCTION PMDC_B1_1_i_M340_Rack1_Slot3_Msg()
+	 	//Msg1~16 Register 40262
+   		        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-1-a-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-1-a-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-1-a-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-1-a-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-1-a-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-1-a-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-1-a-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-1-b-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-1-b-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-1-b-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-1-b-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-1-b-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-1-b-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-1-b-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-1-b-24VDC-PS2-HEALTH" + "'",0);
+   		//Msg16~32 Register 40263
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-1-c-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-1-c-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-1-c-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-1-c-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-1-c-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-1-c-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-1-c-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-1-c-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) IR SWBD B1-1-d-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg25","'" + "25.) IR SWBD B1-1-d-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg26","'" + "26.) IR SWBD B1-1-d-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg27","'" + "27.) IR SWBD B1-1-d-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg28","'" + "28.) IR SWBD B1-1-d-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg29","'" + "29.) IR SWBD B1-1-d-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg30","'" + "30.) IR SWBD B1-1-d-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg31","'" + "31.) IR SWBD B1-1-d-24VDC-PS2-HEALTH" + "'",0);
+END
+
+FUNCTION PMDC_B1_1_i_M340_Rack1_Slot4_Msg()
+	   //Msg1~16 Register 40264                             
+	   Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-2-a-Q1-1-OPEN/CLOSED" + "'",0);        
+	   Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-2-a-Q1-1-TRIP STATUS" + "'",0); 
+	   Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-2-a-Q1-2-OPEN/CLOSED" + "'",0);        
+	   Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-2-a-Q1-2-TRIP STATUS" + "'",0); 
+	   Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-2-a-Q1-3-OPEN/CLOSED" + "'",0);        
+	   Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-2-a-Q1-3-TRIP STATUS" + "'",0); 
+	   Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-2-a-24VDC-PS1-HEALTH" + "'",0);        
+	   Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-2-a-24VDC-PS2-HEALTH" + "'",0); 
+	   Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-2-b-Q1-1-OPEN/CLOSED" + "'",0);        
+	   Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-2-b-Q1-1-TRIP STATUS" + "'",0); 
+	   Ass(-2,"Msg10","'" + "10.) IR SWBD B1-2-b-Q1-2-OPEN/CLOSED" + "'",0);        
+	   Ass(-2,"Msg11","'" + "11.) IR SWBD B1-2-b-Q1-2-TRIP STATUS" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) IR SWBD B1-2-b-Q1-3-OPEN/CLOSED" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) IR SWBD B1-2-b-Q1-3-TRIP STATUS" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) IR SWBD B1-2-b-24VDC-PS1-HEALTH" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) IR SWBD B1-2-b-24VDC-PS2-HEALTH" + "'",0);
+	   //Msg16~32 Register 40265
+	   Ass(-2,"Msg16","'" + "16.) IR SWBD B1-2-c-Q1-1-OPEN/CLOSED" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) IR SWBD B1-2-c-Q1-1-TRIP STATUS" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) IR SWBD B1-2-c-Q1-2-OPEN/CLOSED" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) IR SWBD B1-2-c-Q1-2-TRIP STATUS" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) IR SWBD B1-2-c-Q1-3-OPEN/CLOSED" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) IR SWBD B1-2-c-Q1-3-TRIP STATUS" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) IR SWBD B1-2-c-24VDC-PS1-HEALTH" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) IR SWBD B1-2-c-24VDC-PS2-HEALTH" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) Transformer Door Open/Closed Status" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) Transformer Fan Status" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) Transformer Fan Fault" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) Selector Switch Manual Mode" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) Reverse Power 86" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) CB 52U 86 Trip" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) CB 52G 86 Trip" + "'",0);
+END                                           
+
+FUNCTION PMDC_B1_1_i_M340_Rack1_Slot5_Msg()
+	 	//Msg1~16 Register 40266
+   		Ass(-2,"Msg0","'" +  "00.) 125VDC PS1" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) Generator Common Shutdown" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) Generator Common Warning" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) Generator Ready to Load" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) Transfomrer Temperature Alarm" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) 125VDC PS2" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) BDM PMDC B1-1-i-3 300kA TVSS" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) BDM PMDC B1-1-i-3 R1 150kA TVSS" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) BDM PMDC B1-1-i-3 R3 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) BDM PMDC B1-1-i-3 R5 150kA TVSS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) BDM PMDC B1-1-i-3 R7 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) BDM PMDC B1-1-i-3 R9 150kA TVSS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) BDM PMDC B1-1-i-3 R11 150kA TVSS" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) BDM PMDC B1-1-i-3 R13 150kA TVSS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) BDM PMDC B1-1-i-3 R15 150kA TVSS" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) BDM PMDC B1-1-i-3 R17 150kA TVSS" + "'",0);
+   		//Msg16~32 Register 40267
+   		Ass(-2,"Msg16","'" + "16.) BDM PMDC B1-1-i-3 R19 150kA TVSS" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) BDM PMDC B1-1-i-3 R20 150kA TVSS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) SPARE" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) SPARE" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) BDM PMDC B1-1-i-4 300kA TVSS" + "'",0);                       
+   		Ass(-2,"Msg21","'" + "21.) BDM PMDC B1-1-i-4 R1 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg22","'" + "22.) BDM PMDC B1-1-i-4 R3 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg23","'" + "23.) BDM PMDC B1-1-i-4 R5 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg24","'" + "24.) BDM PMDC B1-1-i-4 R7 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg25","'" + "25.) BDM PMDC B1-1-i-4 R9 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg26","'" + "26.) BDM PMDC B1-1-i-4 R11 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg27","'" + "27.) BDM PMDC B1-1-i-4 R13 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg28","'" + "28.) BDM PMDC B1-1-i-4 R15 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg29","'" + "29.) BDM PMDC B1-1-i-4 R17 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg30","'" + "30.) BDM PMDC B1-1-i-4 R19 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg31","'" + "31.) BDM PMDC B1-1-i-4 R20 150kA TVSS" + "'",0);
+END    
+
+FUNCTION PMDC_B1_1_i_M340_Rack1_Slot6_Msg()
+	 	//Msg1~16 Register 40268                            
+   		Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-1-e-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-1-e-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-1-e-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-1-e-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-1-e-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-1-e-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-1-e-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-1-e-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-1-f-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-1-f-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-1-f-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-1-f-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-1-f-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-1-f-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-1-f-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-1-f-24VDC-PS2-HEALTH" + "'",0);
+   		//Msg16~32 Register 40269
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-1-g-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-1-g-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-1-g-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-1-g-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-1-g-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-1-g-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-1-g-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-1-g-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) IR SWBD B1-2-d-Q1-1-OPEN/CLOSED" + "'",0); 
+   		Ass(-2,"Msg25","'" + "25.) IR SWBD B1-2-d-Q1-1-TRIP STATUS" + "'",0);              
+   		Ass(-2,"Msg26","'" + "26.) IR SWBD B1-2-d-Q1-2-OPEN/CLOSED" + "'",0);               
+   		Ass(-2,"Msg27","'" + "27.) IR SWBD B1-2-d-Q1-2-TRIP STATUS" + "'",0);           
+   		Ass(-2,"Msg28","'" + "28.) IR SWBD B1-2-d-Q1-3-OPEN/CLOSED" + "'",0);         
+   		Ass(-2,"Msg29","'" + "29.) IR SWBD B1-2-d-Q1-3-TRIP STATUS" + "'",0);                    
+   		Ass(-2,"Msg30","'" + "30.) IR SWBD B1-2-d-24VDC-PS1-HEALTH" + "'",0);                      
+   		Ass(-2,"Msg31","'" + "31.) IR SWBD B1-2-d-24VDC-PS2-HEALTH" + "'",0);
+END                     
+
+FUNCTION PMDC_B1_1_i_M340_Rack1_Slot7_Msg()
+	 	//Msg1~16 Register 40270                            
+   		Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-2-e-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-2-e-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-2-e-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-2-e-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-2-e-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-2-e-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-2-e-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-2-e-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-2-f-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-2-f-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-2-f-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-2-f-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-2-f-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-2-f-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-2-f-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-2-f-24VDC-PS2-HEALTH" + "'",0);
+   		//Msg16~32 Register 40271
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-2-g-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-2-g-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-2-g-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-2-g-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-2-g-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-2-g-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-2-g-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-2-g-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) SPARE" + "'",0); 
+   		Ass(-2,"Msg25","'" + "25.) SPARE" + "'",0);              
+   		Ass(-2,"Msg26","'" + "26.) SPARE" + "'",0);               
+   		Ass(-2,"Msg27","'" + "27.) SPARE" + "'",0);           
+   		Ass(-2,"Msg28","'" + "28.) SPARE" + "'",0);         
+   		Ass(-2,"Msg29","'" + "29.) SPARE" + "'",0);                    
+   		Ass(-2,"Msg30","'" + "30.) SPARE" + "'",0);                      
+   		Ass(-2,"Msg31","'" + "31.) SPARE" + "'",0);
+END  
+
+//********************** PLC M340 Msg Call **********************
+//IR PMDC For Levels 4 and 5 Located at 4M
+FUNCTION PMDC_B1_2_i_M340_Rack1_Slot3_Msg()
+	 	//Msg1~32
+   		Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-2-m-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-2-m-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-2-m-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-2-m-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-2-m-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-2-m-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-2-m-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-2-m-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-2-n-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-2-n-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-2-n-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-2-n-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-2-n-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-2-n-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-2-n-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-2-n-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-2-o-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-2-o-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-2-o-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-2-o-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-2-o-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-2-o-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-2-o-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-2-o-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) IR SWBD B1-2-p-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg25","'" + "25.) IR SWBD B1-2-p-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg26","'" + "26.) IR SWBD B1-2-p-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg27","'" + "27.) IR SWBD B1-2-p-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg28","'" + "28.) IR SWBD B1-2-p-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg29","'" + "29.) IR SWBD B1-2-p-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg30","'" + "30.) IR SWBD B1-2-p-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg31","'" + "31.) IR SWBD B1-2-p-24VDC-PS2-HEALTH" + "'",0);
+END
+
+FUNCTION PMDC_B1_2_i_M340_Rack1_Slot4_Msg()
+	 	//Msg1~32                             
+   		Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-1-n-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-1-n-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-1-n-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-1-n-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-1-n-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-1-n-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-1-n-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-1-n-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-1-o-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-1-o-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-1-o-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-1-o-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-1-o-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-1-o-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-1-o-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-1-o-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-1-p-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-1-p-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-1-p-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-1-p-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-1-p-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-1-p-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-1-p-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-1-p-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) Transformer Door Open/Closed Status" + "'",0); 
+   		Ass(-2,"Msg25","'" + "25.) Transformer Fan Status" + "'",0);              
+   		Ass(-2,"Msg26","'" + "26.) Transformer Fan Fault" + "'",0);               
+   		Ass(-2,"Msg27","'" + "27.) Selector Switch Auto Mode" + "'",0);           
+   		Ass(-2,"Msg28","'" + "28.) Selector Switch Manual Mode" + "'",0);         
+   		Ass(-2,"Msg29","'" + "29.) Reverse Power 86" + "'",0);                    
+   		Ass(-2,"Msg30","'" + "30.) CB 52U 86 Trip" + "'",0);                      
+   		Ass(-2,"Msg31","'" + "31.) CB 52G 86 Trip" + "'",0);
+END                                           
+
+FUNCTION PMDC_B1_2_i_M340_Rack1_Slot5_Msg()
+	 	//Msg1~32
+   		Ass(-2,"Msg0","'" +  "00.) 125VDC Input Healthy" + "'",0);                              
+   		Ass(-2,"Msg1","'" +  "01.) Generator Common Shutdown" + "'",0);               
+   		Ass(-2,"Msg2","'" +  "02.) Generator Common Warning" + "'",0);                
+   		Ass(-2,"Msg3","'" +  "03.) Generator Ready to Load" + "'",0);                 
+   		Ass(-2,"Msg4","'" +  "04.) Transfomrer Temperature Alarm" + "'",0);           
+   		Ass(-2,"Msg5","'" +  "05.) 125VDC Power Supply Failure" + "'",0);                              
+   		Ass(-2,"Msg6","'" +  "06.) BDM PMDC B1-2-i-4 300kA TVSS" + "'",0);            
+   		Ass(-2,"Msg7","'" +  "07.) BDM PMDC B1-2-i-4 R1 150kA TVSS" + "'",0);         
+   		Ass(-2,"Msg8","'" +  "08.) BDM PMDC B1-2-i-4 R3 150kA TVSS" + "'",0);         
+   		Ass(-2,"Msg9","'" +  "09.) BDM PMDC B1-2-i-4 R5 150kA TVSS" + "'",0);         
+   		Ass(-2,"Msg10","'" + "10.) BDM PMDC B1-2-i-4 R7 150kA TVSS" + "'",0);         
+   		Ass(-2,"Msg11","'" + "11.) BDM PMDC B1-2-i-4 R9 150kA TVSS" + "'",0);         
+   		Ass(-2,"Msg12","'" + "12.) BDM PMDC B1-2-i-4 R11 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg13","'" + "13.) BDM PMDC B1-2-i-4 R13 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg14","'" + "14.) BDM PMDC B1-2-i-4 R15 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg15","'" + "15.) BDM PMDC B1-2-i-4 R17 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg16","'" + "16.) BDM PMDC B1-2-i-4 R19 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg17","'" + "17.) BDM PMDC B1-2-i-4 R20 150kA TVSS" + "'",0);        
+   		Ass(-2,"Msg18","'" + "18.) SPARE" + "'",0);                                   
+   		Ass(-2,"Msg19","'" + "19.) SPARE" + "'",0);                                   
+   		Ass(-2,"Msg20","'" + "20.) BDM PMDC B1-2-i-3 300kA TVSS" + "'",0);                       
+   		Ass(-2,"Msg21","'" + "21.) BDM PMDC B1-2-i-3 R1 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg22","'" + "22.) BDM PMDC B1-2-i-3 R3 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg23","'" + "23.) BDM PMDC B1-2-i-3 R5 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg24","'" + "24.) BDM PMDC B1-2-i-3 R7 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg25","'" + "25.) BDM PMDC B1-2-i-3 R9 150kA TVSS" + "'",0);                    
+   		Ass(-2,"Msg26","'" + "26.) BDM PMDC B1-2-i-3 R11 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg27","'" + "27.) BDM PMDC B1-2-i-3 R13 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg28","'" + "28.) BDM PMDC B1-2-i-3 R15 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg29","'" + "29.) BDM PMDC B1-2-i-3 R17 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg30","'" + "30.) BDM PMDC B1-2-i-3 R19 150kA TVSS" + "'",0);                   
+   		Ass(-2,"Msg31","'" + "31.) BDM PMDC B1-2-i-3 R20 150kA TVSS" + "'",0);
+END       
+
+FUNCTION PMDC_B1_2_i_M340_Rack1_Slot6_Msg()
+	 	//Msg1~32                             
+   		Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-1-h-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-1-h-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-1-h-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-1-h-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-1-h-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-1-h-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-1-h-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-1-h-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-1-j-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-1-j-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-1-j-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-1-j-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-1-j-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-1-j-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-1-j-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-1-j-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-1-k-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-1-k-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-1-k-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-1-k-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-1-k-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-1-k-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-1-k-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-1-k-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) IR SWBD B1-1-m-Q1-1-OPEN/CLOSED" + "'",0); 
+   		Ass(-2,"Msg25","'" + "25.) IR SWBD B1-1-m-Q1-1-TRIP STATUS" + "'",0);              
+   		Ass(-2,"Msg26","'" + "26.) IR SWBD B1-1-m-Q1-2-OPEN/CLOSED" + "'",0);               
+   		Ass(-2,"Msg27","'" + "27.) IR SWBD B1-1-m-Q1-2-TRIP STATUS" + "'",0);           
+   		Ass(-2,"Msg28","'" + "28.) IR SWBD B1-1-m-Q1-3-OPEN/CLOSED" + "'",0);         
+   		Ass(-2,"Msg29","'" + "29.) IR SWBD B1-1-m-Q1-3-TRIP STATUS" + "'",0);                    
+   		Ass(-2,"Msg30","'" + "30.) IR SWBD B1-1-m-24VDC-PS1-HEALTH" + "'",0);                      
+   		Ass(-2,"Msg31","'" + "31.) IR SWBD B1-1-m-24VDC-PS2-HEALTH" + "'",0);
+END                     
+
+FUNCTION PMDC_B1_2_i_M340_Rack1_Slot7_Msg()
+	 	//Msg1~32                             
+   		Ass(-2,"Msg0","'" +  "00.) IR SWBD B1-2-h-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg1","'" +  "01.) IR SWBD B1-2-h-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg2","'" +  "02.) IR SWBD B1-2-h-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg3","'" +  "03.) IR SWBD B1-2-h-Q1-2-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg4","'" +  "04.) IR SWBD B1-2-h-Q1-3-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg5","'" +  "05.) IR SWBD B1-2-h-Q1-3-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg6","'" +  "06.) IR SWBD B1-2-h-24VDC-PS1-HEALTH" + "'",0);        
+   		Ass(-2,"Msg7","'" +  "07.) IR SWBD B1-2-h-24VDC-PS2-HEALTH" + "'",0); 
+   		Ass(-2,"Msg8","'" +  "08.) IR SWBD B1-2-j-Q1-1-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg9","'" +  "09.) IR SWBD B1-2-j-Q1-1-TRIP STATUS" + "'",0); 
+   		Ass(-2,"Msg10","'" + "10.) IR SWBD B1-2-j-Q1-2-OPEN/CLOSED" + "'",0);        
+   		Ass(-2,"Msg11","'" + "11.) IR SWBD B1-2-j-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg12","'" + "12.) IR SWBD B1-2-j-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg13","'" + "13.) IR SWBD B1-2-j-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg14","'" + "14.) IR SWBD B1-2-j-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg15","'" + "15.) IR SWBD B1-2-j-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg16","'" + "16.) IR SWBD B1-2-k-Q1-1-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg17","'" + "17.) IR SWBD B1-2-k-Q1-1-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg18","'" + "18.) IR SWBD B1-2-k-Q1-2-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg19","'" + "19.) IR SWBD B1-2-k-Q1-2-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg20","'" + "20.) IR SWBD B1-2-k-Q1-3-OPEN/CLOSED" + "'",0);
+   		Ass(-2,"Msg21","'" + "21.) IR SWBD B1-2-k-Q1-3-TRIP STATUS" + "'",0);
+   		Ass(-2,"Msg22","'" + "22.) IR SWBD B1-2-k-24VDC-PS1-HEALTH" + "'",0);
+   		Ass(-2,"Msg23","'" + "23.) IR SWBD B1-2-k-24VDC-PS2-HEALTH" + "'",0);
+   		Ass(-2,"Msg24","'" + "24.) SPARE" + "'",0); 
+   		Ass(-2,"Msg25","'" + "25.) SPARE" + "'",0);              
+   		Ass(-2,"Msg26","'" + "26.) SPARE" + "'",0);               
+   		Ass(-2,"Msg27","'" + "27.) SPARE" + "'",0);           
+   		Ass(-2,"Msg28","'" + "28.) SPARE" + "'",0);         
+   		Ass(-2,"Msg29","'" + "29.) SPARE" + "'",0);                    
+   		Ass(-2,"Msg30","'" + "30.) SPARE" + "'",0);                      
+   		Ass(-2,"Msg31","'" + "31.) SPARE" + "'",0);
+END                     
+               
+FUNCTION SDC_B1_1_M340_Rack1_Slot3_Msg()
+	   //Msg1~32   
+	   Ass(-2,"Msg0","'" +  "00.) SDC XFMR Feeder J02 B1-1-i Open/Close Status" + "'",0);
+	   Ass(-2,"Msg1","'" +  "01.) SDC XFMR Feeder J02 B1-1-i Trip Status" + "'",0);
+	   Ass(-2,"Msg2","'" +  "02.) SDC XFMR Feeder J03 B1-1-a Open/Close Status" + "'",0);
+	   Ass(-2,"Msg3","'" +  "03.) SDC XFMR Feeder J03 B1-1-a Trip Status" + "'",0);
+	   Ass(-2,"Msg4","'" +  "04.) SDC XFMR Feeder J04 B1-1-b Open/Close Status" + "'",0);
+	   Ass(-2,"Msg5","'" +  "05.) SDC XFMR Feeder J04 B1-1-b Trip Status" + "'",0);
+	   Ass(-2,"Msg6","'" +  "06.) SDC XFMR Feeder J05 B1-1-c Open/Close Status" + "'",0);
+	   Ass(-2,"Msg7","'" +  "07.) SDC XFMR Feeder J05 B1-1-c Trip Status" + "'",0);
+	   Ass(-2,"Msg8","'" +  "08.) SDC XFMR Feeder J06 B1-1-d Open/Close Status" + "'",0);
+	   Ass(-2,"Msg9","'" +  "09.) SDC XFMR Feeder J06 B1-1-d Trip Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) SDC XFMR Feeder J07 B1-1-e Open/Close Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) SDC XFMR Feeder J07 B1-1-e Trip Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) SDC XFMR Feeder J08 B1-1-f Open/Close Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) SDC XFMR Feeder J08 B1-1-f Trip Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) SDC XFMR Feeder J09 B1-1-g Open/Close Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) SDC XFMR Feeder J09 B1-1-g Trip Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) SDC XFMR Feeder J10 B1-1-h Open/Close Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) SDC XFMR Feeder J10 B1-1-h Trip Status" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) SDC XFMR Feeder J11 B1-1-j Open/Close Status" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) SDC XFMR Feeder J11 B1-1-j Trip Status" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) SDC XFMR Feeder J12 B1-1-k Open/Close Status" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) SDC XFMR Feeder J12 B1-1-k Trip Status" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) SDC XFMR Feeder J13 B1-1-m Open/Close Status" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) SDC XFMR Feeder J13 B1-1-m Trip Status" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SDC XFMR Feeder J14 B1-1-n Open/Close Status" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) SDC XFMR Feeder J14 B1-1-n Trip Status" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SDC XFMR Feeder J15 B1-1-o Open/Close Status" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SDC XFMR Feeder J15 B1-1-o Trip Status" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) SDC XFMR Feeder J16 B1-1-p Open/Close Status" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) SDC XFMR Feeder J16 B1-1-p Trip Status" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SDC XFMR Feeder J17 B1-1-q Open/Close Status" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SDC XFMR Feeder J17 B1-1-q Trip Status" + "'",0);
+END
+
+FUNCTION SDC_B1_1_M340_Rack1_Slot4_Msg()
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "00.) SDC XFMR Feeder J18 B1-1-r Open/Close Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "01.) SDC XFMR Feeder J18 B1-1-r Trip Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "02.) SDC XFMR Feeder J19 B1-1-s Open/Close Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "03.) SDC XFMR Feeder J19 B1-1-s Trip Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "04.) SDC XFMR Feeder J20 SPARE Open/Close Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "05.) SDC XFMR Feeder J20 SPARE Trip Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "06.) SDC XFMR Feeder J21 TIE Open/Close Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "07.) SDC XFMR Feeder J21 TIE Trip Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "08.) SPARE " + "'",0);
+	   Ass(-2,"Msg9","'" + "09.) SPARE " + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) SPARE " + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) SDC BUS Differential Relay" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) SPARE " + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) SPARE " + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) SPARE " + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) SPARE " + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) SPARE " + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) SPARE " + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) SPARE " + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) SPARE " + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) SPARE " + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) SPARE " + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) SPARE " + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) SPARE " + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE " + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) SPARE " + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SPARE " + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) SPARE " + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) SPARE " + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SPARE " + "'",0); 
+	   Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0); 
+END
+
+FUNCTION SDC_B1_2_M340_Rack1_Slot3_Msg()
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" +  "00.) SDC XFMR Feeder J01 B1-2-TIE1 Open/Close Status" + "'",0);
+	   Ass(-2,"Msg1","'" +  "01.) SDC XFMR Feeder J01 B1-2-TIE1 Trip Status" + "'",0);
+	   Ass(-2,"Msg2","'" +  "02.) SDC XFMR Feeder J02 B1-2-a Open/Close Status" + "'",0);
+	   Ass(-2,"Msg3","'" +  "03.) SDC XFMR Feeder J02 B1-2-a Trip Status" + "'",0);
+	   Ass(-2,"Msg4","'" +  "04.) SDC XFMR Feeder J03 B1-2-b Open/Close Status" + "'",0);
+	   Ass(-2,"Msg5","'" +  "05.) SDC XFMR Feeder J03 B1-2-b Trip Status" + "'",0);
+	   Ass(-2,"Msg6","'" +  "06.) SDC XFMR Feeder J04 B1-2-c Open/Close Status" + "'",0);
+	   Ass(-2,"Msg7","'" +  "07.) SDC XFMR Feeder J04 B1-2-c Trip Status" + "'",0);
+	   Ass(-2,"Msg8","'" +  "08.) SDC XFMR Feeder J05 B1-2-d Open/Close Status" + "'",0);
+	   Ass(-2,"Msg9","'" +  "09.) SDC XFMR Feeder J05 B1-2-d Trip Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) SDC XFMR Feeder J06 B1-2-e Open/Close Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) SDC XFMR Feeder J06 B1-2-e Trip Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) SDC XFMR Feeder J07 B1-2-f Open/Close Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) SDC XFMR Feeder J07 B1-2-f Trip Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) SDC XFMR Feeder J08 B1-2-g Open/Close Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) SDC XFMR Feeder J08 B1-2-g Trip Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) SDC XFMR Feeder J09 B1-2-h Open/Close Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) SDC XFMR Feeder J09 B1-2-h Trip Status" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) SDC XFMR Feeder J10 B1-2-j Open/Close Status" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) SDC XFMR Feeder J10 B1-2-j Trip Status" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) SDC XFMR Feeder J11 B1-2-k Open/Close Status" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) SDC XFMR Feeder J11 B1-2-k Trip Status" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) SDC XFMR Feeder J12 B1-2-i Open/Close Status" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) SDC XFMR Feeder J12 B1-2-i Trip Status" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SDC XFMR Feeder J13 B1-2-m Open/Close Status" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) SDC XFMR Feeder J13 B1-2-m Trip Status" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SDC XFMR Feeder J14 B1-2-n Open/Close Status" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SDC XFMR Feeder J14 B1-2-n Trip Status" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) SDC XFMR Feeder J15 B1-2-o Open/Close Status" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) SDC XFMR Feeder J15 B1-2-o Trip Status" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SDC XFMR Feeder J16 B1-2-p Open/Close Status" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SDC XFMR Feeder J16 B1-2-p Trip Status" + "'",0);
+END                                          
+                                              
+FUNCTION SDC_B1_2_M340_Rack1_Slot4_Msg()
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "00.) SDC XFMR Feeder J17 B1-2-q Open/Close Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "01.) SDC XFMR Feeder J17 B1-2-q Trip Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "02.) SDC XFMR Feeder J18 B1-2-r Open/Close Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "03.) SDC XFMR Feeder J18 B1-2-r Trip Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "04.) SDC XFMR Feeder J19 B1-2-s Open/Close Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "05.) SDC XFMR Feeder J19 B1-2-s Trip Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "06.) SDC XFMR Feeder J20 SPARE Open/Close Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "07.) SDC XFMR Feeder J20 SPARE Trip Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "08.) SDC XFMR Feeder J21 TIE2 Open/Close Status" + "'",0);    
+	   Ass(-2,"Msg9","'" + "09.) SDC XFMR Feeder J21 TIE2 Trip Status" + "'",0);          
+	   Ass(-2,"Msg10","'" + "10.) SPARE " + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) SPARE " + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) SPARE " + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) SPARE " + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) SDC BUS Differential Relay " + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) SPARE " + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) SPARE " + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) SPARE " + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) SPARE " + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) SPARE " + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) SPARE " + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) SPARE " + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) SPARE " + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) SPARE " + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE " + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) SPARE " + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SPARE " + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) SPARE " + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) SPARE " + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SPARE " + "'",0); 
+	   Ass(-2,"Msg31","'" + "31.) SPARE " + "'",0); 
+END
+
+FUNCTION PMDC_B1_1_q_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "00.) PMDC B1-1-q Mechanical Feeder Q1-1 Tripped Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "01.) PMDC B1-1-q Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "02.) PMDC B1-1-q Mechanical Feeder Q1-3 Tripped Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "03.) PMDC B1-1-q Mechanical Feeder Q1-4 Tripped Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "04.) PMDC B1-1-q Mechanical Feeder Q1-5 Tripped Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "05.) PMDC B1-1-q Mechanical Feeder Q1-6 Tripped Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "06.) PMDC B1-1-q Mechanical Feeder Q1-7 Tripped Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "07.) PMDC B1-1-q Mechanical Feeder Q1-8 Tripped Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "08.) PMDC B1-1-q Mechanical Feeder Q1-9 Tripped Status" + "'",0);
+	   Ass(-2,"Msg9","'" + "09.) PMDC B1-1-q Mechanical Feeder Q1-10 Tripped Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1-1-q Mechanical Feeder Q1-11 Tripped Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1-1-q Mechanical Feeder Q1-12 Tripped Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1-1-q Mechanical Feeder Q1-13 Tripped Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) PMDC B1-1-q Mechanical Feeder Q1-14 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) PMDC B1-1-q Mechanical Feeder Q1-14 Tripped Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) PMDC B1-1-q Mechanical Feeder Q1-15 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) PMDC B1-1-q Mechanical Feeder Q1-15 Tripped Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) PMDC B1-1-q Mechanical Feeder Q1-16 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) PMDC B1-1-q Mechanical Feeder Q1-16 Tripped Status" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) PMDC B1-1-q Mechanical Feeder Q1-17 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) PMDC B1-1-q Mechanical Feeder Q1-17 Tripped Status" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) PMDC B1-1-q Mechanical Feeder Q1-18 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) PMDC B1-1-q Mechanical Feeder Q1-18 Tripped Status" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) PMDC B1-1-q Mechanical Feeder Q1-19 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) PMDC B1-1-q Mechanical Feeder Q1-19 Tripped Status" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) PMDC B1-1-q Mechanical Feeder Q1-20 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) PMDC B1-1-q Mechanical Feeder Q1-20 Tripped Status" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1-1-q Transfomrer Door Open / Closed Status" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1-1-q Transfomrer Fan Status" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1-1-q Transfomrer Fan Fault" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1-1-q Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) PMDC B1-1-q Selector Switch Manual Mode" + "'",0);
+END	     
+
+FUNCTION PMDC_B1_1_q_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "00.) PMDC B1-1-q Reverse Power 86" + "'",0);       
+     	Ass(-2,"Msg1","'" + "01.) PMDC B1-1-q CB 52U 86 Trip" + "'",0);      
+     	Ass(-2,"Msg2","'" + "02.) PMDC B1-1-q CB 52G 86 Trip" + "'",0);      
+     	Ass(-2,"Msg3","'" + "03.) PMDC B1-1-q Generator Common Shutdown" + "'",0);
+     	Ass(-2,"Msg4","'" + "04.) PMDC B1-1-q Generator Common Warning" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "05.) PMDC B1-1-q Generator Ready to Load" + "'",0);                
+     	Ass(-2,"Msg6","'" + "06.) PMDC B1-1-q 125VDC PS1 Health" + "'",0);      
+     	Ass(-2,"Msg7","'" + "07.) PMDC B1-1-q Transfomrer Temperature Alarm" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "08.) PMDC B1-1-q 125VDC PS2 Health" + "'",0);
+     	Ass(-2,"Msg9","'" + "09.)  SPARE " + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) SPARE " + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) SPARE " + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) SPARE " + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) SPARE " + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) SPARE " + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE " + ".",0);
+END          
+
+FUNCTION PMDC_B1_1_r_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "00.) PMDC B1-1-r Mechanical Feeder Q1-1 Tripped Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "01.) PMDC B1-1-r Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "02.) PMDC B1-1-r Mechanical Feeder Q1-3 Tripped Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "03.) PMDC B1-1-r Mechanical Feeder Q1-4 Tripped Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "04.) PMDC B1-1-r Mechanical Feeder Q1-5 Tripped Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "05.) PMDC B1-1-r Mechanical Feeder Q1-6 Tripped Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "06.) PMDC B1-1-r Mechanical Feeder Q1-7 Tripped Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "07.) PMDC B1-1-r Mechanical Feeder Q1-8 Tripped Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "08.) PMDC B1-1-r Mechanical Feeder Q1-9 Tripped Status" + "'",0);
+	   Ass(-2,"Msg9","'" + "09.) PMDC B1-1-r Mechanical Feeder Q1-10 Tripped Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1-1-r Mechanical Feeder Q1-11 Tripped Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1-1-r Mechanical Feeder Q1-12 Tripped Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1-1-r Mechanical Feeder Q1-13 Tripped Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) PMDC B1-1-r Mechanical Feeder Q1-14 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) PMDC B1-1-r Mechanical Feeder Q1-14 Tripped Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) PMDC B1-1-r Mechanical Feeder Q1-15 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) PMDC B1-1-r Mechanical Feeder Q1-15 Tripped Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) SPARE " + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) SPARE " + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) SPARE " + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) SPARE " + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) SPARE " + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) SPARE " + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) SPARE " + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE " + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) SPARE " + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1-1-r Transfomrer Door Open / Closed Status" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1-1-r Transfomrer Fan Status " + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1-1-r Transfomrer Fan Fault " + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1-1-r Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) PMDC B1-1-r Selector Switch Manual Mode" + "'",0);
+END	  
+
+FUNCTION PMDC_B1_1_r_M340_Rack1_Slot4_Msg()	
+	  //Msg1~32
+    	Ass(-2,"Msg0","'" + "00.) PMDC B1-1-r Reverse Power 86" + "'",0);       
+    	Ass(-2,"Msg1","'" + "01.) PMDC B1-1-r CB 52U 86 Trip" + "'",0);      
+    	Ass(-2,"Msg2","'" + "02.) PMDC B1-1-r CB 52G 86 Trip" + "'",0);      
+    	Ass(-2,"Msg3","'" + "03.) PMDC B1-1-r Generator Common Warning" + "'",0);
+    	Ass(-2,"Msg4","'" + "04.) PMDC B1-1-r Generator Ready to Load" + "'",0);                  
+    	Ass(-2,"Msg5","'" + "05.) PMDC B1-1-r Generator Common Shutdown" + "'",0);                
+    	Ass(-2,"Msg6","'" + "06.) PMDC B1-1-r 125VDC PS1 Health" + "'",0);      
+    	Ass(-2,"Msg7","'" + "07.) PMDC B1-1-r Transfomrer Temperature Alarm" + "'",0);                     
+    	Ass(-2,"Msg8","'" + "08.) PMDC B1-1-r 125VDC PS2 Health" + "'",0);
+    	Ass(-2,"Msg9","'" + "09.) SPARE " + "'",0);
+    	Ass(-2,"Msg10","'" + "10.) SPARE " + ".",0);
+    	Ass(-2,"Msg11","'" + "11.) SPARE " + ".",0);
+    	Ass(-2,"Msg12","'" + "12.) SPARE " + ".",0);
+    	Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+    	Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+    	Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+    	Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+    	Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+    	Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+    	Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+    	Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+    	Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+    	Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+    	Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+    	Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+    	Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+    	Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+    	Ass(-2,"Msg27","'" + "27.) SPARE " + ".",0);
+    	Ass(-2,"Msg28","'" + "28.) SPARE " + ".",0);              
+    	Ass(-2,"Msg29","'" + "29.) SPARE " + ".",0); 	                                  
+    	Ass(-2,"Msg30","'" + "30.) SPARE " + ".",0); 	                                  
+    	Ass(-2,"Msg31","'" + "31.) SPARE " + ".",0);
+END          
+
+FUNCTION PMDC_B1_1_s_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "00.) PMDC B1-1-s Mechanical Feeder Q1-1 Tripped Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "01.) PMDC B1-1-s Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "02.) PMDC B1-1-s Mechanical Feeder Q1-3 Tripped Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "03.) PMDC B1-1-s Mechanical Feeder Q1-4 Tripped Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "04.) PMDC B1-1-s Mechanical Feeder Q1-5 Tripped Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "05.) PMDC B1-1-s Mechanical Feeder Q1-6 Tripped Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "06.) PMDC B1-1-s Mechanical Feeder Q1-7 Tripped Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "07.) PMDC B1-1-s Mechanical Feeder Q1-8 Tripped Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "08.) PMDC B1-1-s Mechanical Feeder Q1-9 Tripped Status" + "'",0);
+	   Ass(-2,"Msg9","'" + "09.) PMDC B1-1-s Mechanical Feeder Q1-10 Tripped Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1-1-s Mechanical Feeder Q1-11 Tripped Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1-1-s Mechanical Feeder Q1-12 Tripped Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1-1-s Mechanical Feeder Q1-13 Tripped Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) PMDC B1-1-s Mechanical Feeder Q1-14 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) PMDC B1-1-s Mechanical Feeder Q1-14 Tripped Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) PMDC B1-1-s Mechanical Feeder Q1-15 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) PMDC B1-1-s Mechanical Feeder Q1-15 Tripped Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) PMDC B1-1-s Mechanical Feeder Q1-16 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) PMDC B1-1-s Mechanical Feeder Q1-16 Tripped Status" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) PMDC B1-1-s Mechanical Feeder Q1-17 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) PMDC B1-1-s Mechanical Feeder Q1-17 Tripped Status" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) PMDC B1-1-s Mechanical Feeder Q1-18 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) PMDC B1-1-s Mechanical Feeder Q1-18 Tripped Status" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) SPARE " + "'",0); 
+	   Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0); 
+	   Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + "'",0); 
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1-1-s Transfomrer Door Open / Closed Status" + ".",0); 
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1-1-s Transfomrer Fan Status" + "'",0);                
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1-1-s Transfomrer Fan Fault" + "'",0);                 
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1-1-s Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) PMDC B1-1-s Selector Switch Manual Mode" + "'",0);
+END	  
+
+FUNCTION PMDC_B1_1_s_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "00.) PMDC B1-1-s Reverse Power 86" + "'",0);       
+     	Ass(-2,"Msg1","'" + "01.) PMDC B1-1-s CB 52U 86 Trip" + "'",0);      
+     	Ass(-2,"Msg2","'" + "02.) PMDC B1-1-s CB 52G 86 Trip" + "'",0);      
+     	Ass(-2,"Msg3","'" + "03.) PMDC B1-1-s Generator Common Shutdown" + "'",0);
+     	Ass(-2,"Msg4","'" + "04.) PMDC B1-1-s Generator Common Warning" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "05.) PMDC B1-1-s Generator Ready to Load" + "'",0);                
+     	Ass(-2,"Msg6","'" + "06.) PMDC B1-1-s 125VDC PS1 Health" + "'",0);      
+     	Ass(-2,"Msg7","'" + "07.) PMDC B1-1-s Transfomrer Temperature Alarm" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "08.) PMDC B1-1-s 125VDC PS2 Health" + "'",0);
+     	Ass(-2,"Msg9","'" + "09.) SPARE " + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) SPARE " + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) SPARE " + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) SPARE " + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) SPARE " + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) SPARE " + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE " + ".",0);
+END          
+
+FUNCTION PMDC_B1_2_q_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "0.) PMDC B1-2-q Mechanical Feeder Q1-1 Tripped Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "1.) PMDC B1-2-q Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "2.) PMDC B1-2-q Mechanical Feeder Q1-3 Tripped Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "3.) PMDC B1-2-q Mechanical Feeder Q1-4 Tripped Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "4.) PMDC B1-2-q Mechanical Feeder Q1-5 Tripped Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "5.) PMDC B1-2-q Mechanical Feeder Q1-6 Tripped Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "6.) PMDC B1-2-q Mechanical Feeder Q1-7 Tripped Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "7.) PMDC B1-2-q Mechanical Feeder Q1-8 Tripped Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "8.) PMDC B1-2-q Mechanical Feeder Q1-9 Tripped Status" + "'",0);
+	   Ass(-2,"Msg9","'" + "9.) PMDC B1-2-q Mechanical Feeder Q1-10 Tripped Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1-2-q Mechanical Feeder Q1-11 Tripped Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1-2-q Mechanical Feeder Q1-12 Tripped Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1-2-q Mechanical Feeder Q1-13 Tripped Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+	   Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+	   Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+	   Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+	   Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+	   Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+	   Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+	   Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+	   Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+	   Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+	   Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+	   Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+	   Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1-2-q Transfomrer Door Open / Closed Status" + ".",0);
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1-2-q Transfomrer Fan Status" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1-2-q Transfomrer Fan Fault" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1-2-q Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) PMDC B1-2-q Selector Switch Manual Mode" + "'",0);
+END	  
+
+FUNCTION PMDC_B1_2_q_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "0.) PMDC B1-2-q Reverse Power 86" + "'",0);       
+     	Ass(-2,"Msg1","'" + "1.) PMDC B1-2-q CB 52U 86 Trip" + "'",0);      
+     	Ass(-2,"Msg2","'" + "2.) PMDC B1-2-q CB 52G 86 Trip" + "'",0);      
+     	Ass(-2,"Msg3","'" + "3.) PMDC B1-2-q Generator Common Shutdown" + "'",0);
+     	Ass(-2,"Msg4","'" + "4.) PMDC B1-2-q Generator Common Warning" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "5.) PMDC B1-2-q Generator Ready to Load" + "'",0);                
+     	Ass(-2,"Msg6","'" + "6.) PMDC B1-2-q 125VDC PS1 Health" + "'",0);      
+     	Ass(-2,"Msg7","'" + "7.) PMDC B1-2-q Transfomrer Temperature Alarm" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "8.) PMDC B1-2-q 125VDC PS2 Health" + "'",0);
+     	Ass(-2,"Msg9","'" + "9.) SPARE " + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) SPARE " + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) SPARE " + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) SPARE " + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) SPARE " + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) SPARE " + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE " + ".",0);
+END          
+
+FUNCTION PMDC_B1_2_r_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "0.) PMDC B1-2-r Mechanical Feeder Q1-1 Tripped Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "1.) PMDC B1-2-r Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "2.) PMDC B1-2-r Mechanical Feeder Q1-3 Tripped Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "3.) PMDC B1-2-r Mechanical Feeder Q1-4 Tripped Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "4.) PMDC B1-2-r Mechanical Feeder Q1-5 Tripped Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "5.) PMDC B1-2-r Mechanical Feeder Q1-6 Tripped Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "6.) PMDC B1-2-r Mechanical Feeder Q1-7 Tripped Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "7.) PMDC B1-2-r Mechanical Feeder Q1-8 Tripped Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "8.) PMDC B1-2-r Mechanical Feeder Q1-9 Tripped Status" + "'",0);
+	   Ass(-2,"Msg9","'" + "9.) PMDC B1-2-r Mechanical Feeder Q1-10 Tripped Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1-2-r Mechanical Feeder Q1-11 Tripped Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1-2-r Mechanical Feeder Q1-12 Tripped Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1-2-r Mechanical Feeder Q1-13 Tripped Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) PMDC B1-2-r Mechanical Feeder Q1-14 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) PMDC B1-2-r Mechanical Feeder Q1-14 Tripped Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) PMDC B1-2-r Mechanical Feeder Q1-15 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) PMDC B1-2-r Mechanical Feeder Q1-15 Tripped Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) PMDC B1-2-r Mechanical Feeder Q1-16 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) PMDC B1-2-r Mechanical Feeder Q1-16 Tripped Status" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) PMDC B1-2-r Mechanical Feeder Q1-17 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) PMDC B1-2-r Mechanical Feeder Q1-17 Tripped Status" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) PMDC B1-2-r Mechanical Feeder Q1-18 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) PMDC B1-2-r Mechanical Feeder Q1-18 Tripped Status" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) PMDC B1-2-r Mechanical Feeder Q1-19 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) PMDC B1-2-r Mechanical Feeder Q1-19 Tripped Status" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) PMDC B1-2-r Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) PMDC B1-2-r Mechanical Feeder Q1-20 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1-2-r Mechanical Feeder Q1-20 Tripped Status" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1-2-r Transfomrer Door Open / Closed Status" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1-2-r Transfomrer Fan Status" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1-2-r Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) PMDC B1-2-r Selector Switch Manual Mode" + "'",0);
+END	  
+
+FUNCTION PMDC_B1_2_r_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "0.) PMDC B1-2-r Reverse Power 86" + "'",0);       
+     	Ass(-2,"Msg1","'" + "1.) PMDC B1-2-r CB 52G 86 Trip" + "'",0);      
+     	Ass(-2,"Msg2","'" + "2.) PMDC B1-2-r CB 52U 86 Trip" + "'",0);      
+     	Ass(-2,"Msg3","'" + "3.) PMDC B1-2-r Generator Common Shutdown" + "'",0);
+     	Ass(-2,"Msg4","'" + "4.) PMDC B1-2-r Generator Common Warning" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "5.) PMDC B1-2-r Generator Ready to Load" + "'",0);                
+     	Ass(-2,"Msg6","'" + "6.) PMDC B1-2-r 125VDC PS Health" + "'",0);      
+     	Ass(-2,"Msg7","'" + "7.) PMDC B1-2-r Transfomrer Temperature Alarm" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "8.) SPARE " + "'",0);
+     	Ass(-2,"Msg9","'" + "9.) SPARE " + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) SPARE " + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) SPARE " + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) SPARE " + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) SPARE " + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) SPARE " + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE " + ".",0);
+END          
+
+FUNCTION PMDC_B1_2_s_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "0.) PMDC B1-2-s Mechanical Feeder Q1-1 Tripped Status" + "'",0);
+	   Ass(-2,"Msg1","'" + "1.) PMDC B1-2-s Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg2","'" + "2.) PMDC B1-2-s Mechanical Feeder Q1-3 Tripped Status" + "'",0);
+	   Ass(-2,"Msg3","'" + "3.) PMDC B1-2-s Mechanical Feeder Q1-4 Tripped Status" + "'",0);
+	   Ass(-2,"Msg4","'" + "4.) PMDC B1-2-s Mechanical Feeder Q1-5 Tripped Status" + "'",0);
+	   Ass(-2,"Msg5","'" + "5.) PMDC B1-2-s Mechanical Feeder Q1-6 Tripped Status" + "'",0);
+	   Ass(-2,"Msg6","'" + "6.) PMDC B1-2-s Mechanical Feeder Q1-7 Tripped Status" + "'",0);
+	   Ass(-2,"Msg7","'" + "7.) PMDC B1-2-s Mechanical Feeder Q1-8 Tripped Status" + "'",0);
+	   Ass(-2,"Msg8","'" + "8.) PMDC B1-2-s Mechanical Feeder Q1-9 Tripped Status" + "'",0);
+	   Ass(-2,"Msg9","'" + "9.) PMDC B1-2-s Mechanical Feeder Q1-10 Tripped Status" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) PMDC B1-2-s Mechanical Feeder Q1-11 Tripped Status" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) PMDC B1-2-s Mechanical Feeder Q1-12 Tripped Status" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) PMDC B1-2-s Mechanical Feeder Q1-13 Tripped Status" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) PMDC B1-2-s Mechanical Feeder Q1-14 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) PMDC B1-2-s Mechanical Feeder Q1-14 Tripped Status" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) PMDC B1-2-s Mechanical Feeder Q1-15 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) PMDC B1-2-s Mechanical Feeder Q1-15 Tripped Status" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) PMDC B1-2-s Mechanical Feeder Q1-16 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) PMDC B1-2-s Mechanical Feeder Q1-16 Tripped Status" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) PMDC B1-2-s Mechanical Feeder Q1-17 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) PMDC B1-2-s Mechanical Feeder Q1-17 Tripped Status" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) PMDC B1-2-s Mechanical Feeder Q1-18 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) PMDC B1-2-s Mechanical Feeder Q1-18 Tripped Status" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) PMDC B1-2-s Mechanical Feeder Q1-19 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) PMDC B1-2-s Mechanical Feeder Q1-19 Tripped Status" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) PMDC B1-2-s Mechanical Feeder Q1-2 Tripped Status" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) PMDC B1-2-s Mechanical Feeder Q1-20 Open / Close Status" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) PMDC B1-2-s Mechanical Feeder Q1-20 Tripped Status" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) PMDC B1-2-s Transfomrer Door Open / Closed Status" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) PMDC B1-2-s Transfomrer Fan Status" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) PMDC B1-2-s Selector Switch Auto Mode" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) PMDC B1-2-s Selector Switch Manual Mode" + "'",0);
+END	  
+
+FUNCTION PMDC_B1_2_s_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "0.) PMDC B1-2-s Reverse Power 86" + "'",0);       
+     	Ass(-2,"Msg1","'" + "1.) PMDC B1-2-s CB 52G 86 Trip" + "'",0);      
+     	Ass(-2,"Msg2","'" + "2.) PMDC B1-2-s CB 52U 86 Trip" + "'",0);      
+     	Ass(-2,"Msg3","'" + "3.) PMDC B1-2-s Generator Common Shutdown" + "'",0);
+     	Ass(-2,"Msg4","'" + "4.) PMDC B1-2-s Generator Common Warning" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "5.) PMDC B1-2-s Generator Ready to Load" + "'",0);                
+     	Ass(-2,"Msg6","'" + "6.) PMDC B1-2-s 125VDC PS1 Health" + "'",0);      
+     	Ass(-2,"Msg7","'" + "7.) PMDC B1-2-s Transfomrer Temperature Alarm" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "8.) PMDC B1-2-s 125VDC PS2 Health" + "'",0);
+     	Ass(-2,"Msg9","'" + "9.) SPARE " + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) SPARE " + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) SPARE " + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) SPARE " + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) SPARE " + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) SPARE " + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) SPARE " + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) SPARE " + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) SPARE " + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) SPARE " + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) SPARE " + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) SPARE " + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) SPARE " + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) SPARE " + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) SPARE " + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) SPARE " + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) SPARE " + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) SPARE " + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) SPARE " + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) SPARE " + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE " + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE " + ".",0);
+END          
+
+///Eddic updated for MDC PLC
+
+FUNCTION MDC_B1_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "0.) CB CLOSE BLOCKED" + "'",0);
+	   Ass(-2,"Msg1","'" + "1.) CB TRIPPED BLOCKED/SF6 STAGE 2" + "'",0);
+	   Ass(-2,"Msg2","'" + "2.) CB HYDR PUMP FAULTY" + "'",0);
+	   Ass(-2,"Msg3","'" + "3.) GIS AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg4","'" + "4.) GIS VT MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg5","'" + "5.) COLLECTIVE ALARM SF6 DENSITY STAGE 1" + "'",0);
+	   Ass(-2,"Msg6","'" + "6.) COLLECTIVE ALARM SF6 DENSITY STAGE 2" + "'",0);
+	   Ass(-2,"Msg7","'" + "7.) COLLECTIVE ALARM SF6 OVER PRESSURE" + "'",0);
+	   Ass(-2,"Msg8","'" + "8.) OPERATION ON LOCAL" + "'",0);
+	   Ass(-2,"Msg9","'" + "9.) PROT.BOARD AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) CURRENT DIFF.PROT 87L1 FAULTY" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) CURRENT DIFF.PROT 87L2 FAULTY" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) XFMR DIFF.PROT. 87T1/REF/BEF/OC/SEBF FAULTY" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) XFMR DIFF.PROT. 87T2/REF/BEF/OC/SEBF FAULTY" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) TRIP CIRCUIT SUPERVISION OPERATED" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) REMOTE BOARD AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) CURRENT DIFF.PROT. OPERATED 87L1" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) CURRENT DIFF.PROT. OPERATED 87L2" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) XFMR DIFF.PROT. OPERATED 87T1/REF/BEF/OC/SBEF" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) XFMR DIFF.PROT. OPERATED 87T2/REF/BEF/OC/SBEF" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) MASTER TRIPPED OPERATED 86" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) INTERTRIPPED FROM SPPA" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) INTERTRIP FROM 22kV" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) INTERTRIP TO 22kV" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) DC/DC CONVERTOR 1 FAIL/MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) DC/DC CONVERTOR 2 FAIL/MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SF6 COMMON LEAKAGE ALARM" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) SF6 COMMON MONITORING DEVICE FAULTY" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) SPARE" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SPARE" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SPARE" + "'",0);
+END	  
+
+FUNCTION MDC_B1_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "0.) COOLING CONTROL LOCAL" + "'",0);       
+     	Ass(-2,"Msg1","'" + "1.) COOLING CONTROL REMOTE" + "'",0);      
+     	Ass(-2,"Msg2","'" + "2.) SPARE" + "'",0);      
+     	Ass(-2,"Msg3","'" + "3.) COOLING CONTROL AUTO" + "'",0);
+     	Ass(-2,"Msg4","'" + "4.) COOLING CONTROL FAN GROUP1 RUNNING" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "5.) COOLING CONTROL FAN GROUP2 RUNNING" + "'",0);                
+     	Ass(-2,"Msg6","'" + "6.) OLTC CONTROL TAP IN PROGRESS" + "'",0);      
+     	Ass(-2,"Msg7","'" + "7.) OLTC CONTROL LOCAL MDU" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "8.) OLTC CONTROL SCADA REMOTE" + "'",0);
+     	Ass(-2,"Msg9","'" + "9.) OLTC CONTROL REMOTE RTCC" + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) OLTC CONTROL MANUAL" + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) OLTC CONTROL AUTO" + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) XFMR LOW OIL LEVEL ALARM" + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) OLTC LOW OIL LEVEL ALARM" + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) BUCHHOLZ RELAY ALARM" + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) RUBBER BAG LEAK ALARM" + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) OLTC TAP CHANGE INCOMPLETE" + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) OLTC UPPER LIMIT" + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) OLTC LOWER LIMIT" + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) OLTC MOTOR&CONTROL FAIL" + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) AC SUPPLY FAILURE" + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) AC CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) FANS CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) VT&AVR STATUS FAILURE" + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) ALARM AVR U>/U</I>" + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) DS SUPPLY&CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) XFMR PRESSURE RELIEF TRIP" + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) OLTC OIL FLOW RELAY TRIP" + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) OLTC HEATER FAULTY" + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE" + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE" + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE" + ".",0);
+END          
+
+//Eddic updated for MDC PLC
+
+FUNCTION MDC_B2_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "0.) CB CLOSE BLOCKED" + "'",0);
+	   Ass(-2,"Msg1","'" + "1.) CB TRIPPED BLOCKED/SF6 STAGE 2" + "'",0);
+	   Ass(-2,"Msg2","'" + "2.) CB HYDR PUMP FAULTY" + "'",0);
+	   Ass(-2,"Msg3","'" + "3.) GIS AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg4","'" + "4.) GIS VT MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg5","'" + "5.) COLLECTIVE ALARM SF6 DENSITY STAGE 1" + "'",0);
+	   Ass(-2,"Msg6","'" + "6.) COLLECTIVE ALARM SF6 DENSITY STAGE 2" + "'",0);
+	   Ass(-2,"Msg7","'" + "7.) COLLECTIVE ALARM SF6 OVER PRESSURE" + "'",0);
+	   Ass(-2,"Msg8","'" + "8.) OPERATION ON LOCAL" + "'",0);
+	   Ass(-2,"Msg9","'" + "9.) PROT.BOARD AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) CURRENT DIFF.PROT 87L1 FAULTY" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) CURRENT DIFF.PROT 87L2 FAULTY" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) XFMR DIFF.PROT. 87T1/REF/BEF/OC/SEBF FAULTY" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) XFMR DIFF.PROT. 87T2/REF/BEF/OC/SEBF FAULTY" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) TRIP CIRCUIT SUPERVISION OPERATED" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) REMOTE BOARD AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) CURRENT DIFF.PROT. OPERATED 87L1" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) CURRENT DIFF.PROT. OPERATED 87L2" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) XFMR DIFF.PROT. OPERATED 87T1/REF/BEF/OC/SBEF" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) XFMR DIFF.PROT. OPERATED 87T2/REF/BEF/OC/SBEF" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) MASTER TRIPPED OPERATED 86" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) INTERTRIPPED FROM SPPA" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) INTERTRIP FROM 22kV" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) INTERTRIP TO 22kV" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) DC/DC CONVERTOR 1 FAIL/MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) DC/DC CONVERTOR 2 FAIL/MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SPARE" + "'",0);
+	   Ass(-2,"Msg28","'" + "28.) SPARE" + "'",0);
+	   Ass(-2,"Msg29","'" + "29.) SPARE" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SPARE" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SPARE" + "'",0);
+END	  
+
+FUNCTION MDC_B2_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "0.) COOLING CONTROL LOCAL" + "'",0);       
+     	Ass(-2,"Msg1","'" + "1.) COOLING CONTROL REMOTE" + "'",0);      
+     	Ass(-2,"Msg2","'" + "2.) SAPRE" + "'",0);      
+     	Ass(-2,"Msg3","'" + "3.) COOLING CONTROL AUTO" + "'",0);
+     	Ass(-2,"Msg4","'" + "4.) COOLING CONTROL FAN GROUP1 RUNNING" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "5.) COOLING CONTROL FAN GROUP2 RUNNING" + "'",0);                
+     	Ass(-2,"Msg6","'" + "6.) OLTC CONTROL TAP IN PROGRESS" + "'",0);      
+     	Ass(-2,"Msg7","'" + "7.) OLTC CONTROL LOCAL MDU" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "8.) OLTC CONTROL SCADA REMOTE" + "'",0);
+     	Ass(-2,"Msg9","'" + "9.) OLTC CONTROL REMOTE RTCC" + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) OLTC CONTROL MANUAL" + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) OLTC CONTROL AUTO" + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) XFMR LOW OIL LEVEL ALARM" + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) OLTC LOW OIL LEVEL ALARM" + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) BUCHHOLZ RELAY ALARM" + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) RUBBER BAG LEAK ALARM" + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) OLTC TAP CHANGE INCOMPLETE" + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) OLTC UPPER LIMIT" + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) OLTC LOWER LIMIT" + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) OLTC MOTOR&CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) AC SUPPLY FAILURE" + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) AC CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) FANS CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) VT&AVR STATUS FAILURE" + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) ALARM AVR U>/U</I>" + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) DS SUPPLY&CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) XFMR PRESSURE RELIEF TRIP" + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) OLTC OIL FLOW RELAY TRIP" + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) OLTC HEATER FAULTY" + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) SPARE" + ".",0); 	                                  
+     	Ass(-2,"Msg30","'" + "30.) SPARE" + ".",0); 	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE" + ".",0);
+END
+
+//Eddic updated for MDC PLC
+
+FUNCTION MDC_B3_M340_Rack1_Slot3_Msg()	
+	   //Msg1~32
+	   Ass(-2,"Msg0","'" + "0.) CB CLOSE BLOCKED" + "'",0);
+	   Ass(-2,"Msg1","'" + "1.) CB TRIPPED BLOCKED/SF6 STAGE 2" + "'",0);
+	   Ass(-2,"Msg2","'" + "2.) CB HYDR PUMP FAULTY" + "'",0);
+	   Ass(-2,"Msg3","'" + "3.) GIS AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg4","'" + "4.) GIS VT MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg5","'" + "5.) COLLECTIVE ALARM SF6 DENSITY STAGE 1" + "'",0);
+	   Ass(-2,"Msg6","'" + "6.) COLLECTIVE ALARM SF6 DENSITY STAGE 2" + "'",0);
+	   Ass(-2,"Msg7","'" + "7.) COLLECTIVE ALARM SF6 OVER PRESSURE" + "'",0);
+	   Ass(-2,"Msg8","'" + "8.) OPERATION ON LOCAL" + "'",0);
+	   Ass(-2,"Msg9","'" + "9.) PROT.BOARD AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg10","'" + "10.) CURRENT DIFF.PROT 87L1 FAULTY" + "'",0);
+	   Ass(-2,"Msg11","'" + "11.) CURRENT DIFF.PROT 87L2 FAULTY" + "'",0);
+	   Ass(-2,"Msg12","'" + "12.) XFMR DIFF.PROT. 87T1/REF/BEF/OC/SEBF FAULTY" + "'",0);
+	   Ass(-2,"Msg13","'" + "13.) XFMR DIFF.PROT. 87T2/REF/BEF/OC/SEBF FAULTY" + "'",0);
+	   Ass(-2,"Msg14","'" + "14.) TRIP CIRCUIT SUPERVISION OPERATED" + "'",0);
+	   Ass(-2,"Msg15","'" + "15.) REMOTE BOARD AC/DC MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg16","'" + "16.) CURRENT DIFF.PROT. OPERATED 87L1" + "'",0);
+	   Ass(-2,"Msg17","'" + "17.) CURRENT DIFF.PROT. OPERATED 87L2" + "'",0);
+	   Ass(-2,"Msg18","'" + "18.) XFMR DIFF.PROT. OPERATED 87T1/REF/BEF/OC/SBEF" + "'",0);
+	   Ass(-2,"Msg19","'" + "19.) XFMR DIFF.PROT. OPERATED 87T2/REF/BEF/OC/SBEF" + "'",0);
+	   Ass(-2,"Msg20","'" + "20.) MASTER TRIPPED OPERATED 86" + "'",0);
+	   Ass(-2,"Msg21","'" + "21.) INTERTRIPPED FROM SPPA" + "'",0);
+	   Ass(-2,"Msg22","'" + "22.) INTERTRIP FROM 22kV" + "'",0);
+	   Ass(-2,"Msg23","'" + "23.) INTERTRIP TO 22kV" + "'",0);
+	   Ass(-2,"Msg24","'" + "24.) SPARE" + "'",0);
+	   Ass(-2,"Msg25","'" + "25.) DC/DC CONVERTOR 1 FAIL/MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg26","'" + "26.) DC/DC CONVERTOR 2 FAIL/MCB TRIPPED" + "'",0);
+	   Ass(-2,"Msg27","'" + "27.) SF6 LEAKAGE ALARM" + "'",0); !New on B3
+	   Ass(-2,"Msg28","'" + "28.) SF6 MONITORING DEVICE FAULTY" + "'",0); !New on B3
+	   Ass(-2,"Msg29","'" + "29.) SPARE" + "'",0);
+	   Ass(-2,"Msg30","'" + "30.) SPARE" + "'",0);
+	   Ass(-2,"Msg31","'" + "31.) SPARE" + "'",0);
+END	  
+
+FUNCTION MDC_B3_M340_Rack1_Slot4_Msg()	
+	   //Msg1~32
+     	Ass(-2,"Msg0","'" + "0.) COOLING CONTROL LOCAL" + "'",0);       
+     	Ass(-2,"Msg1","'" + "1.) COOLING CONTROL REMOTE" + "'",0);      
+     	Ass(-2,"Msg2","'" + "2.) SAPRE" + "'",0);      
+     	Ass(-2,"Msg3","'" + "3.) COOLING CONTROL AUTO" + "'",0);
+     	Ass(-2,"Msg4","'" + "4.) COOLING CONTROL FAN GROUP1 RUNNING" + "'",0);                  
+     	Ass(-2,"Msg5","'" + "5.) COOLING CONTROL FAN GROUP2 RUNNING" + "'",0);                
+     	Ass(-2,"Msg6","'" + "6.) OLTC CONTROL TAP IN PROGRESS" + "'",0);      
+     	Ass(-2,"Msg7","'" + "7.) OLTC CONTROL LOCAL MDU" + "'",0);                     
+     	Ass(-2,"Msg8","'" + "8.) OLTC CONTROL SCADA REMOTE" + "'",0);
+     	Ass(-2,"Msg9","'" + "9.) OLTC CONTROL REMOTE RTCC" + "'",0);
+     	Ass(-2,"Msg10","'" + "10.) OLTC CONTROL MANUAL" + ".",0);
+     	Ass(-2,"Msg11","'" + "11.) OLTC CONTROL AUTO" + ".",0);
+     	Ass(-2,"Msg12","'" + "12.) XFMR LOW OIL LEVEL ALARM" + ".",0);
+     	Ass(-2,"Msg13","'" + "13.) OLTC LOW OIL LEVEL ALARM" + ".",0);
+     	Ass(-2,"Msg14","'" + "14.) BUCHHOLZ RELAY ALARM" + ".",0);
+     	Ass(-2,"Msg15","'" + "15.) RUBBER BAG LEAK ALARM" + ".",0);
+     	Ass(-2,"Msg16","'" + "16.) OLTC TAP CHANGE INCOMPLETE" + ".",0);
+     	Ass(-2,"Msg17","'" + "17.) OLTC UPPER LIMIT" + ".",0);
+     	Ass(-2,"Msg18","'" + "18.) OLTC LOWER LIMIT" + ".",0);
+     	Ass(-2,"Msg19","'" + "19.) OLTC MOTOR&CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg20","'" + "20.) AC SUPPLY FAILURE" + ".",0);
+     	Ass(-2,"Msg21","'" + "21.) AC CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg22","'" + "22.) FANS FAULTY " + ".",0);
+     	Ass(-2,"Msg23","'" + "23.) VT&AVR STATUS FAILURE" + ".",0);
+     	Ass(-2,"Msg24","'" + "24.) ALARM AVR U>/U</I>" + ".",0);
+     	Ass(-2,"Msg25","'" + "25.) DS SUPPLY&CONTROL FAILURE" + ".",0);
+     	Ass(-2,"Msg26","'" + "26.) XFMR PRESSURE RELIEF TRIP" + ".",0);
+     	Ass(-2,"Msg27","'" + "27.) OLTC OIL FLOW RELAY TRIP" + ".",0);
+     	Ass(-2,"Msg28","'" + "28.) HEATER FAULTY" + ".",0);              
+     	Ass(-2,"Msg29","'" + "29.) OIL FILLED HV CABLE BOX PRESSURE RELIEF TRIP" + ".",0); !New on B3	                                  
+     	Ass(-2,"Msg30","'" + "30.) TEMP MONITORING FAILURE" + ".",0); !New On B3	                                  
+     	Ass(-2,"Msg31","'" + "31.) SPARE" + ".",0);
+END

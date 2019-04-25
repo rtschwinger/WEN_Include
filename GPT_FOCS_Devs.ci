@@ -1,0 +1,97 @@
+INT
+FUNCTION OpenDayTankDetail(INT DayTankNum)
+	!Dim
+	STRING dtpage1 = "CHG3_FOCS_DT1_4";
+	STRING dtpage2 = "CHG3_FOCS_DT5_8";
+	STRING dtpage3 = "CHG3_FOCS_DT9_12";
+	STRING dtpage4 = "CHG3_FOCS_DT13_16";
+	
+	! Get Current Day Tank Number passed in by Genie
+	! Open correct page based on Day Tank clicked on
+	SELECT CASE DayTankNum 
+		CASE 1
+			PageDisplay(dtpage1);
+		CASE 2	
+			PageDisplay(dtpage1);
+		CASE 3
+			PageDisplay(dtpage1);
+		CASE 4
+			PageDisplay(dtpage1);
+		CASE 5
+			PageDisplay(dtpage2);
+		CASE 6
+			PageDisplay(dtpage2);
+		CASE 7
+			PageDisplay(dtpage2);
+		CASE 8
+			PageDisplay(dtpage2);
+		CASE 9
+			PageDisplay(dtpage3);
+		CASE 10
+			PageDisplay(dtpage3);
+		CASE 11
+			PageDisplay(dtpage3);
+		CASE 12
+			PageDisplay(dtpage3);
+		CASE 13
+			PageDisplay(dtpage4);
+		CASE 14
+			PageDisplay(dtpage4);
+		CASE 15
+			PageDisplay(dtpage4);
+		CASE 16
+			PageDisplay(dtpage4);
+	END SELECT
+	
+	RETURN 0
+END
+
+//FUNCTION
+//EquipAssMetadataWin(STRING sPage,INT iMode=512+256+32+1)
+//	INT x, y;
+//	REAL ScaleX, ScaleY;
+//
+//	DspGetMouse(x, y);
+//	PageTransformCoords(WinNumber(), x, y, x, y, 0);
+//	ScaleX = StrToReal(PageInfo(16));
+//	ScaleY = StrToReal(PageInfo(17));
+//	x = x / ScaleX;
+//	y = y / ScaleY;
+//	AssMetadataWin(sPage,x,y,iMode);
+//END
+
+FUNCTION OpenPage(STRING PageName)
+  INT X,Y;
+  DspGetMouse(X,Y);
+  WinNewAt(PageName, X,Y,1);
+END
+
+INT
+FUNCTION OpenFSTDetail()
+	!Dim
+	STRING fstpage = "CHG3_FOCS_STORAGE_TANKS";
+	
+	PageDisplay(fstpage);
+	
+	RETURN 0
+END
+
+INT
+FUNCTION OpenOFTankDetail(INT OFTNum)
+	!Dim
+	STRING oftpage7 = "CHG3_FOCS_OVERFLOW_TANK7";
+	STRING oftpage8 = "CHG3_FOCS_OVERFLOW_TANK8";
+		
+	! Get Current Day Tank Number passed in by Genie
+	! Open correct genie based on Day Tank clicked on
+	SELECT CASE OFTNum 
+		CASE 7
+			PageDisplay(oftpage7);
+		CASE 8	
+			PageDisplay(oftpage8);
+	END SELECT
+	
+	RETURN 0
+END
+
+

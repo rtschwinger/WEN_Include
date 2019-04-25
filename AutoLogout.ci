@@ -1,0 +1,34 @@
+FUNCTION Auto_Logout()
+	INT iIdel_Time
+
+	iCurr_Time=TimeCurrent();
+	
+	OnEvent(0,Mouse_Move);
+	OnEvent(1,Keyboard_Keyin);
+	
+	
+	iIdel_Time = iCurr_Time - iAction_Time;
+	
+	IF iIdel_Time > 43200 THEN
+		IF UserInfo(1) = "WEN_Guest" THEN
+		 	Prompt("Idle...")
+		ELSE
+			IF UserInfo(1)= "" THEN
+				Login("WEN_Guest","WEN_Guest");
+			ELSE
+				//Data_Log("Idle Over Time, Auto Logout");
+				Login("WEN_Guest","WEN_Guest");
+			END
+		END
+	END
+END
+
+INT FUNCTION Mouse_Move()
+	iAction_Time=TimeCurrent();
+	RETURN 0;
+END
+
+INT FUNCTION Keyboard_Keyin()
+	iAction_Time=TimeCurrent();
+	RETURN 0;
+END
