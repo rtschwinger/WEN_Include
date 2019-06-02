@@ -1,6 +1,7 @@
 //********************** CATERPILLAR GENSET **********************
 MODULE INT WINDOW_OPEN_FAILED = -1;   //WinNew or WinNewAt failed
-MODULE INT DEFAULT_WINDOW_MODE = 773;	//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+//Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
+MODULE INT DEFAULT_WINDOW_MODE = 769;	
 MODULE INT XPOS_WINDOW = 14;
 MODULE INT YPOS_WINDOW = 15;
 

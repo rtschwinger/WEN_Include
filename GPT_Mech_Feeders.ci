@@ -71,7 +71,7 @@ FUNCTION GetMecFdrLbl(STRING sPMDCName,STRING sBrkrName, STRING sParam)
 	STRING sBRKR_DBF = CharReplace("_","-", sBrkrName); 
 	
 	hDBFDevice = DevOpen("PMDCMechFeeders",3); //Open Device
-	//TraceMsg("DBF Error: " + IntToStr(hDBFDevice))
+	////TraceMsg("DBF Error: " + IntToStr(hDBFDevice))
 	IF hDBFDevice <> -1 THEN
 		  iRecord = 1;
 		  DevSeek(hDBFDevice, iRecord);

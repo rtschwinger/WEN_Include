@@ -60,7 +60,7 @@ FUNCTION PM8000_ASS_POPUP_MSG(STRING sGearName)
 	//ErrLog("PM8K DBF Handle: " + IntToStr(hDBFDevice))
 	IF hDBFDevice = -1 THEN
 		DspError("DBFDevice Device Error!!");
-		//TraceMsg("Unable to Open DBF Device ");
+		////TraceMsg("Unable to Open DBF Device ");
 		Message("@(Database Access Error!)", "@(Does someone have the file open?)", 0); 
 		RETURN FALSE;
 	ELSE

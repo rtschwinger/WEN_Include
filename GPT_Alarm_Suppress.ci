@@ -54,7 +54,7 @@ END
 FUNCTION ActivateAlmSuppresion(STRING sMMTAGPFX, STRING AlmSup_Eqp)
 			INT sOnMaintTag = TagRead( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\OnAlmSuppresion");          //Alarm Suppression Status, 1=Enable, 0=Disable
 			TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stVal",xPLSFilterDateTime(AlmSup_Eqp));    //Write the EndDateTime from function xPLSFilterDateTime(AlmSup_Eqp)
-			TraceMsg("Alarm Suppression Tag Set: " + IntToStr(sOnMaintTag));
+			//TraceMsg("Alarm Suppression Tag Set: " + IntToStr(sOnMaintTag));
 			
 			STRING sSetDate = _xPLSAlarmsAdvFilter_SetDate(AlmSup_Eqp);                    //End Date input, return from function _xPLSAlarmsAdvFilter_SetDate(AlmSup_Eqp)
 			ErrLog("Date Requested: " + sSetDate);
@@ -66,7 +66,7 @@ FUNCTION ActivateAlmSuppresion(STRING sMMTAGPFX, STRING AlmSup_Eqp)
 				//STRING sOnDateTime =  "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\OnTime";
 				//TIMESTAMP tOnDateTime;
 				//tOnDateTime = TagReadEx( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\OnAlmSuppresion" + ".t");
-				//TraceMsg ("Alarm Tag On Time = " + TimestampToStr(tOnDateTime,5));
+				////TraceMsg ("Alarm Tag On Time = " + TimestampToStr(tOnDateTime,5));
 				//TagWrite(sOnDateTime,TimestampToStr(tOnDateTime,5));
 				//TagWrite(sOnDateTime,tOnDateTime);
 			
@@ -129,7 +129,7 @@ FUNCTION AlmSup_TimeOut()
 				END
 			END
 			//---------------------------------------------------------
-			//TraceMsg("Equipment = " + DevGetField(hDBFDevice,"EQUIP"));
+			////TraceMsg("Equipment = " + DevGetField(hDBFDevice,"EQUIP"));
 			DevNext(hDBFDevice);
 		END //END WHILE
 	END //END OUTER IF ELSE
@@ -483,7 +483,7 @@ FUNCTION _xPLSAlarmsAdvFilter_SetDate(STRING AlmSup_Eqp = "")
 	sEndDateTemp = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS\Temp";
 	IF sEndDate <> "" THEN
 		IF StrToDate(sEndDate) = -1 THEN
-			TraceMsg("Error : Invalid Date - " + sEndDate);
+			//TraceMsg("Error : Invalid Date - " + sEndDate);
 			TagWrite(sEndDate,"Wrong Format");
 			RETURN "";
 		END
@@ -504,7 +504,7 @@ FUNCTION _xPLSAlarmsAdvFilter_SetTime(STRING AlmSup_Eqp = "")
 	sEndTimeTemp = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS\Temp";
 	IF sEndTime <> "" THEN
 		IF StrToTime(sEndTime) = -1 THEN
-			TraceMsg("Error : Invalid Time - " + sEndTime);
+			//TraceMsg("Error : Invalid Time - " + sEndTime);
 			TagWrite(sEndTime,"Wrong Format");
 			RETURN "";
 		END
@@ -531,7 +531,7 @@ FUNCTION DisableAlmByEquiment(STRING AlmSup_Eqp)
 	STRING sMaintTimeOut = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\AlmSupTimeOut";
 	STRING sOnDateTime = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\OnTime";
 	TIMESTAMP tOnDateTime;
-	TraceMsg("DisableAlmByEquiment sOnMaintTag: " + sOnMaintTag);! + " TAG: " +sTag);
+	//TraceMsg("DisableAlmByEquiment sOnMaintTag: " + sOnMaintTag);! + " TAG: " +sTag);
 	IF (sOnMaintTag <> "" AND sTag = "") THEN
 		sTag = sOnMaintTag;
 	END // END IF sOnMaintTag
@@ -543,7 +543,7 @@ FUNCTION DisableAlmByEquiment(STRING AlmSup_Eqp)
 			AlmBrowseFirst(iSession);
 			sEquipName = AlmBrowseGetField(iSession, "CUSTOM8");
 			!sENM_Maint = AlmBrowseGetField(iSession, "CUSTOM6");			
-			//TraceMsg("DisableAlmByEquiment sEquipName: " + sEquipName);
+			////TraceMsg("DisableAlmByEquiment sEquipName: " + sEquipName);
 			AlmBrowseClose(iSession);
 		ELSE
 			sEquipName = "";
@@ -567,7 +567,7 @@ FUNCTION DisableAlmByEquiment(STRING AlmSup_Eqp)
 				WHILE (iResult = 0) DO
 					sAlmTag = AlmBrowseGetField(iSession, "Tag");
 					sAlmCategory = AlmBrowseGetField(iSession, "Category");
-					TraceMsg("Alarm Category changing: " + sAlmCategory + " " + sAlmTag);
+					//TraceMsg("Alarm Category changing: " + sAlmCategory + " " + sAlmTag);
 					IF iAlmDisable = 0 THEN
 						SELECT CASE sAlmCategory
 							CASE IntToStr(_PLSALM_LOW)
@@ -586,7 +586,7 @@ FUNCTION DisableAlmByEquiment(STRING AlmSup_Eqp)
 							SOEEventAdd( TimestampCurrent(), "Alarm Suppression Mode^nEnable : " + sAlmTag);
 							//==============================================================================
 						CASE ELSE
-							TraceMsg("Alarm Category not found to be suppressed: " + sAlmCategory + " " + sAlmTag);
+							//TraceMsg("Alarm Category not found to be suppressed: " + sAlmCategory + " " + sAlmTag);
 						END SELECT
 							//==============================================================================
 							IF StrLeft(sAlmTag,3) = "ENM" THEN
@@ -613,7 +613,7 @@ FUNCTION DisableAlmByEquiment(STRING AlmSup_Eqp)
 							SOEEventAdd( TimestampCurrent(), "Alarm Suppression Mode^nReset : " + sAlmTag);
 							//=============================================================================
 						CASE ELSE
-							TraceMsg("Alarm Category not found to set back to normal: " + sAlmCategory + " " + sAlmTag);
+							//TraceMsg("Alarm Category not found to set back to normal: " + sAlmCategory + " " + sAlmTag);
 						END SELECT
 							//==============================================================================
 							IF StrLeft(sAlmTag,3) = "ENM" THEN
@@ -642,7 +642,7 @@ FUNCTION DisableAlmByEquiment(STRING AlmSup_Eqp)
 						// STRING sOnDateTime =  "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\OnTime";
 						// TIMESTAMP tOnDateTime;
 						tOnDateTime = TagReadEx( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\OnAlmSuppresion" + ".t");
-						TraceMsg ("Alarm Tag On Time = " + TimestampToStr(tOnDateTime,5));
+						//TraceMsg ("Alarm Tag On Time = " + TimestampToStr(tOnDateTime,5));
 						TagWrite(sOnDateTime,TimestampToStr(tOnDateTime,5));
 						//TagWrite(sOnDateTime,tOnDateTime);
 						//-----------------------------------------------------------------------------------------------------
@@ -665,10 +665,10 @@ END
 // ServerGetProperty is a blocking function, need to run through TaskNew
 FUNCTION CG_AlarmSvrDiag_PageVar()
 	STRING sAlarmSvrSyncStat = ServerGetProperty("Cluster1.AlarmServer1_P", "SyncStatus");
-	TraceMsg("SyncStatus = " + sAlarmSvrSyncStat);
+	//TraceMsg("SyncStatus = " + sAlarmSvrSyncStat);
 	PageSetStr("AlarmSvrSyncStat", sAlarmSvrSyncStat);
 	STRING sAlarmSvrSyncPct = ServerGetProperty("Cluster1.AlarmServer1_P", "SyncProgress");
-	TraceMsg("SyncProgress = " + sAlarmSvrSyncPct);
+	//TraceMsg("SyncProgress = " + sAlarmSvrSyncPct);
 	PageSetStr("AlarmSvrSyncPct", sAlarmSvrSyncPct);
 END
 //***************************************************************************************

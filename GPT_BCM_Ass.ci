@@ -15,7 +15,7 @@ FUNCTION BCPM_ASS_TAG_1(STRING sCluster,STRING sDevice,INT iLoop,STRING sLoopNam
     ErrLog( "Cluster: " + sCluster + " IO Device: " + sDevice + " Loop: " + IntToStr(iLoop)  + " Loop Name: " + sLoopName  + " COF: " + RealToStr(iCOF,1,4))
     
     IF iLoop=1 THEN
-        ! Ass Tags for BCPM 1st Loop, TOTAL
+        // Ass Tags for BCPM 1st Loop, TOTAL
         Ass(-2,"Tag11",sCluster + "." + sDevice + "\MMXU1\PhV\phsA",0);
         Ass(-2,"Tag12",sCluster + "." + sDevice + "\MMXU1\PhV\phsB",0);
         Ass(-2,"Tag13",sCluster + "." + sDevice + "\MMXU1\PhV\phsC",0);
@@ -37,7 +37,7 @@ FUNCTION BCPM_ASS_TAG_1(STRING sCluster,STRING sDevice,INT iLoop,STRING sLoopNam
         Ass(-2,"Device","'" + sDevice + "'" ,0);	
         Ass(-2,"Loop","'" + sLoopName + "'",0);
         Ass(-2,"COF",iCOF,0);
-        ! Call Supergenie popup	
+        // Call Supergenie popup	
         EquipAssMetadataWin("!BCM_Monitoring");	
     ELSE
         Loop = iLoop - 2;
@@ -45,34 +45,34 @@ FUNCTION BCPM_ASS_TAG_1(STRING sCluster,STRING sDevice,INT iLoop,STRING sLoopNam
         iCh02 = iCh02+Loop*3
         iCh03 = iCh03+Loop*3
         
-        ! Ass Tags for BCPM loop 2-15
+        // Ass Tags for BCPM loop 2-15
         iAssReturn = Ass(-2,"Tag11",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Vol",0);
-        ErrLog("Assign Return: " + IntToStr(iAssReturn) + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Vol");
+        ErrLog("Assign Return: " + IntToStr(iAssReturn) + "  TAG: " + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Vol");
         Ass(-2,"Tag12",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh02) + "\Vol",0);
         Ass(-2,"Tag13",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh03) + "\Vol",0);
         Ass(-2,"Tag21",sCluster + "." + sDevice + "\MMXU3\PhV\phsA",0);
         Ass(-2,"Tag22",sCluster + "." + sDevice + "\MMXU3\PhV\phsB",0);
         Ass(-2,"Tag23",sCluster + "." + sDevice + "\MMXU3\PhV\phsC",0);
         iAssReturn = Ass(-2,"Tag31",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Amp",0);
-        ErrLog("Assign Return: " + IntToStr(iAssReturn) + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Amp");
+        ErrLog("Assign Return: " + IntToStr(iAssReturn) + "  TAG: " + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Amp");
         Ass(-2,"Tag32",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh02) + "\Amp",0);
         Ass(-2,"Tag33",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh03) + "\Amp",0);
         iAssReturn = Ass(-2,"Tag41",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Watt",0);
-        ErrLog("Assign Return: " + IntToStr(iAssReturn) + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Watt");
+        ErrLog("Assign Return: " + IntToStr(iAssReturn) + "  TAG: " + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\Watt");
         Ass(-2,"Tag42",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh02) + "\Watt",0);
         Ass(-2,"Tag43",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh03) + "\Watt",0);
         iAssReturn = Ass(-2,"Tag51",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\PwrFact",0);
-        ErrLog("Assign Return: " + IntToStr(iAssReturn) + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\PwrFact");
+        ErrLog("Assign Return: " + IntToStr(iAssReturn) + "  TAG: " + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\PwrFact");
         Ass(-2,"Tag52",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh02) + "\PwrFact",0);
         Ass(-2,"Tag53",sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh03) + "\PwrFact",0);
         iAssReturn = Ass(-2,"Tag61",sCluster + "." + sDevice + "\MMTN" + IntToStr(iCh01) + "\TotWh",0);
-        ErrLog("Assign Return: " + IntToStr(iAssReturn) + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\TotWh");
+        ErrLog("Assign Return: " + IntToStr(iAssReturn) + "  TAG: " + sCluster + "." + sDevice + "\MMXN" + IntToStr(iCh01) + "\TotWh");
         Ass(-2,"Tag62",sCluster + "." + sDevice + "\MMTN" + IntToStr(iCh02) + "\TotWh",0);
         Ass(-2,"Tag63",sCluster + "." + sDevice + "\MMTN" + IntToStr(iCh03) + "\TotWh",0);
         Ass(-2,"Device","'" + sDevice + "'" ,0);	
         Ass(-2,"Loop","'" + sLoopName + "'",0);	
         Ass(-2,"COF",iCOF,0);	
-        ! Call Supergenie popup	
+        // Call Supergenie popup	
         EquipAssMetadataWin("!BCM_Monitoring");	
     END
 END

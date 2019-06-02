@@ -203,18 +203,18 @@ INT FUNCTION PLSAlmDsp_Row_GotoPage(INT listID, INT rowID)
 	
 	sEquipment = PLSAlarm_GetDispValue(listID, rowAN, "Custom1");
 	sEquipmentName = PLSAlarm_GetDispValue(listID, rowAN, "Equipment");
-	TraceMsg("Goto Page is: " + sEquipmentName );
+	//TraceMsg("Goto Page is: " + sEquipmentName );
 
 	!Find the alarm page name
 	IF (StrLength(sEquipmentName) <> 0) THEN
 		sCluster = EquipGetCluster(sEquipmentName);
-		TraceMsg("Cluster is :" + sCluster);
+		//TraceMsg("Cluster is :" + sCluster);
 		sEquipmentName = sCluster + "." + sEquipmentName;
-		TraceMsg("Goto Page is: " + sEquipmentName );
+		//TraceMsg("Goto Page is: " + sEquipmentName );
 
 		sPage = EquipGetProperty(sEquipmentName, "Page");
 	END
-	TraceMsg("Goto Page is: " + sPage);
+	//TraceMsg("Goto Page is: " + sPage);
 	IF (StrLength(sPage) <> 0) THEN
 		nParentNo = PageInfo(8);
 		IF (nParentNo > -1) THEN

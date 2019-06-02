@@ -30,11 +30,11 @@ FUNCTION SummaryAlarms()
 			iAlmCnt = AlarmCount(1, sFilter, 1, 0); //last parameter must be 0 or alarms never come in
 			
 			IF(iAlmCnt > 0) THEN
-				TraceMsg("Alarm Count for : " + sFilter + " is : " + IntToStr(iAlmCnt));
+				//TraceMsg("Alarm Count for : " + sFilter + " is : " + IntToStr(iAlmCnt));
 			    TagWrite("SUMMARY_DSK\" + sFilter + "\Int\St\SumAlm\Cnt",iAlmCnt);
 				TagWrite(sAlmTag, 1);
 			ELSE
-				TraceMsg("Alarm Count for : " + sFilter + " is : " + IntToStr(iAlmCnt));
+				//TraceMsg("Alarm Count for : " + sFilter + " is : " + IntToStr(iAlmCnt));
 			    TagWrite("SUMMARY_DSK\" + sFilter + "\Int\St\SumAlm\Cnt",iAlmCnt);
 				TagWrite(sAlmTag, 0);
 			END

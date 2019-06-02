@@ -1,10 +1,22 @@
+//Tower 1
+	//Making one Variable for both tie breakers closed Between B1_1 and B1_2
+MODULE INT iB1_1_B1_2_Tie_OC;
+	//Making one Variable for both tie breakers closed Between B1_2 and B2_1
+MODULE INT iB1_2_B2_1_Tie_OC;
+	//Tower 2
+	//Making one Variable for both tie breakers closed Between B3_1 and B3_2
+MODULE INT iB3_1_1_B3_2_2_Tie_OC;
+	//Making one Variable for both tie breakers closed Between B3_2 TIE1 and B2_1 TIE3
+MODULE INT iB2_1_3_B3_2_1_Tie_OC;
+
+
 INT 
-FUNCTION LineLevel(REAL Volts,INT Level1=1,INT Level2=1,INT Level3=1,INT Level4=1,INT Level5=1)
-	IF Volts <= 0.0 THEN
+FUNCTION LineLevel(REAL rVolts,INT iLevel1=1,INT iLevel2=1,INT iLevel3=1,INT iLevel4=1,INT iLevel5=1)
+	IF rVolts <= 0.0 THEN
 		RETURN 0;
 	END
-	
-	RETURN Level1 AND Level2 AND Level3 AND Level4 AND Level5;
+	////TraceMsg("VOLTS is Greater than 0: " + " L1: " + IntToStr(iLevel1) + " L2: " + IntToStr(iLevel2) + " L3: " + IntToStr(iLevel3) + " L4: " + IntToStr(iLevel4) + " L5: " + IntToStr(iLevel5) );
+	RETURN iLevel1 AND iLevel2 AND iLevel3 AND iLevel4 AND iLevel5;
 END
 
 INT
@@ -26,7 +38,7 @@ FUNCTION LineLevelColor(REAL Volts,INT Level1=1,INT Level2=1,INT Level3=1,INT Le
 	INT iHide = 128;
 	INT LineOn,LineOff;
 
-    TraceMsg("BUS Type is now: " + BUSType);
+    ////TraceMsg("BUS Type is now: " + BUSType);
 
 	SELECT CASE BUSType
 		CASE "HV"
@@ -67,7 +79,7 @@ FUNCTION LineLevelColor(REAL Volts,INT Level1=1,INT Level2=1,INT Level3=1,INT Le
 		LineOff = iGreen;
 		//MDC B3
 		CASE "D_BUS","S_D"
-		LineOn = iTeal;
+		LineOn = iPink;
 		LineOff = iGreen;
 		//Powered By Genset
 		CASE "G_BUS","Gen"
@@ -296,7 +308,7 @@ END
 //WEN2.SDC_B3_2_TIE2_REF620
 //|
 //|
-//|---WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED
+//|---WEN2_SDC_B3_2_BUSHOT_B3_2T2_TIED
 //|
 //|
 //WEN2.SDC_B3_2_TIE1_REF620
@@ -317,13 +329,21 @@ END
 INT
 FUNCTION WEN2_SDC_B1_1_BUSHOT_B1()
   INT iBus_B1_1;
-  IF ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On) OR
-	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
-	WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND
-	WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
-		RETURN iBus_B1_1 = 0;
+  IF (( WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+			WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+				RETURN iBus_B1_1 = 0;
   END
   RETURN iBus_B1_1 = 1;
+END
+
+FUNCTION TEST_SDC_B1_1_BUSHOT_B1( STRING sMDC )
+
+	WEN2.MDC_B1_ION7650\MMXU1\PPV\zavg = 66000
+	WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On = 1
+
+	WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg = 22000
+	WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On = 1
+
 END
 
 //Tower 2
@@ -331,19 +351,13 @@ END
 INT
 FUNCTION WEN2_SDC_B3_1_BUSHOT_B3()
   INT iBus_B3_1;
-  ErrLog(" WEN2_SDC_B3_1_BUSHOT_B3 Initialized: " + IntToStr(iBus_B3_1));
-  
-  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 100.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On) OR
-	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
-	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND
-	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
-      iBus_B3_1 = 0;
-      ErrLog(" WEN2_SDC_B3_1_BUSHOT_B3 Returning 0: " + IntToStr(iBus_B3_1));
-      RETURN iBus_B3_1;
+  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
+			WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On) THEN
+		//ErrLog("B3 _1 Bus is COLD: " + IntToStr(iBus_B3_1));
+		RETURN iBus_B3_1 = 0;
   END
-  iBus_B3_1 = 1;
-  ErrLog(" WEN2_SDC_B3_1_BUSHOT_B3 Returning 1: " + IntToStr(iBus_B3_1));
-  RETURN iBus_B3_1;
+  //ErrLog("B3 _1 Bus is  HOT: " + IntToStr(iBus_B3_1));
+  RETURN iBus_B3_1 = 1;
 END
 
 //Tower 1
@@ -353,13 +367,11 @@ END
 INT
 FUNCTION WEN2_SDC_B1_2_BUSHOT_B1_2T1_UNTIED()
   INT iBus_B1_2_UT;
-  IF ((WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On AND 
-  WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND
-  WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND
-  WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
-    RETURN iBus_B1_2_UT = 0;
+  IF ((	WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On AND  WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND
+  			WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On AND  WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
+    	RETURN iBus_B1_2_UT = 0;
   END
-  RETURN iBus_B1_2_UT = 1;
+  	RETURN iBus_B1_2_UT = 1;
 END
 
 //Tower 2
@@ -369,15 +381,13 @@ END
 INT
 FUNCTION WEN2_SDC_B3_2_BUSHOT_B3_2T1_UNTIED()
   INT iBus_B3_2_UT;
-  ErrLog(" WEN2_SDC_B3_2_BUSHOT_B3_2T1_UNTIED Returned: " + IntToStr(iBus_B3_2_UT));
-  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND
-	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On) OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND
-	WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND
+  IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On) 
+  OR ((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND
 	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
-	ErrLog(" WEN2_SDC_B3_2_BUSHOT_B3_2T1_UNTIED Returned: " + IntToStr(iBus_B3_2_UT));
+		//ErrLog("B3 _1 Bus is COLD and Bus is not fed by B2_1: " + IntToStr(iBus_B3_2_UT));
 		RETURN iBus_B3_2_UT = 0;
   END
-  ErrLog(" WEN2_SDC_B3_2_BUSHOT_B3_2T1_UNTIED Returned: " + IntToStr(iBus_B3_2_UT));
+  //ErrLog("B3 _1 Bus is COLD and Bus is not fed by B2_1: " + IntToStr(iBus_B3_2_UT));
   RETURN iBus_B3_2_UT = 1;
 END
 
@@ -402,20 +412,18 @@ END
 //WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\phsAB
 //WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\phsAB
 INT
-FUNCTION WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED()
+FUNCTION WEN2_SDC_B3_2_BUSHOT_B3_2T2_TIED()
   INT iBus_B3_2_T;
-  ErrLog(" WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED Initialized: " + IntToStr(iBus_B3_2_T));
-  
   IF ((WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On AND 
-	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On) OR
+	WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On) OR
 	((WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND  WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On AND
-	WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
-		ErrLog(" WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED Returned: " + IntToStr(iBus_B3_2_T));
+	WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On)THEN
     RETURN iBus_B3_2_T = 0;
   END
-  ErrLog(" WEN2_SDC_B3_2_BUSHOT_B3_2T1_TIED Returned: " + IntToStr(iBus_B3_2_T));
   RETURN iBus_B3_2_T = 1;
 END
+
+//%Cluster%.SDC_%Area%_REF620\XCBR1\Pos_On AND (WEN2_SDC_B3_1_BUSHOT_B3() OR WEN2_SDC_B3_2_BUSHOT_B3_2T2_TIED())
 
 //Tower 1
 //Determines if B1_2 to B2_1 Bus is Energized
@@ -490,125 +498,108 @@ FUNCTION WEN2_BUS_SDC()
 	INT iTIE_B1_1_B1_2 = 0;
 	INT iTIE_B1_2_B2_1 = 0;
 	INT iTIE_B2_1 = 0;
-	INT B1_1_B1_2_Tie_OC = 0;
-	INT B1_2_B2_1_Tie_OC = 0;
+	//INT iB1_1_B1_2_Tie_OC = 0;
+	//INT iB1_2_B2_1_Tie_OC = 0;
 	//Tower 2
 	INT iBus_B3_1 = 0;
 	INT iBus_B3_2 = 0;
-	INT iTIE_B3_1_B3_2 = 0;
-	INT iTIE_B3_2_B2_1 = 0;
-	INT B3_1_B3_2_Tie_OC = 0;
-	INT B3_2_B2_1_Tie_OC = 0;
+	INT iTIE_B3_1_1_B3_2_2 = 0;
+	INT iTIE_B2_1_3_B3_2_1 = 0;
+	//INT iB3_1_1_B3_2_2_Tie_OC = 0;
+	//INT iB2_1_3_B3_2_1_Tie_OC = 0;
 
 	//Tower 1
 	//Making one Variable for both tie breakers closed Between B1_1 and B1_2
-	B1_1_B1_2_Tie_OC = (WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On);
-
+	iB1_1_B1_2_Tie_OC = (WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On);
 	//Making one Variable for both tie breakers closed Between B1_2 and B2_1
-	B1_2_B2_1_Tie_OC = (WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On);
-	
+	iB1_2_B2_1_Tie_OC = (WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On);
 	//Tower 2
 	//Making one Variable for both tie breakers closed Between B3_1 and B3_2
-	B3_1_B3_2_Tie_OC = (WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On);
-
-	//Making one Variable for both tie breakers closed Between B3_2 and B2_1
-	B3_2_B2_1_Tie_OC = (WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On);
+	iB3_1_1_B3_2_2_Tie_OC = (WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On);
+	//Making one Variable for both tie breakers closed Between B3_2 TIE1 and B2_1 TIE3
+	iB2_1_3_B3_2_1_Tie_OC = (WEN2.SDC_B2_1_TIE3_REF620\XCBR1\Pos_On AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On);
   
   
 	//Check to see what is open and what is closed, then set iBus variables and iTIE accordingly, 
-	//Case one is MDC_A, Case two is MDC_B.
+	//Case one is MDC_B1, Case two is MDC_B2 and Case three is MDC_B3.
 	//If there is voltage on the main B1-1 SDC bus and the SDC B1-1 Main Breaker is closed set iBus_B1_1 to one
 	//Tower 1
 	IF (WEN2.SDC_B1_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B1_1_INC_REF620\XCBR1\Pos_On THEN
 		iBus_B1_1 = 1;
 	END
-	
 	//If there is voltage on the main B2-1 SDC bus and the SDC B2-1 Main Breaker is closed set iBus_B2_1 to two
 	IF (WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On THEN
 		iBus_B2_1 = 2;
 	END
-	
 	//Tower 2
+	//If there is voltage on the main B3-1 SDC bus and the SDC B3-1 Main Breaker is closed set iBus_B3_1 to three
 	IF (WEN2.SDC_B3_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B3_1_INC_REF620\XCBR1\Pos_On THEN
+		ErrLog("Setting iBus_B3_1 to 3");
 		iBus_B3_1 = 3;
 	END
-	
-	
 	//If iBus_B1_1 is true and the B1-1 TIE Breaker is closed set iTIE_B1_1_B1_2 to iBus_B1_1
 	//Tower 1
 	IF (iBus_B1_1 > 0) AND WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On THEN
 		iTIE_B1_1_B1_2 = iBus_B1_1;
 	END
-	
 	//If iBus_B2_1 is true and the B2-1 TIE2 is closed set iTIE_B1_2_B2_1 to iBus_B2_1
 	IF (iBus_B2_1 > 0) AND WEN2.SDC_B2_1_TIE2_REF620\XCBR1\Pos_On THEN
 		iTIE_B1_2_B2_1 = iBus_B2_1;
 	END
-	
-	//If iBus_B3_1 is true and the B3-1 TIE Breaker is closed set iTIE_B3_1_B3_2 to iBus_B3_1
+	//If iBus_B3_1 is true and the B3-1-TIE1 Breaker is closed set iTIE_B3_1_1_B3_2_2 to iBus_B3_1
 	//Tower 2
 	IF (iBus_B3_1 > 0) AND WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On THEN
-		iTIE_B3_1_B3_2 = iBus_B3_1;
+		iTIE_B3_1_1_B3_2_2 = iBus_B3_1;
 	END
-	
 	//If voltage on the tie between B1_1 and B1_2 tie breaker to B1_2 set iBus_B1_2 to iTIE_B1_1_B1_2
 	//Tower 1
 	IF (iTIE_B1_1_B1_2 > 0) AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On THEN
 		iBus_B1_2 = iTIE_B1_1_B1_2;
 	END
-
-	//If voltage on the tie between B3_1 and B3_2 tie breaker to B3_2 set iBus_B3_2 to iTIE_B3_1_B3_2
+	//If voltage on the tie between B3_1 and B3_2 tie breaker to B3_2 set iBus_B3_2 to iTIE_B3_1_1_B3_2_2
 	//Tower 2
-	IF (iTIE_B3_1_B3_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On THEN
-		iBus_B3_2 = iTIE_B3_1_B3_2;
+	IF (iTIE_B3_1_1_B3_2_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On THEN
+		iBus_B3_2 = iTIE_B3_1_1_B3_2_2;
 	END
-	
 	//If voltage on the tie between B1_2 and B2_1 tie breaker to B1_2 set iBus_B1_2 to iTIE_B1_2_B2_1
 	//Tower 1
 	IF (iTIE_B1_2_B2_1 > 0) AND WEN2.SDC_B1_2_TIE2_REF620\XCBR1\Pos_On THEN
 		iBus_B1_2 = iTIE_B1_2_B2_1;
 	END
-	
-	//If voltage on the tie between B3_2 and B2_1 tie breaker to B3_2 set iBus_B3_2 to iTIE_B3_2_B2_1
+	//If voltage on the tie between B3_2 and B2_1 tie breaker to B3_2 set iBus_B3_2 to iTIE_B2_1_3_B3_2_1
 	//Tower 2
-	IF (iTIE_B3_2_B2_1 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On THEN
-		iBus_B3_2 = iTIE_B3_2_B2_1;
+	IF (iTIE_B2_1_3_B3_2_1 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On THEN
+		iBus_B3_2 = iTIE_B2_1_3_B3_2_1;
 	END
-	
 	//If no power on Bus 1_1 and there is power on Bus 1_2 and its tiebreaker to B1_1 is closed set iTIE_B1_1_B1_2 to iBUS_B1_2
 	//Tower 1
 	IF ((iBus_B1_1 = 0) AND (iBUS_B1_2 > 0) AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On) THEN
 		iTIE_B1_1_B1_2 = iBUS_B1_2;
 	END
-	
-	//If no power on Bus 3_1 and there is power on Bus 3_2 and its tiebreaker to B3_1 is closed set iTIE_B3_1_B3_2 to iBUS_B3_2
+	//If no power on Bus 3_1 and there is power on Bus 3_2 and its tiebreaker to B3_1 is closed set iTIE_B3_1_1_B3_2_2 to iBUS_B3_2
 	//Tower 2
 	IF ((iBus_B3_1 = 0) AND (iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On) THEN
-		iTIE_B3_1_B3_2 = iBUS_B3_2;
+		iTIE_B3_1_1_B3_2_2 = iBUS_B3_2;
 	END
-	
 	//If power on Bus 1_1 and its tiebreaker to B1_2 is closed set iTIE_B1_1_B1_2 to iBUS_B1_1
 	//Tower 1
 	IF ((iBus_B1_1 > 0) AND WEN2.SDC_B1_1_TIE_REF620\XCBR1\Pos_On) THEN
 		iTIE_B1_1_B1_2 = iBUS_B1_1;
 	END
-	
-	//If power on Bus 3_1 and its tiebreaker to B3_2 is closed set iTIE_B3_1_B3_2 to iBUS_B3_1
+	//If power on Bus 3_1 and its tiebreaker to B3_2 is closed set iTIE_B3_1_1_B3_2_2 to iBUS_B3_1
 	//Tower 2
 	IF ((iBus_B3_1 > 0) AND WEN2.SDC_B3_1_TIE1_REF620\XCBR1\Pos_On) THEN
-		iTIE_B3_1_B3_2 = iBUS_B3_1;
+		iTIE_B3_1_1_B3_2_2 = iBUS_B3_1;
 	END
-	
 	//If power on Bus 1_2 and its tiebreaker to B1_1 is closed set iTIE_B1_1_B1_2 to iBUS_B1_2
 	//Tower 1
 	IF ((iBUS_B1_2 > 0) AND WEN2.SDC_B1_2_TIE1_REF620\XCBR1\Pos_On) THEN
 		iTIE_B1_1_B1_2 = iBUS_B1_2;
 	END
-
-	//If power on Bus 3_2 and its tiebreaker to B3_1 is closed set iTIE_B3_1_B3_2 to iBUS_B3_2
+	//If power on Bus 3_2 and its tiebreaker to B3_1 is closed set iTIE_B3_1_1_B3_2_2 to iBUS_B3_2
 	//Tower 2
 	IF ((iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE1_REF620\XCBR1\Pos_On) THEN
-		iTIE_B3_1_B3_2 = iBUS_B3_2;
+		iTIE_B3_1_1_B3_2_2 = iBUS_B3_2;
 	END
 	
 	//If no power on Bus 2_1 and there is power on Bus 1_2 and its tiebreaker to B2_1 is closed set iTIE_B1_2_B2_1 to iBUS_B1_2
@@ -617,10 +608,10 @@ FUNCTION WEN2_BUS_SDC()
 		iTIE_B1_2_B2_1 = iBUS_B1_2;
 	END
 	
-	//If no power on Bus 2_1 and there is power on Bus 3_2 and its tiebreaker to B2_1 is closed set iTIE_B3_2_B2_1 to iBUS_B3_2
+	//If no power on Bus 2_1 and there is power on Bus 3_2 and its tiebreaker to B2_1 is closed set iTIE_B2_1_3_B3_2_1 to iBUS_B3_2
 	//Tower 2
 	IF ((iBus_B2_1 = 0) AND (iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On) THEN
-		iTIE_B3_2_B2_1 = iBUS_B3_2;
+		iTIE_B2_1_3_B3_2_1 = iBUS_B3_2;
 	END
 	
 	//If power on Bus 2_1 and its tiebreaker to B1_2 is closed set iTIE_B1_2_B2_1 to Bus 2_1
@@ -632,7 +623,7 @@ FUNCTION WEN2_BUS_SDC()
 	//If power on Bus 2_1 and its tiebreaker to B1_2 is closed set iTIE_B1_2_B2_1 to Bus 2_1
 	//Tower 2
 	IF ((iBus_B2_1 > 0) AND WEN2.SDC_B2_1_TIE3_REF620\XCBR1\Pos_On) THEN
-		iTIE_B3_2_B2_1 = iBUS_B2_1;
+		iTIE_B2_1_3_B3_2_1 = iBUS_B2_1;
 	END
 	
 	//If power on Bus 1_2 and its tiebreaker to B2_1 is closed set iTIE_B1_2_B2_1 to Bus 1_2
@@ -641,34 +632,38 @@ FUNCTION WEN2_BUS_SDC()
 		iTIE_B1_2_B2_1 = iBUS_B1_2;
 	END
 	
-	//If power on Bus 3_2 and its tiebreaker to B2_1 is closed set iTIE_B3_2_B2_1 to Bus 3_2
+	//If power on Bus 3_2 and its tiebreaker to B2_1 is closed set iTIE_B2_1_3_B3_2_1 to Bus 3_2
 	//Tower 2
 	IF ((iBUS_B3_2 > 0) AND WEN2.SDC_B3_2_TIE2_REF620\XCBR1\Pos_On) THEN
-		iTIE_B3_2_B2_1 = iBUS_B3_2;
+		iTIE_B2_1_3_B3_2_1 = iBUS_B3_2;
 	END
 	
 	//If no power on Bus 1_1 and there is power on Bus 1_2 and Both tiebreakers are closed between them set iBus_B1_1 to iBus_B2_1
 	//Tower 1
-	IF (iBus_B1_1 = 0) AND (iBUS_B1_2 > 0) AND B1_1_B1_2_Tie_OC THEN
+	IF (iBus_B1_1 = 0) AND (iBUS_B1_2 > 0) AND iB1_1_B1_2_Tie_OC THEN
 		iBus_B1_1 = iBUS_B1_2;
 	END
 	
-	//If no power on Bus 3_1 and there is power on Bus 3_2 and Both tiebreakers are closed between them set iBus_B3_1 to iBus_B2_1
+	//If no power on Bus 3_1 and there is power on Bus 3_2 and 
+	//Both tiebreakers are closed between them set iBus_B3_1 to iBus_B2_1
 	//Tower 2
-	IF (iBus_B3_1 = 0) AND (iBUS_B3_2 > 0) AND B3_1_B3_2_Tie_OC THEN
-		iBus_B3_1 = iBUS_B3_2;
+	ErrLog("iBus_B3_1 is: " + IntToStr(iBus_B3_1) + "  iBus_B2_1 is: " + IntToStr(iBus_B2_1) + "  iB3_1_1_B3_2_2_Tie_OC is: " + IntToStr(iB3_1_1_B3_2_2_Tie_OC) );
+	
+	IF (iBus_B3_1 = 0) AND (iBUS_B2_1 > 0) AND iB3_1_1_B3_2_2_Tie_OC THEN
+		ErrLog("Setting iBus_B3_1 to: " + IntToStr(iBUS_B3_2));
+		iBus_B3_1 = iBUS_B2_1;
 	END
 	
 	//If no power on Bus 2_1 and there is power on Bus 1_2 and Both tiebreakers are closed between them set iBus_B2_1 to iBus_B1_2
 	//Tower 1
-	IF (iBus_B2_1 = 0) AND (iBUS_B1_2 > 0) AND B1_1_B1_2_Tie_OC THEN
+	IF (iBus_B2_1 = 0) AND (iBUS_B1_2 > 0) AND iB1_1_B1_2_Tie_OC THEN
 		iBus_B2_1 = iBUS_B1_2;  
 	END
 	
 	//If no power on Bus 2_1 and there is power on Bus 3_2 and Both tiebreakers are closed between them set iBus_B2_1 to iBus_B3_2
 	//Tower 2
-	IF (iBus_B2_1 = 0) AND (iBUS_B3_2 > 0) AND B3_1_B3_2_Tie_OC THEN
-		iBus_B2_1 = iBUS_B3_2;  
+	IF (iBus_B2_1 = 0) AND (iBUS_B2_1 > 0) AND iB3_1_1_B3_2_2_Tie_OC THEN
+		iBus_B3_2 = iBUS_B2_1;  
 	END
 	
 	//Set Tie B2_1 on right side of MDC for Future to iBUS_B2_1    
@@ -686,8 +681,8 @@ FUNCTION WEN2_BUS_SDC()
 	PageSetInt("SDC_BUS_TIE_B1_1_B1_2",IntToStr(iTIE_B1_1_B1_2));
 	PageSetInt("SDC_BUS_TIE_B1_2_B2_1",IntToStr(iTIE_B1_2_B2_1));
 	//Tower 2
-	PageSetInt("SDC_BUS_TIE_B3_1_B3_2",IntToStr(iTIE_B3_1_B3_2));
-	PageSetInt("SDC_BUS_TIE_B3_2_B2_1",IntToStr(iTIE_B3_2_B2_1));
+	PageSetInt("SDC_BUS_TIE_B3_1_B3_2",IntToStr(iTIE_B3_1_1_B3_2_2));
+	PageSetInt("SDC_BUS_TIE_B3_2_B2_1",IntToStr(iTIE_B2_1_3_B3_2_1));
 	//Tower 1 & 2
 	PageSetInt("SDC_BUS_TIE_B2_1",IntToStr(iTIE_B2_1));
 	
@@ -702,6 +697,7 @@ FUNCTION WEN2_BUS_SDC()
 	END SELECT
 	
 	//Tower 2
+	ErrLog("Case for iBus_B3_1 : " + IntToStr(iBus_B3_1));
 	SELECT CASE iBus_B3_1
 	CASE 1
 		PageSetStr("SDC_BUS_B3_1","S_B");
@@ -724,10 +720,11 @@ FUNCTION WEN2_BUS_SDC()
 	END SELECT
 	
 	//Tower 2
+	ErrLog("Case for iBus_B3_2: " + IntToStr(iBus_B3_2));
 	SELECT CASE iBus_B3_2
 	CASE 1
 		PageSetStr("SDC_BUS_B3_2","S_B");
-	CASE 2
+	CASE 0
 		PageSetStr("SDC_BUS_B3_2","S_C");
 	CASE 3
 		PageSetStr("SDC_BUS_B3_2","S_D");
@@ -742,7 +739,7 @@ FUNCTION WEN2_BUS_SDC()
 	CASE 2
 		PageSetStr("SDC_BUS_B2_1","S_C");
 	CASE 3
-		PageSetStr("SDC_BUS_B2_1","S_C");	
+		PageSetStr("SDC_BUS_B2_1","S_D");	
 	CASE ELSE
 		PageSetStr("SDC_BUS_B2_1","");
 	END SELECT
@@ -758,13 +755,14 @@ FUNCTION WEN2_BUS_SDC()
 	END SELECT
 	
 	//Tower 2
-	SELECT CASE iTIE_B3_1_B3_2
+	ErrLog("Case for  iTIE_B3_1_1_B3_2_2 : " + IntToStr(iTIE_B3_1_1_B3_2_2));
+	SELECT CASE iTIE_B3_1_1_B3_2_2
 	CASE 1
 		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_B");
 	CASE 2
 		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_C");
 	CASE 3
-		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_C");
+		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","S_D");
 	CASE ELSE
 		PageSetStr("SDC_BUS_TIE_B3_1_B3_2","");
 	END SELECT
@@ -780,13 +778,13 @@ FUNCTION WEN2_BUS_SDC()
 	END SELECT
 	
 	//Tower 2
-	SELECT CASE iTIE_B3_2_B2_1
+	SELECT CASE iTIE_B2_1_3_B3_2_1
 	CASE 1
 		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_B");
 	CASE 2
 		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_C");
 	CASE 3
-		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_C");
+		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","S_D");
 	CASE ELSE
 		PageSetStr("SDC_BUS_TIE_B3_2_B2_1","");
 	END SELECT
@@ -798,7 +796,7 @@ FUNCTION WEN2_BUS_SDC()
 	CASE 2
 		PageSetStr("SDC_BUS_TIE_B2_1","S_C");
 	CASE 3
-		PageSetStr("SDC_BUS_TIE_B2_1","S_C");	
+		PageSetStr("SDC_BUS_TIE_B2_1","S_D");	
 	CASE ELSE
 		PageSetStr("SDC_BUS_TIE_B2_1","");
 	END SELECT
@@ -827,7 +825,7 @@ FUNCTION WEN2_PMDC_BUS_Coloring(STRING sGearLabel)
 
 	//iGBrkrState = TagRead("WEN2.PMDC_" + sGearLabel + "_52G\XCBR1\Pos_On");
 	
-	//TraceMsg("G Breaker State :"  + IntToStr(iGBrkrState));  
+	////TraceMsg("G Breaker State :"  + IntToStr(iGBrkrState));  
 	
 	SELECT CASE SGearLabel
 	CASE "B1_1_a"
@@ -1081,11 +1079,11 @@ STRING sIR = "S_IR";
 
 	IF WEN2.PMDC_B3_1_i_52G\XCBR1\Pos_On THEN
 		PageSetStr("PMDC_BUS_" + sPMDC,sBus_G);
-		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRD",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
 		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
 	ELSE
 		PageSetStr("PMDC_BUS_" + sPMDC,sBus);
-		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRD",sIR);
+		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRB",sIR);
 		PageSetStr("PMDC_BUS_" + sPMDC+ "_IRC",sIR);
 	END
 	//Bus Status
@@ -1099,23 +1097,23 @@ STRING sIR = "S_IR";
 	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
 		WEN2.PMDC_B3_1_i_Q1_2\XCBR1\Pos_On AND
 		WEN2.PMDC_B3_1_i_Q1_2\XCBR1\Pos_On.Q = "Good" THEN
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","1");
+	ELSE
+		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","0");
+	END
+	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
+		WEN2.PMDC_B3_1_i_Q1_3\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_1_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","1");
 	ELSE
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","0");
 	END
 	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
-		WEN2.PMDC_B3_1_i_Q1_3\XCBR1\Pos_On AND
-		WEN2.PMDC_B3_1_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
+		WEN2.PMDC_B3_1_i_Q1_4\XCBR1\Pos_On AND
+		WEN2.PMDC_B3_1_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","1");
 	ELSE
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","0");
-	END
-	IF WEN2.PMDC_B3_1_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
-		WEN2.PMDC_B3_1_i_Q1_4\XCBR1\Pos_On AND
-		WEN2.PMDC_B3_1_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
-		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","1");
-	ELSE
-		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRF","0");
 	END
 END
 
@@ -1147,27 +1145,12 @@ STRING sIR = "S_IR";
 	ELSE
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRC","0");
 	END
-	//Bus Status IR For Zone 7
-	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
-		WEN2.PMDC_B3_2_i_Q1_2\XCBR1\Pos_On AND
-		WEN2.PMDC_B3_2_i_Q1_2\XCBR1\Pos_On.Q = "Good" THEN
-		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","1");
-	ELSE
-		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRB","0");
-	END
 	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
 		WEN2.PMDC_B3_2_i_Q1_3\XCBR1\Pos_On AND
 		WEN2.PMDC_B3_2_i_Q1_3\XCBR1\Pos_On.Q = "Good" THEN
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","1");
 	ELSE
 		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRD","0");
-	END
-	IF WEN2.PMDC_B3_2_i_ION7650\MMXU1\PPV\zavg > 100.0 AND
-		WEN2.PMDC_B3_2_i_Q1_4\XCBR1\Pos_On AND
-		WEN2.PMDC_B3_2_i_Q1_4\XCBR1\Pos_On.Q = "Good" THEN
-		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","1");
-	ELSE
-		PageSetInt("PMDC_BUS_" + sPMDC+ "_IRE","0");
 	END
 END
 

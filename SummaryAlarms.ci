@@ -45,8 +45,8 @@ FUNCTION GPTSummaryAlarms()
 							+ "* AND (CATEGORY>=" + IntToStr(_PLSALM_HIGH) 
 							+ " AND CATEGORY<=" +IntToStr(_PLSALM_LOW) + ")";
 				
-				TraceMsg("Filter" + sFilter);
-				TraceMsg("tag" + sAlmTag);				
+				//TraceMsg("Filter" + sFilter);
+				//TraceMsg("tag" + sAlmTag);				
 				
 				iAlmCnt = AlarmCount(1, sFilter, 1, 0); //last parameter must be 0 or alarms never come in
 								

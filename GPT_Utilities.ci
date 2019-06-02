@@ -711,7 +711,7 @@ FUNCTION SuperGenie_PrintScreen()
 	END
 	
 	PageName = AssInfo("Equip",0) + "_Test Num_" + TestNo + "_at_";  //Ass_Title();
-	TraceMsg("PageName : " + PageName);
+	//TraceMsg("PageName : " + PageName);
 	SaveDateTime = GetDateAndTime();
 	Folder = Create_New_Folder();
 	WinFile(sUserProf + "\Pictures\" + Folder + "\" + PageName +"_"+ SaveDateTime + ".bmp",);
@@ -797,22 +797,22 @@ FUNCTION DspProjVersInfo()
    IF FormRead(0) = 0 THEN
   	FOR iType = 0 TO 5 DO
       sProjWENName = GetProjData(iType,0);
-      TraceMsg("Project name: " + sProjWENName);
+      //TraceMsg("Project name: " + sProjWENName);
       
       sProjWENDesc = GetProjData(iType,1);
-      TraceMsg("Project description: " + sProjWENDesc);
+      //TraceMsg("Project description: " + sProjWENDesc);
       
       sProjWENMaVer = GetProjData(iType,2);
-      TraceMsg("Project major version: " + sProjWENMaVer);
+      //TraceMsg("Project major version: " + sProjWENMaVer);
       
       sProjWENMiVer = GetProjData(iType,3);
-      TraceMsg("Project minor version: " + sProjWENMiVer);
+      //TraceMsg("Project minor version: " + sProjWENMiVer);
       
       sProjWENDate = GetProjData(iType,4);
-      TraceMsg("Project date: " + sProjWENDate);
+      //TraceMsg("Project date: " + sProjWENDate);
       
       sProjInfoArray[iType] = "Project Name: " + sProjWENName  + " " + sProjWENDesc + " Project Version: "+ sProjWENMaVer +"."+ sProjWENMiVer + " Build Date: " + sProjWENDate; 
-      TraceMsg("Project Info: " + sProjInfoArray[iType]);
+      //TraceMsg("Project Info: " + sProjInfoArray[iType]);
       FormSetText(hForm, hFieldName[iType], sProjInfoArray[iType]);
   	END
 	END  
@@ -847,7 +847,7 @@ END
 STRING FUNCTION GetProjData(INT iProjNum, INT iProjParm)
     STRING sRetVal;
     sRetVal = ProjectInfo(iProjNum,iProjParm);
-    TraceMsg ("Project Number: " + IntToStr(iProjNum) + "Project Parm: " + IntToStr(iProjParm));
+    //TraceMsg ("Project Number: " + IntToStr(iProjNum) + "Project Parm: " + IntToStr(iProjParm));
     IF sRetVal <> "" THEN
        RETURN sRetVal;
     ELSE 

@@ -142,7 +142,7 @@ FUNCTION M340_ASS_POPUP_MSG(STRING sGearName,	STRING sSLOTNUM, STRING	sCOLNAME)
 	ErrLog("M340 DBF	Error: " + IntToStr(hDBFDevice))
 	IF hDBFDevice	=	-1 THEN
 		DspError("DBFDevice	Device Error!!");
-		TraceMsg("Unable to	Open DBF Device	");
+		//TraceMsg("Unable to	Open DBF Device	");
 		Message("Database	Access Error!", "Does someone have the file open?",	0);
 		RETURN FALSE;
 	ELSE

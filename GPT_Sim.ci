@@ -385,19 +385,19 @@ INT i;
 	Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
 	Ass(-2,"CB_" + sACB + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Test",0);
 	Ass(-2,"CB_" + sACB + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Out",0);
-	TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On")
+	//TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On")
 	!GCB Setup substitutions for Generator Breaker.
 	sACB = "G";
 	Ass(-2,"CB_" + sACB + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On",0);
 	Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
 	Ass(-2,"CB_" + sACB + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Test",0);
 	Ass(-2,"CB_" + sACB + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Out",0);
-	TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On") 
+	//TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On") 
 	!XCB
 	sACB = "X";
 	Ass(-2,"CB_" + sACB + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On",0);
 	Ass(-2,"CB_" + sACB + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\PTRC1\Tr",0);
-	TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On") 
+	//TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On") 
 	
 	!LCB
 	IF (StrRight(sArea,1) <> "q") OR (StrRight(sArea,1) <> "r") OR (StrRight(sArea,5) <> "s")  THEN
@@ -408,24 +408,24 @@ INT i;
 				Ass(-2,"CB_" + sACB + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\CBRkdPos\Test",0);
 				Ass(-2,"CB_" + sACB + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB +"\XCBR1\CBRkdPos\Out",0);
 				Ass(-2,"CB_" + sACB + "_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_52" + sACB + "\MMXU1\PPV\phsAB",0);
-				TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On");
+				//TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_52" + sACB + "\XCBR1\Pos_On");
   END
   
     i = 0;
     ErrLog("PMDC Name: " + sPMDCName);
     SELECT CASE sPMDCName
-        CASE "B1_1_a","B1_1_b","B3_1_a","B3_1_b","B3_1_c","B3_1_d","B3_2_a","B3_2_b","B3_2_c"
+        CASE "B1_1_a","B1_1_b","B3_1_a","B3_1_b","B3_1_c","B3_1_d","B3_2_a","B3_2_b","B3_2_c","B3_2_d","B3_1_e","B3_2_e","B3_1_f","B3_2_f","B3_1_g","B3_2_g","B3_1_h","B3_2_h","B3_1_j","B3_2_j","B3_1_k","B3_2_k","B3_1_m"
            FOR i = 0 TO 3 DO
               IF i < 4 THEN
                  Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
-                 TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+                 //TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
               ELSE
                  Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
-                  TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+                  //TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
               END
            END
         CASE "B1_1_i","B1_2_i","B3_1_i","B3_2_i"
@@ -435,11 +435,11 @@ INT i;
                  Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Test",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Test",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Disconn",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\CBRkdPos\Out",0);
-                 TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+                 //TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
               ELSE
                  Ass(-2,"CB_" + IntToStr(i) + "_On",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On",0);
                  Ass(-2,"CB_" + IntToStr(i) + "_Trip",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\PTRC1\Tr",0);
-                 TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
+                 //TraceMsg("Tag: " + "PMDC_" + sPMDCName + "_Q1_" + IntToStr(i) + "\XCBR1\Pos_On");
               END
            END
         CASE "B1_1_q"
@@ -608,18 +608,26 @@ INT i;
 		Ass(-2,"CB_4_Volt",sCluster + "." + "PMDC_" + sPMDCName + "_Q1_4\MMXU1\PPV\zavg",0);
   END
 	
-	!Sim Win Popup
+	//Sim Win Popup
 	IF StrRight(sPMDCName,1) = "q" OR StrRight(sPMDCName,1) = "r" OR StrRight(sPMDCName,1) = "s" THEN
 	   	EquipAssMetadataWin("!mpmdc_colorsim");
-  END
+	END
   
-  IF StrRight(sPMDCName,1) = "i" THEN
+	IF StrRight(sPMDCName,1) = "i" THEN
       EquipAssMetadataWin("!irpmdc_colorsim");
-  END
+	END
   	
-  IF StrRight(sPMDCName,1) = "a" OR  StrRight(sPMDCName,1) = "b" OR StrRight(sPMDCName,1) = "c" OR StrRight(sPMDCName,1) = "d" THEN	
+	IF StrRight(sPMDCName,1) = "a" OR  StrRight(sPMDCName,1) = "b" OR StrRight(sPMDCName,1) = "c" OR StrRight(sPMDCName,1) = "d" THEN
       EquipAssMetadataWin("!pmdc_colorsim");
-  END	
+	END
+  
+	IF StrRight(sPMDCName,1) = "e" OR  StrRight(sPMDCName,1) = "f" OR StrRight(sPMDCName,1) = "g" OR StrRight(sPMDCName,1) = "h" THEN  
+      EquipAssMetadataWin("!pmdc_colorsim");
+	END
+  
+	IF StrRight(sPMDCName,1) = "j" OR StrRight(sPMDCName,1) = "k" THEN
+      EquipAssMetadataWin("!pmdc_colorsim");
+	END	
 END
 
 FUNCTION Sim_Ass_ATP(STRING sArea ,STRING sCluster)

@@ -3,7 +3,7 @@ FUNCTION StartLoadBank()
 INT LoadBankState;
 
 LoadBankState = IODeviceControl(36, 0, 0 );
-TraceMsg("LOAD BANK :" + IntToStr(LoadBankState)); 
+//TraceMsg("LOAD BANK :" + IntToStr(LoadBankState)); 
 
 END
 
