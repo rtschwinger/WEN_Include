@@ -1,0 +1,339 @@
+INT m_FirstRun_P;
+INT m_FirstRun_S;
+
+FUNCTION WEN2_Server_Status_Check_P()
+STRING sCluster = "WEN2";
+STRING ServerStatus;
+ErrSet(1);
+
+	IF NOT m_FirstRun_P THEN
+		OnEvent(32,WEN2_Server_P_Shutdown);
+		m_FirstRun_P = 1;
+	END
+	!I/O Server
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END  
+	WEN2.IOServer1\Standby\Status = ServerStatus; 
+
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer2\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer3\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer4\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer5\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer6\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer7\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_12_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer8\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_14_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer9\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C8_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer10\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C6_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer11\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C4_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer12\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C2_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer13\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer14\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_8A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer15\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_1B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer16\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_2B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer17\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_3B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer18\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_4B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer19\Standby\Status = ServerStatus; 
+	!Alarm Server
+	ServerStatus = KernelTableInfo("Tran","@@" + sCluster + "." + "WEN2_PC1_ALM","State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.AlarmServer\Primary\Status = ServerStatus;
+	!Trend Server
+	ServerStatus = KernelTableInfo("Tran","@@" + sCluster + "." + "WEN2_PC1_TRND","State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.TrendServer\Primary\Status = ServerStatus;
+	!Report Server
+	ServerStatus = KernelTableInfo("Tran","@@" + sCluster + "." + "WEN2_PC1_RPT","State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.ReportServer\Primary\Status = ServerStatus;
+	
+!Standby 
+	!I/O Server
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END  
+	WEN2.IOServer1\Standby\Status = ServerStatus; 
+
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer2\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer3\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer4\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer5\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer6\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer7\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_12_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer8\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_14_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer9\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C8_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer10\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C6_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer11\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C4_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer12\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C2_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer13\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer14\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_8A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer15\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_1B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer16\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_2B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer17\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_3B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer18\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_4B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer19\Standby\Status = ServerStatus;
+
+ErrSet(0);
+END
+
+FUNCTION WEN2_Server_Status_Check_S()
+STRING sCluster = "WEN2";
+STRING ServerStatus;
+ErrSet(1);
+
+	IF NOT m_FirstRun_S THEN
+		OnEvent(32,WEN2_Server_S_Shutdown);
+		m_FirstRun_S = 1;
+	END
+
+!Standby 
+	!I/O Server
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END  
+	WEN2.IOServer1\Standby\Status = ServerStatus; 
+
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer2\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer3\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer4\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer5\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer6\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer7\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_12_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer8\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_14_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer9\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C8_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer10\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C6_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer11\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C4_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer12\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C2_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer13\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer14\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_8A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer15\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_1B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer16\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_2B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer17\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_3B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer18\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_4B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer19\Standby\Status = ServerStatus;
+
+	!Alarm Server
+	ServerStatus = KernelTableInfo("Tran","@@" + sCluster + "." + "WEN2_PC2_ALM","State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.AlarmServer\Standby\Status = ServerStatus;
+	!Trend Server
+	ServerStatus = KernelTableInfo("Tran","@@" + sCluster + "." + "WEN2_PC2_TRND","State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.TrendServer\Standby\Status = ServerStatus;
+	!Report Server
+	ServerStatus = KernelTableInfo("Tran","@@" + sCluster + "." + "WEN2_PC2_RPT","State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.ReportServer\Standby\Status = ServerStatus;
+	
+!Primary
+	!I/O Server
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END  
+	WEN2.IOServer1\Standby\Status = ServerStatus; 
+
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer2\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer3\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer4\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_6A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer5\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_5A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer6\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_10A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer7\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_12_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer8\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_14_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer9\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C8_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer10\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C6_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer11\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C4_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer12\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_C2_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer13\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_7A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer14\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_8A_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer15\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_1B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer16\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_2B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer17\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_3B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer18\Standby\Status = ServerStatus; 
+	
+	ServerStatus = KernelTableInfo("Tran","WEN2_S_4B_IO" + sCluster,"State"); IF ServerStatus = "" THEN ServerStatus = "Offline"; END
+	WEN2.IOServer19\Standby\Status = ServerStatus; 
+
+
+ErrSet(0);
+END
+
+INT
+FUNCTION WEN2_Server_P_Shutdown()
+STRING ServerStatus = "Offline";
+	WEN2.IOServer1\Primary\Status = ServerStatus;
+	WEN2.IOServer2\Primary\Status = ServerStatus;
+	WEN2.IOServer3\Primary\Status = ServerStatus;
+	WEN2.IOServer4\Primary\Status = ServerStatus;
+	WEN2.IOServer5\Primary\Status = ServerStatus;
+	WEN2.IOServer6\Primary\Status = ServerStatus;
+	WEN2.IOServer7\Primary\Status = ServerStatus;
+	WEN2.IOServer8\Primary\Status = ServerStatus;
+	WEN2.IOServer9\Primary\Status = ServerStatus;
+	WEN2.IOServer10\Primary\Status = ServerStatus;
+	WEN2.IOServer11\Primary\Status = ServerStatus;
+	WEN2.IOServer12\Primary\Status = ServerStatus;
+	WEN2.IOServer13\Primary\Status = ServerStatus;
+	WEN2.IOServer14\Primary\Status = ServerStatus;
+	WEN2.IOServer15\Primary\Status = ServerStatus;
+	WEN2.IOServer16\Primary\Status = ServerStatus;
+	WEN2.IOServer17\Primary\Status = ServerStatus;
+	WEN2.IOServer18\Primary\Status = ServerStatus;
+	WEN2.IOServer19\Primary\Status = ServerStatus;
+	WEN2.IOServer20\Primary\Status = ServerStatus;
+	WEN2.AlarmServer\Primary\Status = ServerStatus;
+	WEN2.TrendServer\Primary\Status = ServerStatus;
+	WEN2.ReportServer\Primary\Status = ServerStatus;
+	RETURN 1;
+END
+
+INT
+FUNCTION WEN2_Server_S_Shutdown()
+STRING ServerStatus = "Offline";
+	WEN2.IOServer1\Standby\Status = ServerStatus;
+	WEN2.IOServer2\Standby\Status = ServerStatus;
+	WEN2.IOServer3\Standby\Status = ServerStatus;
+	WEN2.IOServer4\Standby\Status = ServerStatus;
+	WEN2.IOServer5\Standby\Status = ServerStatus;
+	WEN2.IOServer6\Standby\Status = ServerStatus;
+	WEN2.IOServer7\Standby\Status = ServerStatus;
+	WEN2.IOServer8\Standby\Status = ServerStatus;
+	WEN2.IOServer9\Standby\Status = ServerStatus;
+	WEN2.IOServer10\Standby\Status = ServerStatus;
+	WEN2.IOServer11\Standby\Status = ServerStatus;
+	WEN2.IOServer12\Standby\Status = ServerStatus;
+	WEN2.IOServer13\Standby\Status = ServerStatus;
+	WEN2.IOServer14\Standby\Status = ServerStatus;
+	WEN2.IOServer15\Standby\Status = ServerStatus;
+	WEN2.IOServer16\Standby\Status = ServerStatus;
+	WEN2.IOServer17\Standby\Status = ServerStatus;
+	WEN2.IOServer18\Standby\Status = ServerStatus;
+	WEN2.IOServer19\Standby\Status = ServerStatus;
+	WEN2.AlarmServer\Standby\Status = ServerStatus;
+	WEN2.TrendServer\Standby\Status = ServerStatus;
+	WEN2.ReportServer\Standby\Status = ServerStatus;
+	RETURN 1;
+END

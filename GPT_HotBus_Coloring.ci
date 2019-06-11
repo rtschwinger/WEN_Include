@@ -529,6 +529,7 @@ FUNCTION WEN2_BUS_SDC()
 	END
 	//If there is voltage on the main B2-1 SDC bus and the SDC B2-1 Main Breaker is closed set iBus_B2_1 to two
 	IF (WEN2.SDC_B2_1_ION7650_1\MMXU1\PPV\zavg > 0.0) AND WEN2.SDC_B2_1_INC_REF620\XCBR1\Pos_On THEN
+		ErrLog("Setting iBus_B2_1 to 2");
 		iBus_B2_1 = 2;
 	END
 	//Tower 2

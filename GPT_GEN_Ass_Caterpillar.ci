@@ -11,7 +11,7 @@ FUNCTION GEN_CAT_EquipPopup_L( STRING sTAGPFX,STRING sCluster, STRING sTitle = "
 		INT iMouseX = 0;
 		INT iMouseY = 0;
 		//------------------------------------------------------
-		//Message("1.)GEN_CUMMINS_EquipPopup_L.sTAGPFX: ", sTAGPFX, 33);
+		//Message("1.)GEN_CAT_EquipPopup_L.sTAGPFX: ", sTAGPFX, 33);
 		//                   Equip Ass
 		//------------------------------------------------------
 		GEN_ASS_CAT(sTAGPFX,sCluster,sTitle);

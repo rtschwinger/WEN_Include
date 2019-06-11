@@ -732,8 +732,9 @@ END
 
 STRING 
 FUNCTION Create_New_Folder()
-STRING sUserProf = GetEnv("USERPROFILE");	
-STRING sYear,sMonth,sDay,sHour,sMin,sSecond
+	STRING sUserProf = GetEnv("USERPROFILE");	
+	STRING sYear,sMonth,sDay,sHour,sMin,sSecond
+	
 	sYear=IntToStr(DateYear(TimeCurrent(),1));
 	sMonth=StrPad(IntToStr(DateMonth(TimeCurrent())),"0",-2);
 	sDay=StrPad(IntToStr(DateDay(TimeCurrent())),"0",-2);

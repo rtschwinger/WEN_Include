@@ -1,0 +1,197 @@
+//!Check Server Status
+//FUNCTION ServerCheck1()
+//     	INT iWEN2_PIO1,iWEN2_SIO2;
+//     	INT iWEN2_PIO3,iWEN2_SIO4;
+//     	INT iWEN2_PIO5,iWEN2_SIO6;
+//     	INT iWEN2_PIO7,iWEN2_SIO8;
+//
+//     	INT iWEN2_ALM1,iWEN2_ALM2;
+//     	INT iWEN2_TRND1,iWEN2_TRND2;
+//     	INT iWEN2_RPT1,iWEN2_RPT2;
+//     	INT iWEN2_P1,iWEN2_S1;
+//     	INT iWEN2_PS;
+//     	
+//     	iWEN2_PIO1=ServerIsOnline("WEN2_PC1_IO","WEN2");
+//     	iWEN2_SIO2=ServerIsOnline("WEN2_PC2_IO","WEN2");
+//     	iWEN2_PIO3=ServerIsOnline("WEN2_PC3_IO","WEN2");
+//     	iWEN2_SIO4=ServerIsOnline("WEN2_PC4_IO","WEN2");
+//     	iWEN2_PIO5=ServerIsOnline("WEN2_PC5_IO","WEN2");
+//     	iWEN2_SIO6=ServerIsOnline("WEN2_PC6_IO","WEN2");
+//     	iWEN2_PIO7=ServerIsOnline("WEN2_PC7_IO","WEN2");
+//     	iWEN2_SIO8=ServerIsOnline("WEN2_PC8_IO","WEN2");
+//     	
+//     	iWEN2_TRND1=ServerIsOnline("WEN2_PC1_TRND","WEN2");
+//     	iWEN2_TRND2=ServerIsOnline("WEN2_PC2_TRND","WEN2");
+//     	
+//     	iWEN2_ALM1=ServerIsOnline("WEN2_PC1_ALM","WEN2");
+//     	iWEN2_ALM2=ServerIsOnline("WEN2_PC2_ALM","WEN2");
+//     	
+//     	iWEN2_RPT1=ServerIsOnline("WEN2_PC1_RPT","WEN2");
+//     	iWEN2_RPT2=ServerIsOnline("WEN2_PC2_RPT","WEN2");
+//
+//     	iWEN2_PS=ServerInfo("Alarm",2,"WEN2")
+//     	
+//     	IF iWEN2_PS THEN
+//     		iWEN2_P1 = 1;
+//     		iWEN2_S1 = 0;
+//     	ELSE
+//     		iWEN2_P1 = 0;
+//     		iWEN2_S1 = 1;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO1=1) THEN
+//     		WEN2.SERVER_INFO\Primary1\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary1\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO3=1) THEN
+//     		WEN2.SERVER_INFO\Primary3\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary3\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO5=1) THEN
+//     		WEN2.SERVER_INFO\Primary5\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary5\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO7=1) THEN
+//     		WEN2.SERVER_INFO\Primary7\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary7\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO9=1) THEN
+//     		WEN2.SERVER_INFO\Primary9\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary9\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO9A=1) THEN
+//     		WEN2.SERVER_INFO\Primary9A\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary9A\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO11=1) THEN
+//     		WEN2.SERVER_INFO\Primary11\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary11\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_PIO13=1) THEN
+//     		WEN2.SERVER_INFO\Primary13\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Primary13\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_ALM1=1) THEN
+//     		WEN2.SERVER_INFO\Alarm1\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Alarm1\Shutdown\stVal=0;
+//     	END
+//     	
+//     	WEN2.SERVER_INFO\Primary1\Status\stVal = iWEN2_P1;
+//
+//     	IF NOT(iWEN2_SIO2=1) THEN
+//     		WEN2.SERVER_INFO\Standby2\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby2\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO4=1) THEN
+//     		WEN2.SERVER_INFO\Standby4\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby4\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO6=1) THEN
+//     		WEN2.SERVER_INFO\Standby6\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby6\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO8=1) THEN
+//     		WEN2.SERVER_INFO\Standby8\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby8\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO10=1) THEN
+//     		WEN2.SERVER_INFO\Standby10\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby10\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO10A=1) THEN
+//     		WEN2.SERVER_INFO\Standby10A\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby10A\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO12=1) THEN
+//     		WEN2.SERVER_INFO\Standby12\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby12\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_SIO14=1) THEN
+//     		WEN2.SERVER_INFO\Standby14\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Standby14\Shutdown\stVal=0;
+//     	END
+//     	
+//     	IF NOT(iWEN2_ALM2=1) THEN
+//     		WEN2.SERVER_INFO\Alarm2\Shutdown\stVal=1;
+//     	ELSE
+//     		WEN2.SERVER_INFO\Alarm2\Shutdown\stVal=0;
+//     	END
+//     	
+//     	WEN2.SERVER_INFO\Standby2\Status\stVal = iWEN2_S1;
+//END
+//
+//SERVER_INFO\WEN2_PC1_IO\Online\stVal
+//SERVER_INFO\WEN2_PC2_IO\Online\stVal
+//SERVER_INFO\WEN2_PC3_IO\Online\stVal
+//SERVER_INFO\WEN2_PC4_IO\Online\stVal
+//SERVER_INFO\WEN2_PC5_IO\Online\stVal
+//SERVER_INFO\WEN2_PC6_IO\Online\stVal
+//SERVER_INFO\WEN2_PC7_IO\Online\stVal
+//SERVER_INFO\WEN2_PC8_IO\Online\stVal
+//SERVER_INFO\WEN2_PC9_IO\Online\stVal
+//SERVER_INFO\WEN2_P10_IO\Online\stVal
+//SERVER_INFO\WEN2_P11_IO\Online\stVal
+//SERVER_INFO\WEN2_P12_IO\Online\stVal
+//SERVER_INFO\WEN2_P13_IO\Online\stVal
+//SERVER_INFO\WEN2_P14_IO\Online\stVal
+//SERVER_INFO\WEN2_PC1_ALM\Online\stVal
+//SERVER_INFO\WEN2_PC2_ALM\Online\stVal
+//SERVER_INFO\WEN2_PC1_TRND\Online\stVal
+//SERVER_INFO\WEN2_PC2_TRND\Online\stVal
+//SERVER_INFO\WEN2_PC1_RPT\Online\stVal
+//SERVER_INFO\WEN2_PC2_RPT\Online\stVal
+//
+//
+//
+//FUNCTION ServerCheck_Display1()
+//	INT iWEN2_P1,iWEN2_S1;
+//	INT iWEN2_PShut,iWEN2_SShut;
+//
+//	iWEN2_P1=WEN2.SERVER_INFO\Primary1\Status\stVal;
+//	iWEN2_S1=WEN2.SERVER_INFO\Standby2\Status\stVal;
+//	iWEN2_PShut= WEN2.SERVER_INFO\Primary1\Shutdown\stVal OR WEN2.SERVER_INFO\Primary3\Shutdown\stVal OR WEN2.SERVER_INFO\Primary5\Shutdown\stVal 
+//				OR WEN2.SERVER_INFO\Primary7\Shutdown\stVal OR WEN2.SERVER_INFO\Primary9\Shutdown\stVal OR WEN2.SERVER_INFO\Primary9A\Shutdown\stVal OR 
+//				WEN2.SERVER_INFO\Primary11\Shutdown\stVal OR WEN2.SERVER_INFO\Primary13\Shutdown\stVal OR WEN2.SERVER_INFO\Alarm1\Shutdown\stVal
+//	iWEN2_SShut= WEN2.SERVER_INFO\Standby2\Shutdown\stVal OR WEN2.SERVER_INFO\Standby4\Shutdown\stVal OR WEN2.SERVER_INFO\Standby6\Shutdown\stVal 
+//				OR WEN2.SERVER_INFO\Standby8\Shutdown\stVal OR WEN2.SERVER_INFO\Standby10\Shutdown\stVal OR WEN2.SERVER_INFO\Standby10\Shutdown\stVal
+//				OR WEN2.SERVER_INFO\Standby12\Shutdown\stVal OR WEN2.SERVER_INFO\Standby14\Shutdown\stVal OR WEN2.SERVER_INFO\Alarm2\Shutdown\stVal
+//	
+//
+//	PageSetInt("WEN2_P_Shutdown",IntToStr(iWEN2_PShut));
+//	PageSetInt("WEN2_S_Shutdown",IntToStr(iWEN2_SShut));
+//	
+//	PageSetInt("WEN2_P_Status1",IntToStr(iWEN2_P1));
+//	PageSetInt("WEN2_S_Status1",IntToStr(iWEN2_S1));
+//END

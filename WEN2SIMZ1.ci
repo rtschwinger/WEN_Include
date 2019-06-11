@@ -3203,15 +3203,7 @@ FUNCTION UPS_Sim()
 END
 
 FUNCTION SimExtras()
-    SERVER_INFO\Primary1\Shutdown\stVal = 0
-    SERVER_INFO\Primary5\Shutdown\stVal = 0
-    SERVER_INFO\Primary1\Status\stVal = 0
-    SERVER_INFO\Alarm1\Shutdown\stVal = 0
-    SERVER_INFO\Standby2\Shutdown\stVal = 0
-    SERVER_INFO\Standby6\Shutdown\stVal = 0
-    SERVER_INFO\Standby2\Status\stVal = 0
-    SERVER_INFO\Alarm2\Shutdown\stVal = 0
-    ENM_EMAIL\TestTag = 0
+ 
     PMDC_B1_1_i_ION7650\Transient = 0
     PMDC_B1_1_i_ION7650\MMXU1\SS = 0
     ATP_B1_1_a_1_METER1\MMXU1\SS = 0

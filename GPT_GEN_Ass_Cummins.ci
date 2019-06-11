@@ -25,7 +25,7 @@ Equip_ASS_CUMMINS(strTAG,strCluster);
 END
 
 ! GPT RTS 2016/08/17 New
-FUNCTION GEN_CUMMINS_EquipPopup_L(STRING strTAG,STRING sCluster)
+FUNCTION GEN_CUMMINS_EquipPopup_L(STRING strTAG,STRING sCluster, STRING sTitle = "")
 !------------------------------------------------------
 !Message("1.)GEN_CUMMINS_EquipPopup_L.strTAG: ", strTAG, 33);
 !                   Equip Ass
@@ -39,7 +39,7 @@ EquipAssMetadataWin("!Cummins_Genset_Main");
 END
 
 ! GPT RTS 2016/08/17 New
-FUNCTION GEN_CUMMINS_EquipPopup_R(STRING strTAG,STRING sCluster)
+FUNCTION GEN_CUMMINS_EquipPopup_R(STRING strTAG,STRING sCluster, STRING sTitle = "")
 	STRING sType = "CUMMINS";
 	STRING sPage;
 	INT iSelection;

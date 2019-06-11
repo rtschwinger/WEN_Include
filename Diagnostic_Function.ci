@@ -1,0 +1,385 @@
+STRING sPortName[501];
+STRING sPortIP[501];
+INT nPortStatus[501];
+INT nPortCount;
+INT nScanFirst;
+INT nNode;
+STRING sNode;
+REAL rDiskCurrent[27];
+REAL rDiskMax[27];
+
+INT
+FUNCTION Ping_Check(STRING sIP="")
+STRING Ip = "IP_";
+STRING sFileName = PathToStr("[Data]:" + Ip + sIP + ".txt");
+STRING sTemp;
+INT hWnd;
+INT hFile;
+	
+	IF sIP = "" THEN
+		RETURN -1;
+	END
+
+	IF NOT Exec("cmd.exe /c ping.exe -n 2 -w 1000 " + sIP + " > " + "^"" + sFileName + "^"",6) > 0 THEN
+		SleepMS(100);
+		hWnd = WndFind("C:\Windows\system32\cmd.exe");
+		IF hWnd > 0 THEN WndShow(hWnd, 0) END
+	ELSE
+		RETURN -1;
+	END
+	SleepMS(1500);
+
+	hFile = FileOpen(sFileName,"r");
+	IF hFile <= -1 THEN
+		FileClose(hFile);
+		RETURN -1;
+	ELSE
+		FileSeek(hFile,1);	
+		WHILE NOT FileEOF(hFile) DO
+			sTemp=FileReadLn(hFile);
+			IF StrSearch(0,sTemp,"TTL=") <> -1 THEN
+				FileClose(hFile);
+				RETURN 0;
+			END
+		END
+	END
+
+	FileClose(hFile);
+	RETURN 1;
+END
+
+PRIVATE
+FUNCTION _GetDeviceIP()
+ErrSet(1)
+INT hRdb;
+STRING sOldName;
+STRING sName;
+STRING result;
+INT i;
+	IF NOT nScanFirst THEN
+		!Get Port IP Address
+		hRdb = RdbOpen("_PORTS");
+		IF hRdb <> -1 THEN
+			RdbFirstRec(hRdb);
+			WHILE NOT RdbEOF(hRdb) DO 
+				sName = RdbGet(hRdb,"NAME");
+				result = RdbGet(hRdb,"OPTIONS");
+				IF result <> "" AND sOldName <> sName THEN
+					i = i + 1;
+					result = StrReplace(result,"-I","");
+					result = StrReplace(result," -P502 -T","");
+					sPortName[i] = sName;
+					sPortIP[i] = result;
+					sOldName = sName;
+				END
+				RdbNextRec(hRdb);
+			END
+			RdbClose(hRdb);
+		END
+		nPortCount = i;
+	END
+	nScanFirst = 1;
+END
+
+FUNCTION PortStatusList()
+INT i;
+STRING Status;
+STRING MSG;
+INT iNext;
+PageSetInt("Loading","1");
+	IF NOT nScanFirst THEN
+		_GetDeviceIP();
+	END
+	PageSetInt("PortNumber",nPortCount);
+	FOR i = 1 TO nPortCount DO
+		nPortStatus[i] = Ping_Check(sPortIP[i]);
+		SELECT CASE nPortStatus[i] CASE 0 Status = "Good"; CASE 1 Status = "Bad"; CASE 2 Status = "Warning"; END SELECT
+		MSG = "Port : " + sPortName[i] + "," + "IP : " + sPortIP[i] + "," + "Status : " + Status;
+		!MSG = "Port : " + StrPad(sPortName[i]," ",32) + "IP : " + StrPad(sPortIP[i]," ",16) + "Status : " + Status;
+		PageSetStr("Port" + IntToStr(i) + "_Status",MSG);
+		!Display Updete
+		IF iNext THEN PageSetInt("PageNumber",StrToInt(StrFormat(i / 30,2,0,""))+1); iNext = 0; END
+		IF (i MOD 30) = 0 THEN iNext = 1; END
+	END
+PageSetInt("Loading","0");
+END
+
+FUNCTION PortDetectionOpen()
+//	IF SuperUserCheck() THEN
+		EquipAssMetadataWin("!PortStatusDetection");
+//	END
+END
+
+INT
+FUNCTION GetComputerNodeName()
+STRING sFileName = PathToStr("[Data]:" + "Node" + ".txt");
+STRING sTemp;
+INT hWnd;
+INT hFile;
+	
+	IF nNode = 1 THEN
+		RETURN 1;
+	END
+
+	IF NOT Exec("cmd.exe /c ipconfig/all " + " > " + "^"" + sFileName + "^"",6) > 0 THEN
+		SleepMS(100);
+		hWnd = WndFind("C:\Windows\system32\cmd.exe");
+		IF hWnd > 0 THEN WndShow(hWnd, 0) END
+	ELSE
+		RETURN -1;
+	END
+	SleepMS(1500);
+
+	hFile = FileOpen(sFileName,"r");
+	IF hFile <= -1 THEN
+		FileClose(hFile);
+		RETURN -1;
+	ELSE
+		FileSeek(hFile,1);	
+		WHILE NOT FileEOF(hFile) DO
+			sTemp=FileReadLn(hFile);
+			IF StrSearch(0,sTemp,"IPv4") <> -1 THEN
+
+!WEN2
+				!WEN2 Server1
+				IF (StrSearch(0,sTemp,"192.168.1.3") <> -1) OR (StrSearch(0,sTemp,"10.248.48.3") <> -1) THEN
+					sNode = "WEN2_Server_P";
+				END
+				!WEN2 Server2
+				IF (StrSearch(0,sTemp,"192.168.1.4") <> -1) OR (StrSearch(0,sTemp,"10.248.48.4") <> -1) THEN
+					sNode = "WEN2_Server_S";
+				END
+//				!CCR Client1
+//				IF StrSearch(0,sTemp,"192.168.30.23") <> -1 THEN
+//					sNode = "CHG_CCR_Client_1";
+//				END
+//				!CCR Client2
+//				IF StrSearch(0,sTemp,"192.168.30.24") <> -1 THEN
+//					sNode = "CHG_CCR_Client_2";
+//				END
+				
+//!CCR
+//				!CCR Server1
+//				IF (StrSearch(0,sTemp,"192.168.30.21") <> -1) OR (StrSearch(0,sTemp,"10.247.253.90") <> -1) THEN
+//					sNode = "CHG_CCR_Server_P";
+//				END
+//				!CCR Server2
+//				IF (StrSearch(0,sTemp,"192.168.30.22") <> -1) OR (StrSearch(0,sTemp,"10.247.253.91") <> -1) THEN
+//					sNode = "CHG_CCR_Server_S";
+//				END
+//				!CCR Client1
+//				IF StrSearch(0,sTemp,"192.168.30.23") <> -1 THEN
+//					sNode = "CHG_CCR_Client_1";
+//				END
+//				!CCR Client2
+//				IF StrSearch(0,sTemp,"192.168.30.24") <> -1 THEN
+//					sNode = "CHG_CCR_Client_2";
+//				END
+
+//!CHG3				
+//				!CHG3 Server1
+//				IF StrSearch(0,sTemp,"192.168.30.4") <> -1 THEN
+//					sNode = "CHG3_Server_P";
+//				END
+//				!CHG3 Server2
+//				IF StrSearch(0,sTemp,"192.168.30.5") <> -1 THEN
+//					sNode = "CHG3_Server_S";
+//				END
+//				!CHG3 Client1
+//				IF StrSearch(0,sTemp,"192.168.30.6") <> -1 THEN
+//					sNode = "CHG3_Client_1";
+//				END				
+//				!CHG3 Client2
+//				IF StrSearch(0,sTemp,"192.168.30.7") <> -1 THEN
+//					sNode = "CHG3_Client_2";
+//				END	
+//				!CHG3 Client3
+//				IF StrSearch(0,sTemp,"192.168.30.8") <> -1 THEN
+//					sNode = "CHG3_Client_3";
+//				END	
+//				!CHG3 Client4
+//				IF StrSearch(0,sTemp,"192.168.30.9") <> -1 THEN
+//					sNode = "CHG3_Client_4";
+//				END	
+//				!CHG3 Client5
+//				IF StrSearch(0,sTemp,"192.168.30.12") <> -1 THEN
+//					sNode = "CHG3_Client_5";
+//				END	
+//				!CHG3 Client6
+//				IF StrSearch(0,sTemp,"192.168.30.13") <> -1 THEN
+//					sNode = "CHG3_Client_6";
+//				END	
+//				!CHG3 Client7
+//				IF StrSearch(0,sTemp,"192.168.30.10") <> -1 THEN
+//					sNode = "CHG3_Client_7";
+//				END	
+//				!CHG3 Client8
+//				IF StrSearch(0,sTemp,"192.168.30.11") <> -1 THEN
+//					sNode = "CHG3_Client_8";
+//				END	
+				
+				IF sNode <> "" THEN
+					FileClose(hFile);
+					nNode = 1;
+					RETURN 1;
+				END
+			END
+		END
+	END
+
+	FileClose(hFile);
+	RETURN 0;
+END
+
+FUNCTION PSO_RunTimeCount()
+INT nReturn;
+STRING sRT_Tag = "\RunTimeCnt";
+STRING sTag;
+
+	IF NOT GetComputerNodeName() THEN
+		RETURN;
+	END
+
+	SELECT CASE sNode
+	!WEN2 CHG_CCR_Server_S\RunTimeCount WEN2_Server_P
+	CASE "WEN2_Server_P","WEN2_Server_S"
+		sTag = "WEN2." + sNode + sRT_Tag;	
+//	!CCR CHG_CCR_Server_S\RunTimeCount WEN2_Server_P
+//	CASE "CHG_CCR_Server_P","CHG_CCR_Server_S","CHG_CCR_Client_1","CHG_CCR_Client_2"
+//		sTag = "CHG_CCR." + sNode + sRT_Tag;
+//	!CHG3
+//	CASE "CHG3_Server_P","CHG3_Server_S","CHG3_Client_1","CHG3_Client_2","CHG3_Client_3","CHG3_Client_4","CHG3_Client_5","CHG3_Client_6","CHG3_Client_7","CHG3_Client_8"
+//		sTag = "CHG3." + sNode + sRT_Tag;
+	!None
+	CASE ELSE
+		RETURN;
+	END SELECT
+	
+	IF sTag <> "" THEN
+		nReturn = TagRead(sTag);
+		IF IsError() THEN
+			RETURN;
+		END
+	
+		IF nReturn > 30000 THEN nReturn = 0; END
+	
+		nReturn = nReturn + 1;
+		TagWrite(sTag,IntToStr(nReturn));
+	END
+END
+
+FUNCTION PSO_UserNameSet()
+STRING sReturn;
+STRING sUser_Tag = "\LoingUser";
+STRING sTag;
+
+	IF NOT GetComputerNodeName() THEN
+		RETURN;
+	END
+
+	SELECT CASE sNode
+	!CCR
+	CASE "CHG_CCR_Server_P","CHG_CCR_Server_S","CHG_CCR_Client_1","CHG_CCR_Client_2"
+		sTag = "CHG_CCR." + sNode + sUser_Tag;
+	!CHG3
+	CASE "CHG3_Server_P","CHG3_Server_S","CHG3_Client_1","CHG3_Client_2","CHG3_Client_3","CHG3_Client_4","CHG3_Client_5","CHG3_Client_6","CHG3_Client_7","CHG3_Client_8"
+		sTag = "CHG3." + sNode + sUser_Tag;
+	!None
+	CASE ELSE
+		RETURN;
+	END SELECT
+	
+	IF sTag <> "" THEN
+		sReturn = UserInfo(2);
+		IF sReturn = "" THEN sReturn = UserInfo(1); END
+		IF IsError() THEN
+			RETURN;
+		END
+		TagWrite(sTag,sReturn);
+	END
+END
+
+FUNCTION PSO_DiskMemoryGet()
+REAL rReturn;
+STRING sNodeP = "Server\Primary\Disk";
+STRING sNodeS = "Server\Standby\Disk";
+STRING sTag1 = "\Current\stVal";
+STRING sTag2 = "\Max\stVal";
+STRING sTag;
+
+	IF NOT GetComputerNodeName() THEN
+		RETURN;
+	END
+
+	SELECT CASE sNode
+	!CCR
+	CASE "CHG_CCR_Server_P"
+		sTag = "CHG_CCR." + sNodeP;
+	CASE "CHG_CCR_Server_S"
+		sTag = "CHG_CCR." + sNodeS;
+	!CHG3
+	CASE "CHG3_Server_P"
+		sTag = "CHG3." + sNodeP;
+	CASE "CHG3_Server_S"
+		sTag = "CHG3." + sNodeS;
+	!None
+	CASE ELSE
+		RETURN;
+	END SELECT
+	
+	IF sTag <> "" THEN
+	!Read Disk Memory Value
+		!C:
+		rDiskCurrent[3] = 	CitectInfo("Disk", "3", 2) / 1024.0 / 1024.0;
+		rDiskMax[3] = 	CitectInfo("Disk", "3", 3) / 1024.0 / 1024.0;
+		!D:
+		rDiskCurrent[4] = 	CitectInfo("Disk", "4", 2) / 1024.0 / 1024.0;
+		rDiskMax[4] = 	CitectInfo("Disk", "4", 3) / 1024.0 / 1024.0;
+		!E:
+		rDiskCurrent[5] = 	CitectInfo("Disk", "5", 2) / 1024.0 / 1024.0;
+		rDiskMax[5] = 	CitectInfo("Disk", "5", 3) / 1024.0 / 1024.0;
+	!Write Disk Memory Tag
+		!C:
+		rReturn = rDiskCurrent[3];	TagWrite(sTag + "3" + sTag1,rReturn);
+		rReturn = rDiskMax[3];		TagWrite(sTag + "3" + sTag2,rReturn);
+		!D:
+		rReturn = rDiskCurrent[4];	TagWrite(sTag + "4" + sTag1,rReturn);
+		rReturn = rDiskMax[4];		TagWrite(sTag + "4" + sTag2,rReturn);
+		!E:
+		rReturn = rDiskCurrent[5];	TagWrite(sTag + "5" + sTag1,rReturn);
+		rReturn = rDiskMax[5];		TagWrite(sTag + "5" + sTag2,rReturn);
+	END
+END
+
+STRING 
+FUNCTION StrReplace(STRING sSource, STRING sOrig, STRING sReplace = "")
+
+	INT iStart = 0;
+	INT iPos = 0;
+	STRING sResult = "";
+	STRING sSearch = sSource;!StrLower(sSource);
+	INT iSourceLen = StrLength(sSource);
+	INT iOrigLen = StrLength(sOrig);
+
+	IF (iOrigLen = 0) THEN RETURN (sSource); END
+
+!	sOrig = StrLower(sOrig);
+
+	WHILE (iPos > -1) DO
+
+		iPos = StrSearch(iStart, sSearch, sOrig);
+
+		IF (iPos > -1) THEN
+			sResult = sResult + StrMid(sSource, iStart, iPos - iStart);
+			sResult = sResult + sReplace;
+		ELSE
+			sResult = sResult + StrRight(sSource, iSourceLen - iStart);
+		END
+
+		iStart = iPos + iOrigLen;
+	END
+
+	RETURN (sResult);
+END
+
+
