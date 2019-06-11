@@ -10,6 +10,7 @@ FUNCTION Maint_Mode_EquipPopup(STRING	sMMTAGPFX, STRING	sMMGroup,	STRING sCluste
 			INT iMouseX = 0;
 			INT iMouseY = 0;
 			//------------------------------------------------------
+			//          Equip Ass
 			//------------------------------------------------------
 			Maint_Mode_ASS(sMMTAGPFX, sMMGroup, sCluster);
 			//------------------------------------------------------
@@ -28,7 +29,6 @@ FUNCTION Maint_Mode_EquipPopup(STRING	sMMTAGPFX, STRING	sMMGroup,	STRING sCluste
 			//EquipAssMetadataWin("!Alm_Suppress");
 			
 END
-
 
 //***************************************************************************************
 FUNCTION Maint_Mode_ASS(STRING sMMTAGPFX, STRING sMMGroup, STRING sCluster)
@@ -689,4 +689,143 @@ FUNCTION CG_AlarmSvrDiag_PageVar()
 	TraceMsg("SyncProgress = " + sAlarmSvrSyncPct);
 	PageSetStr("AlarmSvrSyncPct", sAlarmSvrSyncPct);
 END
+//***************************************************************************************
+
+//***************************************************************************************
+
+FUNCTION AlmSup_TimeOut_Event(STRING sAlmSup_Eqp)
+	INT hDBFDevice;
+	INT iOnAlmSuppression;
+	INT iDateTime;
+	INT iTimeSub;
+	INT iEndDateTime;
+	STRING sMMTAGPFX = "MAINT_MODE_DSK";
+//	STRING sAlmSup_Eqp;
+	
+//	ErrSet(1);
+//	hDBFDevice = DevOpen("AlmSupTimeOut", 0);      // Device open
+//	INT iDateTime = StrToInt(IntToStr(TimeCurrent()));
+//	IF hDBFDevice = -1 THEN
+//		DspError("DBFDevice Device Error !!");      // Prompt Error
+//		RETURN FALSE;
+//	ELSE
+//		WHILE NOT DevEOF(hDBFDevice) DO
+			//---------------------------------------------------------
+			iDateTime = StrToInt(IntToStr(TimeCurrent()));
+//			sAlmSup_Eqp = DevGetField(hDBFDevice,"EQUIP");
+			iOnAlmSuppression = TagRead( "MAINT_MODE_DSK\" + sAlmSup_Eqp + "\Dig\St\OnAlmSuppression");
+			//-----------------------------------------------------------
+			IF iOnAlmSuppression = 1 THEN
+				iEndDateTime = TagRead( "MAINT_MODE_DSK\" + sAlmSup_Eqp + "\Int\EndDateTime\stVal");
+				iTimeSub = DateSub(iDateTime,iEndDateTime);
+				IF iTimeSub >= 0 THEN
+					TagWrite( "MAINT_MODE_DSK\" + sAlmSup_Eqp + "\Dig\St\AlmSupTimeOut",1);
+				ELSE
+					TagWrite( "MAINT_MODE_DSK\" + sAlmSup_Eqp + "\Dig\St\AlmSupTimeOut",0);
+				END
+			END
+			//---------------------------------------------------------
+			//TraceMsg("Equipment = " + DevGetField(hDBFDevice,"EQUIP"));
+//			DevNext(hDBFDevice);
+//		END //END WHILE
+//	END //END OUTER IF ELSE
+//	DevClose(hDBFDevice); // Device Close
+END
+
+//***************************************************************************************
+
+FUNCTION RemainingTime_Event(STRING AlmSup_Eqp)
+			STRING sMaintTimeOut =  "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\AlmSupTimeOut";          //Alarm Suppression Time Out Variable Tag
+			STRING sRemainTime =  "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\RemainingTime";             //Remaining Time Variable Tag
+			INT iTimeSub;
+			INT iOnMaintTag = TagRead( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\OnAlmSuppression");       //Alarm Suppression Status, 1=Enable, 0=Disable
+			INT iDateTime = StrToInt(IntToStr(TimeCurrent()));                        //Current Time in seconds
+			INT iEndDateTime = TagRead( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stVal");       //End Date Time in seconds
+			//INT iEndDateTimeTemp = TagRead( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stValTemp");   //End Date Time in seconds - Temporary
+			INT iTimeOut = TagRead(sMaintTimeOut);                              //Alarm Suppression Time Out Status, 1=Time Out, 0=Normal
+			
+			//IF iEndDateTime < iDateTime THEN
+			// iEndDateTime = iEndDateTimeTemp
+			//END
+			//------------------------Calculate the elapsed time----------------------------------------------------
+			STRING sMaintTag =  "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Dig\St\OnAlmSuppression";
+			STRING sElapsedDateTime =  "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\ElapsedTime";
+			TIMESTAMP tMaintOnTime = TagReadEx(sMaintTag + ".On.T");
+			INT iCurrentTime = StrToInt(IntToStr(TimeCurrent()));
+			STRING sOnDateTime = TimestampToStr(tMaintOnTime,5);
+			INT iOnDateTime = TimestampToTimeInt(tMaintOnTime);
+			INT iElapsedTime;
+			STRING sElapsedTime;
+			
+			IF iOnMaintTag = 1 THEN
+						iElapsedTime = iCurrentTime - iOnDateTime;
+			ELSE
+						iElapsedTime = 0;
+			END
+			sElapsedTime = TimeToStr(iElapsedTime,8);
+			TagWrite(sElapsedDateTime,sElapsedTime)
+			
+			//------------------------Calculate the elapsed time----------------------------------------------------
+			IF iOnMaintTag = 1 THEN
+					iTimeSub = DateSub(iEndDateTime,iDateTime);
+					IF iTimeSub < 0 THEN
+						iTimeSub = 0;
+					ELSE
+						TagWrite(sRemainTime,TimeToStr(iTimeSub,8));
+					END
+			ELSE
+					iTimeSub = 0;
+					TagWrite(sRemainTime,TimeToStr(iTimeSub,8));
+			END
+			IF iTimeOut = 1 THEN
+					iTimeSub = 0;
+					TagWrite(sRemainTime,TimeToStr(iTimeSub,8));
+			END
+			IF iTimeSub > 0 THEN
+					TagWrite(sMaintTimeOut,"0");
+			END
+END // FUNCTION RemainingTime
+
+//***************************************************************************************
+
+FUNCTION ENM_Disable(STRING sAlmTag)
+	STRING sENM_AlarmTag
+	INT iENM_Alarm_Exist,ErrCode
+	INT sReturn
+	
+	sENM_AlarmTag = sAlmTag
+	//sENM_AlarmTag =  sCluster + "." + sPrefix + sAlmTag	
+	ErrSet(1)
+	
+	sReturn = TagRead(sENM_AlarmTag+".Disabled")	
+	ErrCode= IsError()
+	ErrSet(0)
+	
+	IF ErrCode <> 424 THEN
+		TagWrite(sENM_AlarmTag+".Disabled",1)
+	END
+	
+END
+
+//***************************************************************************************
+
+FUNCTION ENM_Enable(STRING sAlmTag)
+	STRING sENM_AlarmTag
+	INT iENM_Alarm_Exist,ErrCode
+	INT sReturn
+
+	sENM_AlarmTag = sAlmTag	
+	//sENM_AlarmTag = sCluster + "." + sPrefix + sAlmTag
+	ErrSet(1)
+	
+	sReturn = TagRead(sENM_AlarmTag+".Disabled")	
+	ErrCode= IsError()
+	ErrSet(0)
+	
+	IF ErrCode <> 424 THEN
+		TagWrite(sENM_AlarmTag+".Disabled",0)
+	END
+	
+END
+
 //***************************************************************************************
