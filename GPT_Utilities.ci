@@ -29,6 +29,7 @@ FUNCTION PLSD_Startup()
 	INT iDebugFile;
 	PLSWaveformInit();
 	SummaryAlarms();
+	Login("ctapi","0");
 	iDebug_On = 1;
 	INT LogState = ErrLog("Logging is Working");
 
@@ -970,4 +971,32 @@ FUNCTION capture_screen()
 		// Go back to the last page displayed before screenshot
 		PageLast();
 
+END
+
+INT
+FUNCTION TagIncr1 (INT iTagVal)
+	INT iVal;
+	iVal = iTagVal + 1;
+	RETURN iVal;
+END
+
+INT
+FUNCTION TagDecr1 (INT iTagVal)
+	INT iVal;
+	iVal = iTagVal - 1;
+	RETURN iVal;
+END
+
+INT
+FUNCTION TagIncr10 (INT iTagVal)
+	INT iVal;
+	iVal = iTagVal + 10;
+	RETURN iVal;
+END
+
+INT
+FUNCTION TagDecr10 (INT iTagVal)
+	INT iVal;
+	iVal = iTagVal - 10;
+	RETURN iVal;
 END

@@ -2,7 +2,7 @@ MODULE INT WINDOW_OPEN_FAILED = -1;   //WinNew or WinNewAt failed
 //Window mode used by default : 1(Page child window)/4(No resize window)/256(Show all window)/512(Unique super genie)
 MODULE INT DEFAULT_WINDOW_MODE = 773;	
 MODULE INT XPOS_WINDOW = 14;
-MODULE INT YPOS_WINDOW = 15;
+MODULE INT YPOS_WINDOW = 15; 
 
 FUNCTION Maint_Mode_EquipPopup(STRING	sMMTAGPFX, STRING	sMMGroup,	STRING sCluster)
 			STRING sTitle = "Alarm Suppression /  Maintenance Mode"
@@ -17,7 +17,6 @@ FUNCTION Maint_Mode_EquipPopup(STRING	sMMTAGPFX, STRING	sMMGroup,	STRING sCluste
 			//          Equip PopUp
 			//------------------------------------------------------
 			DspGetMouse(iMouseX , iMouseY);
-		
 			//---------------------------------------------------
 			hWin = WinNewAt("!Alm_Suppress" , iMouseX + StrToInt(PageInfo(XPOS_WINDOW)) , iMouseY + StrToInt(PageInfo(YPOS_WINDOW)) , DEFAULT_WINDOW_MODE);
 	
@@ -26,37 +25,49 @@ FUNCTION Maint_Mode_EquipPopup(STRING	sMMTAGPFX, STRING	sMMGroup,	STRING sCluste
 				//Set window title
 				WinTitle(sTitle);
 			END
-			//EquipAssMetadataWin("!Alm_Suppress");
-			
 END
 
 //***************************************************************************************
 FUNCTION Maint_Mode_ASS(STRING sMMTAGPFX, STRING sMMGroup, STRING sCluster)
+			INT iReturn = 0;
 			!------------------------------------------------------
 			!          Tag String List
 			!------------------------------------------------------
 			STRING sAlmSupStateTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Dig\St\OnAlmSuppression";
 			STRING sAlmSupOnTimeTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Dig\St\OnAlmSuppression";
-			STRING sEndDateTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\EndDate\TS";
-			STRING sEndTimeTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\EndTime\TS";
+			STRING sEndDateTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Str\EndDate\TS";
+			STRING sEndTimeTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Str\EndTime\TS";
 			STRING sAlmSupTimeOutTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Dig\St\AlmSupTimeOut";
 			STRING sRemainTimeTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Str\RemainingTime";
 			STRING sElapsedDateTimeTag = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Str\ElapsedTime";
 			STRING sOnDateTime = sCluster + "." +  "MAINT_MODE_DSK\" + sMMGroup + "\Str\OnTime";
+			STRING sHourTag = sCluster + "." + "MAINT_MODE_DSK\Int\Time\Hour";    //0 - 23
+			STRING sMinTag = sCluster + "." + "MAINT_MODE_DSK\Int\Time\Minute";   //0 - 59
+			STRING sDayTag = sCluster + "." + "MAINT_MODE_DSK\Int\Date\Day";			//0 - 31
+			STRING sMonthTag = sCluster + "." + "MAINT_MODE_DSK\Int\Date\Month";	//0 - 12
+			STRING sYearTag = sCluster + "." + "MAINT_MODE_DSK\Int\Date\Year";		//0000 - 9999
+
 			!------------------------------------------------------
 			!          Type Ass
 			!------------------------------------------------------
-			Ass(-2,"Equip","'" + sMMTAGPFX + "'",0);
-			Ass(-2,"MaintGroup","'" + sMMGroup + "'",0);
-			Ass(-2,"Operator","'" + UserInfo(1) + "'",0);
-			Ass(-2,"MaintMode",sAlmSupStateTag,0);
-			Ass(-2,"MaintModeOnTime",sAlmSupOnTimeTag,0);
-			Ass(-2,"EndDate",sEndDateTag,0);
-			Ass(-2,"EndTime",sEndTimeTag,0);
-			Ass(-2,"AlmSupTimeOut",sAlmSupTimeOutTag,0);
-			Ass(-2,"sRemainTime",sRemainTimeTag,0);
-			Ass(-2,"sElapsedTime",sElapsedDateTimeTag,0);
-			Ass(-2,"sOnDateTime",sOnDateTime,0);
+			iReturn = Ass(-2,"Equip","'" + sMMTAGPFX + "'",0);
+			iReturn = Ass(-2,"MaintGroup","'" + sMMGroup + "'",0);
+			iReturn = Ass(-2,"Operator","'" + UserInfo(1) + "'",0);
+			iReturn = Ass(-2,"MaintMode",sAlmSupStateTag,0);
+			iReturn = Ass(-2,"MaintModeOnTime",sAlmSupOnTimeTag,0);
+			//Time
+			iReturn = Ass(-2,"EndTime",sEndTimeTag,0);
+			iReturn = Ass(-2,"EndHour",sHourTag,0);
+			iReturn = Ass(-2,"EndMinute",sMinTag,0);
+			//Date
+			iReturn = Ass(-2,"EndDate",sEndDateTag,0);
+			iReturn = Ass(-2,"EndDay",sDayTag,0);
+			iReturn = Ass(-2,"EndMonth",sMonthTag,0);
+			iReturn = Ass(-2,"EndYear",sYearTag,0);
+			iReturn = Ass(-2,"AlmSupTimeOut",sAlmSupTimeOutTag,0);
+			iReturn = Ass(-2,"sRemainTime",sRemainTimeTag,0);
+			iReturn = Ass(-2,"sElapsedTime",sElapsedDateTimeTag,0);
+			iReturn = Ass(-2,"sOnDateTime",sOnDateTime,0);
 END
 
 //***************************************************************************************
@@ -427,10 +438,12 @@ FUNCTION xPLSFilterDateTime (STRING AlmSup_Eqp = "")
 	INT iTagErrorCode1,iTagErrorCode2,iTagErrorCode3;
 	STRING sEndDate, sEndTime;
 	STRING sEndDateTemp, sEndTimeTemp;
-	sEndDate = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS");
-	sEndTime = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS");
-	sEndDateTemp = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS\Temp");
-	sEndTimeTemp = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS\Temp");
+	
+	sEndDate = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndDate\TS");
+	sEndTime = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndTime\TS");
+	sEndDateTemp = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndDate\TS\Temp");
+	sEndTimeTemp = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndTime\TS\Temp");
+	
 	ErrLog("Info Read from Tags: " + " EndDate " + sEndDate	+ " EndTime " + sEndTime + " EndTempDate " + sEndDateTemp + " EndTempTime " + sEndTimeTemp);
 
 	IF StrLength(sEndDate + sEndTime) > 0 THEN
@@ -459,29 +472,29 @@ FUNCTION xPLSFilterDateTime (STRING AlmSup_Eqp = "")
 	iCurrTime = StrToInt(IntToStr(TimeCurrent()));
 		
 	IF sOnMaintTag = 1 THEN
-		IF iEndDateNew < iCurrTime THEN
-			iTagErrorCode1 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stVal",iEndDateOld);
-			iTagErrorCode2 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS",sEndDateTemp);
-			iTagErrorCode3 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS",sEndTimeTemp);
-			IF iTagErrorCode1 <> 0 OR iTagErrorCode2 <> 0 OR iTagErrorCode3 <> 0 THEN
-				ErrLog("Tag Writes Error Codes: " + "Code 1 " + IntToStr(iTagErrorCode1) + " Code 2 " + IntToStr(iTagErrorCode2) + " Code 3 " + IntToStr(iTagErrorCode3)); 
-			END
-			ErrLog("Returning Data1: " + IntToStr(iEndDateOld));
-			RETURN iEndDateOld;
-		ELSE
-			iTagErrorCode1 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stVal",iEndDateNew);
-			iTagErrorCode2 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS\Temp",sEndDate);
-			iTagErrorCode3 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS\Temp",sEndTime);
-			IF iTagErrorCode1 <> 0 OR iTagErrorCode2 <> 0 OR iTagErrorCode3 <> 0 THEN
-				ErrLog("Tag Writes Error Codes: " + "Code 1 " + IntToStr(iTagErrorCode1) + " Code 2 " + IntToStr(iTagErrorCode2) + " Code 3 " + IntToStr(iTagErrorCode3)); 
-			END
-			!------------------------------------------------------------------------------------------------------------
-			SOEEventAdd( TimestampCurrent(), "The Configurable Date Time is Updated by : " + UserInfo(1) +
-			", to the Date Time : " + sEndDate + " " + sEndTime + ", for the Equipment : " + AlmSup_Eqp, "");
-			!------------------------------------------------------------------------------------------------------------
-			ErrLog("Returning Data2: " + IntToStr(iEndDateNew));
-			RETURN iEndDateNew;
-		END
+     		IF iEndDateNew < iCurrTime THEN
+     			iTagErrorCode1 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stVal",iEndDateOld);
+     			iTagErrorCode2 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndDate\TS",sEndDateTemp);
+     			iTagErrorCode3 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndTime\TS",sEndTimeTemp);
+     			IF iTagErrorCode1 <> 0 OR iTagErrorCode2 <> 0 OR iTagErrorCode3 <> 0 THEN
+     				ErrLog("Tag Writes Error Codes: " + "Code 1 " + IntToStr(iTagErrorCode1) + " Code 2 " + IntToStr(iTagErrorCode2) + " Code 3 " + IntToStr(iTagErrorCode3)); 
+     			END
+     			ErrLog("Returning Data1: " + IntToStr(iEndDateOld));
+     			RETURN iEndDateOld;
+     		ELSE
+     			iTagErrorCode1 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Int\EndDateTime\stVal",iEndDateNew);
+     			iTagErrorCode2 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndDate\TS\Temp",sEndDate);
+     			iTagErrorCode3 = TagWrite( "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndTime\TS\Temp",sEndTime);
+     			IF iTagErrorCode1 <> 0 OR iTagErrorCode2 <> 0 OR iTagErrorCode3 <> 0 THEN
+     				ErrLog("Tag Writes Error Codes: " + "Code 1 " + IntToStr(iTagErrorCode1) + " Code 2 " + IntToStr(iTagErrorCode2) + " Code 3 " + IntToStr(iTagErrorCode3)); 
+     			END
+     			!------------------------------------------------------------------------------------------------------------
+     			SOEEventAdd( TimestampCurrent(), "The Configurable Date Time is Updated by : " + UserInfo(1) +
+     			", to the Date Time : " + sEndDate + " " + sEndTime + ", for the Equipment : " + AlmSup_Eqp, "");
+     			!------------------------------------------------------------------------------------------------------------
+     			ErrLog("Returning Data2: " + IntToStr(iEndDateNew));
+     			RETURN iEndDateNew;
+     		END
 	ELSE
 		ErrLog("Returning Data3: " + IntToStr(iEndDateNew));
 		RETURN iEndDateNew;
@@ -497,8 +510,8 @@ STRING
 FUNCTION _xPLSAlarmsAdvFilter_SetDate(STRING AlmSup_Eqp = "")
 	ErrLog("PLSAlarmAdvFilterSetDate: Dev:  Group: " + AlmSup_Eqp);
 	STRING sEndDate, sEndDateTemp;
-	sEndDate = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS");
-	sEndDateTemp = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndDate\TS\Temp";
+	sEndDate = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndDate\TS");
+	sEndDateTemp = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndDate\TS\Temp";
 	IF sEndDate <> "" THEN
 		IF StrToDate(sEndDate) = -1 THEN
 			TraceMsg("Error : Invalid Date - " + sEndDate);
@@ -518,8 +531,8 @@ STRING
 FUNCTION _xPLSAlarmsAdvFilter_SetTime(STRING AlmSup_Eqp = "")
 	ErrLog("PLSAlarmAdvFilterSetTime: Dev: Group: " + AlmSup_Eqp);
 	STRING sEndTimeTemp, sEndTime;
-	sEndTime = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS");
-	sEndTimeTemp = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\EndTime\TS\Temp";
+	sEndTime = TagRead("MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndTime\TS");
+	sEndTimeTemp = "MAINT_MODE_DSK\" + AlmSup_Eqp + "\Str\EndTime\TS\Temp";
 	IF sEndTime <> "" THEN
 		IF StrToTime(sEndTime) = -1 THEN
 			TraceMsg("Error : Invalid Time - " + sEndTime);
@@ -829,3 +842,125 @@ FUNCTION ENM_Enable(STRING sAlmTag)
 END
 
 //***************************************************************************************
+//
+//PUBLIC
+//INT
+//FUNCTION Alarm_Mask (STRING fieldName,STRING filterValue)
+//
+//		INT hndl;
+//		INT resultFilter=-1;
+//
+//		hndl = AlarmFilterEditOpen(21);
+//		
+//		IF  hndl <> -1 THEN
+//			resultFilter = AlarmFilterEditSet(hndl, fieldName)
+//			IF  resultFilter = 0 THEN
+//			    resultFilter = AlarmFilterEditAppend(hndl, "=^"")
+//			END  
+//			IF  resultFilter = 0 THEN
+//			    resultFilter = AlarmFilterEditAppend(hndl, filterValue)
+//			END  
+//			IF  resultFilter = 0 THEN
+//			    resultFilter = AlarmFilterEditAppend(hndl, "^"")
+//			END  
+//			IF  resultFilter = 0 THEN
+//			    resultFilter = AlarmFilterEditCommit(hndl)
+//			END  
+//			AlarmFilterEditClose(hndl)  
+//		END
+//
+//		RETURN resultFilter;
+//END 
+//***************************************************************************************
+
+! This query function called FilterCustom1()
+! filters alarms by the requested Custom filter 1.
+! Only alarms with the requested Custom Filter 1 are displayed.
+INT
+FUNCTION FilterCustom3(STRING sValue)
+	INT iResult=-1, INT iHndl=-1, 
+	STRING sFilter="";
+	
+	IF sValue = "" THEN
+		sValue=Input("Filter Alarms","Please Input a Predetermined Filter String","Filter1");
+	END
+	ErrLog("Result from User Input: " + sValue);
+	sFilter = "Custom3=" + "^"" + sValue + "^"";
+	iHndl= AlarmFilterEditOpen(507);
+	ErrLog("Result from Edit Open: " + IntToStr(iHndl));
+	IF  iHndl <> -1 THEN
+		iResult = AlarmFilterEditSet(iHndl,sFilter);
+		ErrLog("Result from Edit Set" + IntToStr(iResult));
+		IF  iResult = 0 THEN
+			iResult = AlarmFilterEditCommit(iHndl);
+			ErrLog("Result from Edit Commit" + IntToStr(iResult));
+		END
+		AlarmFilterEditClose(iHndl);    
+	END
+
+
+	RETURN iResult;
+
+END 
+
+//***************************************************************************************
+// This function creates a single instance of the calendar control at the designated location with an object name of "CalendarEvent" and an event class of "CalendarEvent"//
+FUNCTION CreateCalendar()
+	OBJECT Calendar;
+	STRING sCalendarClass;
+	STRING sEventClass;
+	STRING sObjectName;
+	sCalendarClass = "Calendar Control 11.0";
+	sEventClass = "CalendarEvent";
+	sObjectName = "MyCalendar";
+	Calendar = CreateControlObject(sCalendarClass, sObjectName, 246, 325, 487, 500, sEventClass);
+END
+
+// This function shows how to change the title font of the calendar//
+FUNCTION CalendarSetFont(STRING sFont)
+	OBJECT Font;
+	OBJECT Calendar;
+	Calendar = ObjectByName("MyCalendar");
+	Font = _ObjectGetProperty(Calendar, "TitleFont");
+	_ObjectSetProperty(Font, "Name", sFont);
+END
+
+// This function shows how to change the background color of the calendar//
+FUNCTION CalendarSetColor(INT nRed, INT nGreen, INT nBlue)
+	OBJECT Calendar;
+	Calendar = ObjectByName("MyCalendar");
+	_ObjectSetProperty(Calendar, "BackColor", 
+	PackedRGB(nRed,nGreen,nBlue));
+END
+
+// This function shows how to call the NextDay method of the calendar//
+FUNCTION CalendarNextDay()
+	OBJECT	Calendar;
+	Calendar = ObjectByName("MyCalendar");
+	_ObjectCallMethod(Calendar, "NextDay");
+END
+
+FUNCTION CalendarEvent_AfterUpdate(STRING sAlmSupDev)
+	ErrLog("After Update");
+END
+
+// This function shows you how to write a mouse click event handler for the calendar//
+FUNCTION CalendarEvent_Click(OBJECT This)
+	INT nDay;
+	INT nMonth;
+	INT nYear;
+	STRING sAlmSuprDev;
+	STRING sDateStamp;
+	
+	nDay = _ObjectGetProperty(This, "Day");
+	nMonth = _ObjectGetProperty(This, "Month");
+	nYear = _ObjectGetProperty(This, "Year");
+	sAlmSuprDev = _ObjectGetProperty(This, "Value");
+	
+	ErrLog("Month.Day.Year: " + IntToStr(nMonth) +  ":" + IntToStr(nDay) + ":" + IntToStr(nYear));
+	sDateStamp = IntToStr(nMonth) +  "/" + IntToStr(nDay) + "/" + IntToStr(nYear);
+	ErrLog("Month/Day/Year: " + sDateStamp);
+	 
+	TagWrite("MAINT_MODE_DSK\" + sAlmSuprDev + "\Str\EndDate\TS",sDateStamp);
+	
+END
